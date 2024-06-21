@@ -1,7 +1,5 @@
-import styles from "./student.module.css"   
-import { useState, userState } from "react"
-import { 
-    IconBackground,
+import { useState } from "react"
+import {
     IconSquareRoundedCheck, IconSquareRoundedX, 
     IconSquareRoundedXFilled, IconSquareRoundedCheckFilled
 } from "@tabler/icons-react";
@@ -26,7 +24,6 @@ function Student({name, id, data, validateBtn}) {
     }
     const checkProps = {
         size: iconSize,
-        className: styles.check,
         onClick: handleCheckClick
     }
 
@@ -37,7 +34,6 @@ function Student({name, id, data, validateBtn}) {
     }
     const crossProps = {
         size: iconSize,
-        className: styles.cross,
         onClick: handleCrossClick
     }
 
@@ -46,13 +42,13 @@ function Student({name, id, data, validateBtn}) {
 
 
     return (
-        <div className="h-16 p-1 w-full relative flex gap-1 items-center border rounded-xl border-[--border-col] overflow-hidden transition hover:border-[--border-hover-col] duration-300">
+        <div className="relative flex h-16 w-full items-center gap-1 overflow-hidden rounded-xl border border-[--border-col] p-1 transition duration-300 hover:border-[--border-hover-col]">
 
-            { (state != states.unMarked) && <div className={styles.overlay}></div> }        
+            { (state != states.unMarked) && <div className="pointer-events-none absolute z-10 bg-black opacity-20 inset-0"></div> }        
             
-            <div className={styles.left}>
-                <div className={styles.icon}>
-                    <span className={styles.center}>{name[0]}</span>
+            <div className="flex flex-initial h-full items-center">
+                <div className="relative h-[80%] aspect-square select-none rounded-full bg-emerald-500">
+                    <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-semibold">{name[0]}</span>
                 </div>                
             </div>
 
@@ -61,11 +57,11 @@ function Student({name, id, data, validateBtn}) {
 
             <div className="flex ">
 
-                {state == states.present ? <IconSquareRoundedCheckFilled {...checkProps} style={{zIndex: 3}} />
-                : <IconSquareRoundedCheck {...checkProps} />}
+                {state == states.present ? <IconSquareRoundedCheckFilled {...checkProps} className="text-green-500 z-20" />
+                : <IconSquareRoundedCheck {...checkProps} className="text-green-500" />}
 
-                {state == states.absent ? <IconSquareRoundedXFilled {...crossProps} style={{zIndex: 3}} />
-                : <IconSquareRoundedX {...crossProps} />}
+                {state == states.absent ? <IconSquareRoundedXFilled {...crossProps} className="text-red-500 z-20"/>
+                : <IconSquareRoundedX {...crossProps} className="text-red-500" />}
                 
             </div>
 
