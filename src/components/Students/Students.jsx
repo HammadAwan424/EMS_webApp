@@ -1,5 +1,5 @@
 import Student from "./Student.jsx";
-import Popup from "/src/Components/Popup.jsx"
+import Popup from "/src/components/reusableComponents/Popup.jsx"
 import { useState, useRef } from "react";
 
 function Students({ lst }) {

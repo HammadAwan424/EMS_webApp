@@ -1,30 +1,11 @@
-import Homepage from "./Homepage/Homepage.jsx"
+import { RouterProvider } from "react-router-dom"
+import "/src/index.css"
+import CustomRouterProvider from "./routes"
 
 function App() {
-  let lst = [
-    {
-      name: "Hammad",
-      id: 3
-    },
-    {
-      name: "ali",
-      id: 4
-    },
-    {
-      name: "sewr",
-      id: 5
-    }
-  ]
-
-
-  return(
-    <>
-      <Homepage />
-    </>
-
-  )
+    return(
+        <CustomRouterProvider />
+    )
 }
-
-
 
 export default App
