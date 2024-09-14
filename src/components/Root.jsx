@@ -5,31 +5,31 @@ import { useContext, createContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { connectFirestoreEmulator } from "firebase/firestore";
 import { firestore } from "src/firebase/config";
+import store from "src/app/store";
+import { apiSlice, useGetAuthQuery } from "src/api/apiSlice";
 const AuthContext = createContext(null)
+
+export const RootLoader = async () => {
+    const promise = store.dispatch(apiSlice.endpoints.getAuth.initiate())
+    promise.unsubscribe()
+    const {data: Auth} = await promise
+
+    if (Auth) {
+        const userDoc = store.dispatch(apiSlice.endpoints.getUser.initiate(Auth.uid))
+        const classGroups = store.dispatch(apiSlice.endpoints.getClassGroups.initiate(Auth.uid))
+        classGroups.unsubscribe()
+        userDoc.unsubscribe()
+    }
+    return "Common Data"
+}
 
 function Root() {
 
-    const [isAuthenticated, setIsAuthenticated] = useState(null)
-
-    useEffect(() => {
-        return onAuthStateChanged(auth, user => {
-            if (user) {
-                setIsAuthenticated(true)
-            } else {
-                setIsAuthenticated(false)
-            }
-        })
-    }, [])
-
-
+    const {isSuccess} = useGetAuthQuery()
 
     return (
         <>
-        {isAuthenticated !== null ? (
-            <AuthContext.Provider value={isAuthenticated}>
-                <Outlet />
-            </AuthContext.Provider>
-        ) : null}
+        {isSuccess ? <Outlet /> : null}
         </>
     )
 }
@@ -39,19 +39,20 @@ export function useAuth() {
 }
 
 export function AuthRequired({children}) {
-    const isAuthenticated = useAuth()
+    
     const navigate = useNavigate()
     const location = useLocation()
+    const {data: Auth} = useGetAuthQuery()
 
     useEffect(() => {
-        if (!isAuthenticated) {
+        if (!Auth) {
             navigate("/login", {state: location.pathname})
         }
     }, [])
-    
+
     return (
         <>
-        { isAuthenticated && children }
+        { Auth && children }
         </>
     )
 }

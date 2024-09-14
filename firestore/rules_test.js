@@ -3,11 +3,10 @@ import {
     assertSucceeds,
     initializeTestEnvironment
 } from "@firebase/rules-unit-testing"
-import { setDoc, getDoc, updateDoc, doc, writeBatch, deleteDoc } from "firebase/firestore"
+import { setDoc, getDoc, updateDoc, doc, writeBatch, deleteDoc, deleteField, arrayUnion } from "firebase/firestore"
 import fs from "fs"
 import { setLogLevel } from "firebase/app"
 import path from "path"
-import { update } from "firebase/database"
 
 setLogLevel("error")
 
@@ -35,12 +34,12 @@ async function test1() {
 
     const jake = env.authenticatedContext("jake")
     const jakeFirestore = jake.firestore()
-    const jakeInvitations = "teachers/jake/invitations/jake"
-    await setDoc(doc(jakeFirestore, jakeInvitations), {name: "I am jake, setting my data"})
+    const jakeInvitationsPath = "teachers/jake/invitations/jake"
+    await setDoc(doc(jakeFirestore, jakeInvitationsPath), {name: "I am jake, setting my data"})
     // Can accept invitation
-    await assertSucceeds(updateDoc(doc(jakeFirestore, jakeInvitations), {rand: "I am accepting invitation"}))
+    await assertSucceeds(updateDoc(doc(jakeFirestore, jakeInvitationsPath), {rand: "I am accepting invitation"}))
     // alice can only change fields with key == alice.uid
-    await assertFails(updateDoc(doc(aliceFirestore, jakeInvitations), {"invitation_by_other": "I am changing other person's invitations maliciously"}))
+    await assertFails(updateDoc(doc(aliceFirestore, jakeInvitationsPath), {"invitation_by_other": "I am changing other person's invitations maliciously"}))
 
 
     
@@ -65,16 +64,16 @@ async function classInClassGroupTests() {
 
     // Creating classes
     const aliceGroup = "classGroups/aliceGroup"
-    const aliceClassWithClassGroup = "classGroups/aliceGroup/classes/classByAlice"
-    const aliceClassWithoutClassGroup = "classGroups/THIS_DOES_NOT_EXIST/classes/classByAlice"
+    const aliceClassWithClassGroup = "classGroups/aliceGroup/classes/aliceClassId"
+    const aliceClassWithoutClassGroup = "classGroups/THIS_DOES_NOT_EXIST/classes/aliceClassId"
 
     await env.withSecurityRulesDisabled(context => {
         return setDoc(doc(context.firestore(), aliceGroup), {By: "Security_RULES_DISABLED", cgAdmin: "alice"})
     })
 
     // Creating class without classGroup fails, Creating class with classGroup succeeds
-    await assertFails(setDoc(doc(aliceFirestore, aliceClassWithoutClassGroup), {"className": "classByAlice"}))
-    await assertSucceeds(setDoc(doc(aliceFirestore, aliceClassWithClassGroup), {"className": "classByAlice"}))
+    await assertFails(setDoc(doc(aliceFirestore, aliceClassWithoutClassGroup), {"className": "aliceClassId"}))
+    await assertSucceeds(setDoc(doc(aliceFirestore, aliceClassWithClassGroup), {"className": "aliceClassId"}))
 
     // Updating class succeeds if user created classGroup
     await assertSucceeds(updateDoc(doc(aliceFirestore, aliceClassWithClassGroup), {"update": "updating data"}))
@@ -84,7 +83,7 @@ async function classInClassGroupTests() {
     
     // Alice is inviting jake
     await env.withSecurityRulesDisabled(context => {
-        return updateDoc(doc(context.firestore(), aliceGroup), {"editors.jake": "classByAlice"})
+        return updateDoc(doc(context.firestore(), aliceGroup), {"editors.jake": "aliceClassId"})
     })
 
     await assertSucceeds(updateDoc(doc(jakeFirestore, aliceClassWithClassGroup), {"update": "Jake is updating alice class after invitation"}))
@@ -97,6 +96,12 @@ async function classInClassGroupTests() {
 
 }
 
+// someTests()
+async function someTests() {
+    let env = await getEnv({older: false})
+    
+}
+
 
 invitationsTest()
 async function invitationsTest() {
@@ -104,38 +109,143 @@ async function invitationsTest() {
     // 1) As soon as someone is invited, he is given access to modify class data by updating classGroupDoc
     // 2) Invited person's invitations list is also chagned so to notify him
 
-    let env = await getEnv()
+    let env = await getEnv({older: false})
 
     const alice = env.authenticatedContext("alice", {email: "alice@gmail.com"})
-    const aliceFirestore = alice.firestore()
+    const byAlice = alice.firestore()
     const jake = env.authenticatedContext("jake", {email: "jake@gmail.com"})
-    const jakeFirestore = jake.firestore()
+    const byJake = jake.firestore()
     const mike = env.authenticatedContext("mike", {email: "mike@gmail.com"})
-    const mikeFirestore = mike.firestore()
+    const byMike = mike.firestore()
 
     // Creating classes
     const aliceGroup = "classGroups/aliceGroup"
-    const aliceClassWithClassGroup = "classGroups/aliceGroup/classes/classByAlice"
-    await env.withSecurityRulesDisabled(context => {
-        return setDoc(doc(context.firestore(), aliceGroup), {By: "Security_RULES_DISABLED", cgAdmin: "alice"})
+    const mikeGroup = "classGroups/mikeGroup"
+    const aliceClassWithClassGroup = "classGroups/aliceGroup/classes/aliceClassId"
+    await env.withSecurityRulesDisabled(async context => {
+        const f = context.firestore()
+        await setDoc(doc(f, aliceGroup), {By: "Security_RULES_DISABLED", 
+            classGroupName: "aliceGroupName",
+            cgAdmin: "alice", classes: { 
+                aliceClassId: {
+                    students: {},
+                    className: "alice's Class"
+                }, 
+                alice2ndClassId: {
+                    students: {},
+                    className: "alice's 2nd Class"
+                },
+                editors: {}
+            }
+        })
+        await setDoc(doc(f, mikeGroup), {By: "Security_RULES_DISABLED", 
+            classGroupName: "mikeGroupName",
+            cgAdmin: "mike", classes: {
+                mikeClassId: {
+                    students: {},
+                    className: "mike's Class"
+                }, 
+                mike2ndClassId: {
+                    students: {},
+                    className: "mike's 2nd Class"
+                },
+                editors: {}
+            }
+        })
     })
-    await assertSucceeds(setDoc(doc(aliceFirestore, aliceClassWithClassGroup), {"className": "classByAlice"}))
 
-    // Invitation fail if invited person doesn't exists (no notification but access)
-    const jakeInvitations = 'teachers/jake'
-    await assertFails(setDoc(doc(aliceFirestore, jakeInvitations), {'invitations.alice': {alice: {email: "alice@gmail.com"}}}))
-
-    // Teacher now exists
-    await setDoc(doc(jakeFirestore, "teachers/jake"), {"msg": "hi I am adding data for myself", invitations: {}})
     
-    // Invitations now works
-    await assertSucceeds(updateDoc(doc(mikeFirestore, jakeInvitations), {"invitations.mike": {email: "mike@gmail.com"}}))
-    await assertSucceeds(updateDoc(doc(aliceFirestore, jakeInvitations), {"invitations.alice": {email: "alice@gmail.com"}}))
 
-    // Can't send invitation at place of some other person (can't modify any other field except auth.uid and use own email)
-    await assertFails(updateDoc(doc(aliceFirestore, jakeInvitations), {'invitations.mike': {email: "I am using mike id for invitation"}}))
-    await assertFails(updateDoc(doc(aliceFirestore, jakeInvitations), {'invitations.alice': {email: "someOtherPerson@gmail.com"}}))
-    await assertFails(updateDoc(doc(aliceFirestore, jakeInvitations), {'invitations.alice': {email: "alice@gmail.com"}, otherField: "Modifying other field fails"}))
+    const invitation = (cid, uid, cgid, cname) => ({
+        meta: {metaId: cid},
+        [`invitations.${cid}`]: {
+            classGroupId: cgid,
+            email: uid+"@gmail.com",
+            className: cname
+        }
+    })
+    // const notification = () => ({
+    //     meta: {metaId: cid},
+    //     [`invitati`]
+    // })
+    const aliceInvitation = invitation('aliceClassId', "alice", "aliceGroup", "alice's Class")
+    const jakeInvitationsPath = 'teachers/jake'
+
+    // // Invitation fail if invited person doesn't exists (no notification but access)
+    await assertFails(setDoc(doc(byAlice, jakeInvitationsPath), aliceInvitation))
+
+    // TEACHER NOW EXISTS
+    await setDoc(doc(byJake, "teachers/jake"), {"msg": "hi I am adding data for myself", invitations: {}})
+
+    const invite = (firestore, invitationPath, hostId, classId, className) => {
+        const [col, recepientId] = invitationPath.split('/')
+        const batch = writeBatch(firestore)
+        batch.update(doc(firestore, invitationPath), invitation(classId, hostId, hostId+"Group", className))
+        batch.update(doc(firestore, "classGroups", hostId+"Group"), {
+            [`editors.${recepientId}`]: arrayUnion(classId)
+        })
+        return batch.commit()
+    }
+
+    // Invitations now works
+
+    // await assertSucceeds(updateDoc(doc(byAlice, jakeInvitationsPath), aliceInvitation))
+    await assertSucceeds(invite(byAlice, jakeInvitationsPath, "alice", "aliceClassId", "alice's Class"))
+
+    // inviting with the same invitation doesn't raises an error 
+    await assertSucceeds(invite(byAlice, jakeInvitationsPath, "alice", "aliceClassId", "alice's Class"))
+    await assertFails(invite(byMike, jakeInvitationsPath, "alice", "aliceClassId", "alice's Class"))
+
+    // Inviting without giving access fails, if some other person invites on behalf of other
+    await assertFails(updateDoc(doc(byAlice, jakeInvitationsPath), invitation('alice2ndClassId', "alice", "aliceGroup", "alice's 2nd Class")))
+    
+    // SETTING MORE INVITATIONS
+    await assertSucceeds(invite(byAlice, jakeInvitationsPath, "alice", "alice2ndClassId", "alice's 2nd Class"))
+    await assertSucceeds(invite(byMike, jakeInvitationsPath, "mike", "mikeClassId", "mike's Class"))
+    await assertSucceeds(invite(byMike, jakeInvitationsPath, "mike", "mike2ndClassId", "mike's 2nd Class"))
+
+    // // Removing Invitation
+    // await assertSucceeds(updateDoc(doc(byAlice, jakeInvitationsPath), {"invitations.aliceClassId": deleteField(), meta: {metaId: "aliceClassId"}}))
+    // await assertSucceeds(updateDoc(doc(byMike, jakeInvitationsPath), {"invitations.mikeClassId": deleteField(), meta: {metaId: "mikeClassId"}}))
+
+    // // Can't send or remove invitation at place of some other person
+    // await assertFails(updateDoc(doc(byAlice, jakeInvitationsPath), invitation('aliceClassId', "IAMNOTALICE", "aliceGroup", "alice's Class")))
+    // await assertFails(updateDoc(doc(byAlice, jakeInvitationsPath), invitation('aliceClassId', "mike", "aliceGroup", "alice's Class")))
+    // await assertFails(updateDoc(doc(byAlice, jakeInvitationsPath), {OTHERFIELD: "MALICIOUS", ...aliceInvitation}))
+    
+    // // Removing invitation multiple times works
+    // await assertSucceeds(updateDoc(doc(byAlice, jakeInvitationsPath), {"invitations.mikeClassId": deleteField(), meta: {metaId: "mikeClassId"}}))
+    // await assertSucceeds(updateDoc(doc(byAlice, jakeInvitationsPath), {"invitations.mikeClassId": deleteField(), meta: {metaId: "mikeClassId"}}))
+
+    // // JAKE ACCEPTS INVITATION
+    // await assertSucceeds(updateDoc(doc(byJake, jakeInvitationsPath), {
+    //     [`invitations.mike2ndClassId`]: deleteField(),
+    //     [`classes.mike2ndClassId`]: {
+    //         className: "mike's 2nd Class",
+    //         classGroupId: "mikeGroup",
+    //         cgAdminEmail: "mike@gmail.com",
+    //         classId: "mike2ndClassId",
+    //     }
+    // }))
+
+
+
+    // // If class is joined by recepient, host can take back control but must add a notification
+    // const removeNotification = {
+    //     meta: {metaId: "mike2ndClassId"},
+    //     "notifications.mike2ndClassId": {
+    //         type: "classRemoved",
+    //         email: "mike@gmail.com",
+    //         classId: "mike2ndClassId",
+    //         classGroupId: "mikeGroup",
+    //         className: "mike's 2nd Class"
+    //     }
+    // }
+    // await assertFails(updateDoc(doc(byAlice, jakeInvitationsPath), removeNotification))
+    // await assertSucceeds(updateDoc(doc(byMike, jakeInvitationsPath), removeNotification))
+    // await assertSucceeds(updateDoc(doc(byMike, jakeInvitationsPath), removeNotification))
+
+
 
 
     await env.cleanup()
@@ -143,7 +253,7 @@ async function invitationsTest() {
 
 
 
-teacherPublicTests() 
+// teacherPublicTests() 
 async function teacherPublicTests() {
     let env = await getEnv()
 
@@ -212,21 +322,33 @@ async function classGroupTests() {
 
 
 async function arbitraryLogs() {
-    let env = await getEnv()
-    let jadeContext = env.authenticatedContext("jade")
+    let env = await getEnv({})
+    // let jadeContext = env.authenticatedContext("jade")
 
-    const firestore = jadeContext.firestore()
-    await setDoc(doc(firestore, "test/first"), {"key": "value"})
-    const docSnapshot = await getDoc(doc(firestore, "test/first"))
-    console.log(docSnapshot.exists())
+    // const firestore = jadeContext.firestore()
+    // await setDoc(doc(firestore, "test/first"), {"key": "value"})
+    // const docSnapshot = await getDoc(doc(firestore, "test/first"))
+    // console.log(docSnapshot.exists())
+
+    await env.withSecurityRulesDisabled(async context => {
+        const f = context.firestore()
+        const docu = doc(f, "classGroups", "rgqm8JSNqxRhqKT5xyCY")
+        await setDoc(docu, {
+            "classes.C2QqbAN0qE2Vxs6pW2z9.className": "changed"
+        }, {merge: true})
+        console.log("after")
+        
+    })
+
+    await env.cleanup()
 }
-// arbitraryLogs()
+// await arbitraryLogs()
 
 
 
 
 
-async function getEnv() {
+async function getEnv({older = true} = {}) {
     let env = await initializeTestEnvironment({
         projectId: "uplifted-env-416417",
         firestore: {
@@ -235,7 +357,9 @@ async function getEnv() {
             rules: fs.readFileSync(path.join(import.meta.dirname, "../", "storage.rules"), "utf-8")
         }
     })
-    await env.clearFirestore()
+    if (!older) {
+        await env.clearFirestore()
+    }
     return env
 }
 

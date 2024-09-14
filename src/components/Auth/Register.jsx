@@ -1,10 +1,10 @@
-import { onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { useEffect, useRef, useState } from 'react'
 import { auth, firestore } from "../../firebase/config.js"
-import { useAuth } from '../Root.jsx'
-import Alert from "../reusableComponents/Alert.jsx"
+import Alert from "../CommonUI/Alert.jsx"
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { writeBatch, doc } from 'firebase/firestore'
+import { useGetAuthQuery, useRegisterMutation } from 'src/api/apiSlice.js'
 
 
 function Register() {
@@ -17,60 +17,50 @@ function Register() {
     const [formVisible, setFormVisible] = useState(false)
     const navigate = useNavigate()
     const location = useLocation()
-
-    const isAuthenticated = useAuth()
+    const [register, {isLoading, isSuccess}] = useRegisterMutation()
+    
+    const {data: userAuth, refetch} = useGetAuthQuery()
 
 
     function redirectBack() {
-        navigate(location.state?.from || "/");
+        navigate(location.state?.from || "/", {replace: true});
     }
 
+    console.log(status)
+    
+
     useEffect(() => {
-        if (isAuthenticated) {
-            redirectBack()
+        if (userAuth) {
+            return redirectBack()
         }
-    }, [isAuthenticated])
+    }, [])
 
-
-    function handleSubmit(e) {
+    async function handleClick(e) {
         e.preventDefault()
         const email = emailRef.current.value
         const password = passwordRef.current.value
-
         if (password !== confirmPassword) {
             setStatus({visible: true, type: "warning", text: "Password mismatch"})
             return
         }
-
-
-        createUserWithEmailAndPassword(auth, email, password)
-            .then(creds => {
-                setStatus(
-                    {type: "success", text: "Registered successfully, redirecting...", visible: false}
-                )
-                const batch = writeBatch(firestore)
-                batch.set(doc(firestore, "teachers", creds.user.uid), {invitations: {}})
-                batch.set(doc(firestore, "teachersPublic", creds.user.uid), {email: creds.user.email})
-                return batch.commit()
-            })
-            .catch(err => {
-                const errorMsg = err.code == "auth/email-already-in-use" ? "Email already exists, change it to different address" :
-                    "Couldn't register for now, try again later"
-
-                setStatus({type: "warning", text: errorMsg, visible: false})  
-            })
-            .finally(() => setStatus(currentState => {
-                return {...currentState, visible: true}
-            }))
+        try {
+            await register({ email, password }).unwrap()
+            setStatus({type: "success", text: "Registered successfully, redirecting in a second...", visible: true})
+            refetch()
+        } catch (err) {
+            const errorMsg = err.code == "auth/invalid-credentials" ? "Email and/or password incorrect" :
+                "Couldn't register for now, try again later"
+            setStatus({type: "warning", text: errorMsg, visible: true})
+        }
     }
 
     return(
         <div className='py-8'>
-            {!isAuthenticated ? (
+            {!userAuth ? (
                 <div id="Registration-Form" className="flex flex-col gap-10 bg-[rgb(59,59,59)] p-6 w-80 mx-auto rounded">  
                     <h1 className='text-white self-center'>Register</h1>
 
-                    <form action="" className='flex flex-col gap-4' onSubmit={(e) => handleSubmit(e)}>
+                    <form action="" className='flex flex-col gap-4' onSubmit={(e) => handleClick(e)}>
                         <p className='text-sm'>Enter you email address</p>
                         <input className='text-black bg-neutral-600 rounded-sm p-1' ref={emailRef} type="email" placeholder="Enter Email" required/>
                         <p className='text-sm pt-2'>Password</p>

@@ -1,0 +1,221 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null
+    }
+
+    match /classGroups/{classGroupID} {
+      function validateClassGroup(requestData) {
+        return requestData.classGroupName.size() < 21 &&
+        requestData.classGroupName.size() > 0;
+      }
+
+      allow create: if request.resource.data.cgAdmin == request.auth.uid && true
+      allow update: if resource.data.cgAdmin == request.auth.uid && validateClassGroup(request.resource.data)
+      allow read: if resource.data.cgAdmin == request.auth.uid
+      allow delete: if resource.data.cgAdmin == request.auth.uid
+
+
+      match /classes/{classID} {
+
+        function classAssignedToTeacher() {
+          let classGroup = getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data;
+          return classGroup.editors.get([request.auth.uid], []).hasAll([classID])
+        }
+
+        function isClassAdmin() {
+          let classGroup = getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data;
+          return classGroup.cgAdmin == request.auth.uid;
+        }
+
+        function validateFields(requestData) {
+          return requestData.className.size() > 0 &&
+          requestData.className.size() < 20;
+        }
+
+        allow read: if classAssignedToTeacher() || isClassAdmin() || resource == null
+
+        allow create: if isClassAdmin() && validateFields(request.resource.data)
+
+        allow update: if (classAssignedToTeacher() || isClassAdmin()) && validateFields(request.resource.data)  
+
+        allow delete: if isClassAdmin()
+
+        match /{allSubCollections=**} {
+          allow read, write: if false
+        }
+      }
+    }
+
+    match /teachers/{teacherID} {
+      
+      function isHimself() {
+        return request.auth.uid == teacherID;
+      }
+
+      // function fetcher(first, second) {
+      //   let boolean = (first == null) && (second != null);
+      //   let another = debug(first) == debug(second);
+      //   let s = debug(first.classGroupId) == debug(second.email);
+      //   // let doc =  {
+      //   //   'true': get(/databases/$(database)/documents/classGroups/$(second.classGroupId)),
+      //   //   'false': get(/databases/$(database)/documents/classGroups/$(first.classGroupId)),
+      //   // };
+      //   // let doc = boolean ? "world hello" : "hello world";
+      //   let doc = debug(boolean ? get(/databases/$(database)/documents/classGroups/$(second.classGroupId)) : get(/databases/$(database)/documents/classGroups/$(first.classGroupId)));
+      //   return doc
+      // }
+
+      function validClassChange() {
+        let requestData = request.resource.data;
+        let resourceData = resource.data;
+        let metaId = requestData.meta.get("metaId", null);
+
+        let rootChangesGood = requestData.diff(resourceData).affectedKeys().hasOnly(["notifications", "meta"]);
+        let notificationGood = requestData.notifications.diff(resourceData.get('notifications', {})).affectedKeys().hasOnly([metaId]);
+
+        let notification = requestData.notifications[metaId];
+
+        let doc = getAfter(/databases/$(database)/documents/classGroups/$(notification.classGroupId)).data;
+
+        return rootChangesGood && notificationGood &&
+          notification.type == "classRemoved" && 
+          notification.email == request.auth.token.email &&
+          notification.classId == metaId &&
+          notification.className == resourceData.classes[metaId].className &&
+          doc.cgAdmin == request.auth.uid
+      }
+
+      function validInvitation() {
+        
+        let requestData = request.resource.data;
+        let metaId = requestData.meta.get("metaId", null);
+        let resourceData = resource.data;
+        
+        let rootChanges = requestData.diff(resourceData).affectedKeys();
+        let nestedChanges = requestData.get('invitations', {}).diff(resourceData.get('invitations', {})).affectedKeys();
+        let invitation = requestData.get('invitations', {}).get(metaId, null);
+        let resourseInvitation = resourceData.get('invitations', {}).get(metaId, null);
+
+        let boolean = (invitation == null) && (resourseInvitation != null);
+        let doc = boolean ?
+          getAfter(/databases/$(database)/documents/classGroups/$(resourseInvitation.classGroupId)).data : 
+          getAfter(/databases/$(database)/documents/classGroups/$(invitation.classGroupId)).data;
+
+        return (
+          rootChanges.hasOnly(['invitations', 'meta']) && 
+          nestedChanges.hasOnly([metaId]) && (
+            (
+              invitation.email == request.auth.token.email &&
+              doc.cgAdmin == request.auth.uid && 
+              doc.classes.keys().hasAny([metaId]) &&
+              doc.classes[metaId].className == invitation.className &&
+              doc.editors[teacherID].hasAll([metaId])
+
+            ) || (
+              invitation == null && (
+                resourseInvitation == null ||
+                (
+                  resourseInvitation.email == request.auth.token.email &&
+                  doc.cgAdmin == request.auth.uid && 
+                  doc.classes.keys().hasAny([metaId]) &&
+                  doc.classes[metaId].className == resourseInvitation.className &&
+                  doc.editors[teacherID].hasAll([metaId]) == false
+                ) 
+              )  
+            )
+          )     
+        )
+      }
+
+      allow read: if signedIn() && isHimself()
+      allow create: if signedIn() && isHimself()
+      allow update: if signedIn() && (
+        isHimself() || 
+        validInvitation() || 
+        validClassChange()
+      )
+    }
+
+    match /teachersPublic/{teacherID} {
+
+      function isHimself() {
+        return request.auth.uid == teacherID
+      }
+
+      allow read: if signedIn()
+      allow create: if signedIn() && isHimself() && existsAfter(/databases/$(database)/documents/teachers/$(teacherID))
+      allow update, delete: if isHimself()
+    }
+
+
+
+
+
+
+
+
+
+    // match /test/first {
+    //   function my() {
+    //     let j = ([0, 0, {"hello": "there is something asdf"}]).toSet();
+    //     let k = ({"a": "hello", "b": {"ini": "some", "ano": "another"}}).diff({"a": "hello", "b": {"ini": "sdfsdd"}, "c": "another"}).affectedKeys();
+    //     let another = ['a', 'b'];
+    //     return debug(debug(j) == debug([1, 2, 3].toSet()));
+    //   }
+      
+    //   allow read: if my() || true;
+    //   allow write: if true;
+    // }
+
+
+
+    function TeacherOrAdmin(classGroupId, myResource) {
+      let classGroup = get(/databases/$(database)/documents/classGroups/$(classGroupId)).data;
+      return classGroup.editors.get(request.auth.uid, []).hasAll(myResource.classId) ||  
+        classGroup.cgAdmin == request.auth.uid
+    }
+    
+    match /attendance/{sheetID} {
+      // function verify() {
+      //   let classGroup = get(/databases/$(database)/documents/classGroups/$(request.resource.data.classGroupId)).data;
+      //   return classGroup.editors.get(request.auth.uid).hasAll(request.resource.data.classId) && 
+      //     classGroup.students.size() == request.resource.data.stats.size() &&
+      //     request.resource.data.createdAt == request.time.date() && 
+      //     request.resource.data.lastModified == request.time
+      // }
+
+      allow update: if TeacherOrAdmin(resource.data.classGroupId, resource.data) &&
+
+        timestamp.date(int(sheetID[20:24]), int(sheetID[24:26]), int(sheetID[26:28]), ) == request.time.date() &&
+        request.resource.data.classId == resource.data.classId &&
+        request.resource.data.classGroupId == resource.data.classGroupId &&
+        request.resource.data.students.size() == resource.data.students.size() &&
+        request.resource.data.createdAt == resource.data.createdAt && 
+
+        request.resource.data.lastModified == request.time 
+        
+      allow create: if TeacherOrAdmin(request.resource.data.classGroupId, request.resource.data) && 
+        // get(/databases/$(database)/documents/classGroups/$(request.resource.data.classGroupId)/classes/$(request.resource.data.classId)).data.students.size() == request.resource.data.students.size() &&
+        request.resource.data.createdAt == request.time.date() && 
+        
+        request.resource.data.lastModified == request.time 
+
+      allow read: if TeacherOrAdmin(resource.data.classGroupId, resource.data) || resource == null
+    }
+
+    match /monthlyAttendance/{document} {
+      allow write: if false
+      allow read: if resource == null || TeacherOrAdmin(resource.data.classGroupId, resource.data)
+    }
+
+    
+
+    // match /teacher/{teacherID} {
+    //   // all class groups the teacher is admin of and class groups which he has joined
+    // }
+  }
+}

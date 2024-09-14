@@ -1,44 +1,53 @@
 import { createBrowserRouter, createRoutesFromElements, Route, Link, redirect, useNavigate, renderMatches, redirectDocument, Router, RouterProvider } from "react-router-dom";
-import RootLayout from "./components/Root-layout/Root-layout.jsx"
-import Root, { AuthRequired } from "./components/Root.jsx";
-import Index, { loader as indexLoader, loader } from "./components/Root-layout/Index.jsx"
-import RootErrorPage from "./components/Root-layout/Error-page.jsx"
-import Homepage from "./components/Homepage/Homepage.jsx";
+import RootLayout from "./components/Layout/Layout.jsx"
+import Root, {RootLoader, AuthRequired} from "./components/Root.jsx";
+import Index from "./components/Index/Index.jsx"
+import RootErrorPage from "./components/Layout/Error-page.jsx"
 import Login from "./components/Auth/Login.jsx";
 import Register from "./components/Auth/Register.jsx";
-import { action as createCGAction } from "./components/Homepage/Create-card.jsx";
+import { action as createCGAction } from "./components/Index/Create-card.jsx";
 import { auth, firestore } from "./firebase/config.js";
-import Students from "./components/Students/Students.jsx";
 import { onAuthStateChanged, connectAuthEmulator } from "firebase/auth";
 import { connectFirestoreEmulator } from "firebase/firestore"
-import Edit, {editAction, editLoader} from "./components/Edit/Edit.jsx"
+import { editAction, editLoader } from "./components/Edit/Edit.jsx"
 import EditErrorPage from "./components/Edit/ErrorPage.jsx";
+import { acceptInvitation, rejectInvitation } from "./api/invitations.js";
+import { signOutAction } from "./api/Utility.js";
+// import { classAction, classLoader } from "./components/Index/Dashboard.jsx";
+import ClassInput, {loader as classEditLoader, action as classEditAction} from "./components/Class/ClassEdit.jsx";
+import Attendance from "./components/Attendance/Attendance.jsx";
+import ClassGroupEdit from "./components/Classgroup/Edit.jsx";
+import ClassGroupCreate from "./components/Classgroup/Create.jsx";
 
 
-function loaderWrapper(loader) {
-    return async function loaderWrapperFunction(obj) {
-        let unsubscribe;
-        return new Promise((resolve, reject) => {
-            unsubscribe = onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    resolve(loader(obj))
-                } else {
-                    console.log("Not signed in, Rejected with null")
-                    reject(new Error("User is not signed in", {cause: "null-auth"}))
-                }
-            })
-        })
-        .catch(err => {
-            if (err.cause != "null-auth") {
-                throw err;
-            } 
-            // This is only to prevent err "Loader didn't return anything"
-            // root component won't render anything until this err persists aka undefined auth status
-            return err  
-        })
-        .finally(() => unsubscribe())
-    }
-}
+// function loaderWrapper(loader) {
+//     return async function loaderWrapperFunction(obj) {
+//         let unsubscribe;
+//         return new Promise((resolve, reject) => {
+//             unsubscribe = onAuthStateChanged(auth, (user) => {
+//                 // if (user) {
+//                 //     console.log(user)
+//                 //     resolve(loader(obj))
+//                 // } else {
+//                 //     console.log("Not signed in, Rejected with null", user)
+//                 //     reject(new Error("User is not signed in", {cause: "null-auth"}))
+//                 // }
+                
+//                 // Doing just to mimic latency
+//                 setTimeout(() => resolve(loader(obj)), 500)
+//             })
+//         })
+//         .catch(err => {
+//             if (err.cause != "null-auth") {
+//                 throw err;
+//             } 
+//             // This is only to prevent err "Loader didn't return anything"
+//             // root component won't render anything until this err persists aka undefined auth status
+//             return err  
+//         })
+//         .finally(() => unsubscribe())
+//     }
+// }
 
 
 
@@ -46,7 +55,7 @@ function CustomRouterProvider() {
 
     const router = createBrowserRouter(
         createRoutesFromElements(
-            <Route element={<Root />}>
+            <Route element={<Root />} loader={RootLoader} id="root">
                 <Route
                     path="/login"
                     element={<Login />}
@@ -56,6 +65,11 @@ function CustomRouterProvider() {
                     path="/register"
                     element={<Register />}
                 />
+
+                <Route 
+                    path="/signout"
+                    action={signOutAction}
+                />
     
                 <Route
                 path="/"
@@ -63,20 +77,41 @@ function CustomRouterProvider() {
                 errorElement={<RootErrorPage />}
                 >   
     
-                    <Route index element={<Index />} loader={loaderWrapper(indexLoader) } action={createCGAction} />
+                    <Route index element={<Index />} action={createCGAction} />
     
-                    <Route path="/edit/classgroup/:Id" 
-                    element={<AuthRequired><Edit /></AuthRequired>} 
-                    action={editAction} loader={loaderWrapper(editLoader)} 
+                    <Route path="/classgroup/:Id" 
+                    element={<AuthRequired><ClassGroupEdit /></AuthRequired>} 
+                    action={editAction} loader={editLoader} 
                     errorElement={<EditErrorPage />}
                     />
-        
+
                     <Route
-                    path="/home"
-                    element={<h1>You are at home</h1>}             
+                    path="/classgroup/create"
+                    element={<ClassGroupCreate />}
                     />
-    
-                    <Route path="/students" element={<Students lst={[{id: 3, name: "hello"}]} />}/>
+
+      
+
+                    <Route 
+                    path="class/:classGroupId/:classId" 
+                    // loader={classEditLoader}
+                    // action={classEditAction}
+                    element={<ClassInput />}
+                    />
+
+                    <Route 
+                    path="attendance/:type/:classGroupId/:classId/:date" 
+                    element={<Attendance />}
+                    />
+
+                    <Route
+                    path="/invitations/reject"
+                    action={rejectInvitation}
+                    />
+                    <Route
+                    path="/invitations/accept"
+                    action={acceptInvitation}
+                    />
                         
                 </Route>
             </Route>
@@ -84,6 +119,7 @@ function CustomRouterProvider() {
     )
 
     return(
+
         <RouterProvider router={router} />
     )
 }

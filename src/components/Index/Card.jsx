@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useRef } from "react";
 import { IconArrowLeft, IconArrowNarrowLeft } from "@tabler/icons-react"
-import Popup from "src/components/reusableComponents/Popup.jsx"
-import Alert from "src/components/reusableComponents/Alert.jsx"
+import Popup from "src/components/CommonUI/Popup.jsx"
+import Alert from "src/components/CommonUI/Alert.jsx"
 import { auth, firestore } from "src/firebase/config";
 import { addDoc, collection } from "firebase/firestore";
 

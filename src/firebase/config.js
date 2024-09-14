@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore"
+import { getFirestore, initializeFirestore, memoryLocalCache, persistentLocalCache } from "firebase/firestore"
 import { connectAuthEmulator } from "firebase/auth";
 import { connectFirestoreEmulator } from "firebase/firestore";
 
@@ -16,7 +16,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig)
 const auth = getAuth(firebaseApp)
-const firestore = getFirestore(firebaseApp)
+const firestore = initializeFirestore(firebaseApp, {})
 
 connectAuthEmulator(auth, 'http://127.0.0.1:9099')
 connectFirestoreEmulator(firestore, "127.0.0.1", 8080)

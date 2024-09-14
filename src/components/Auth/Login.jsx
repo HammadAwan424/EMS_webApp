@@ -1,12 +1,13 @@
 import { signInWithEmailAndPassword, AuthErrorCodes as code, connectAuthEmulator, onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth'
 import { useRef, useState, useEffect } from 'react'
 import { auth } from "../../firebase/config.js"
-import Alert from "../reusableComponents/Alert.jsx"
-import { useAuth } from '../Root.jsx'
+import Alert from "../CommonUI/Alert.jsx"
 import { Link, useLocation, useNavigate, useNavigation } from 'react-router-dom'
+import { useGetAuthQuery, useSignInMutation } from 'src/api/apiSlice.js'
 
 function Login() {
-    console.log("Login comp is in effect")
+
+    console.log("Login component is in effect")
 
     const emailRef = useRef()
     const passwordRef = useRef()
@@ -14,50 +15,51 @@ function Login() {
     const location = useLocation()
     const [formVisible, setFormVisible] = useState(false)
     const navigate = useNavigate()    
+    const [signIn, {isLoading, isSuccess}] = useSignInMutation()
 
     function redirectBack() {
-        navigate(location.state?.from || "/");
+        navigate(location.state?.from || "/", {replace: true});
     }
 
-    const isAuthenticated = useAuth()
+    const {data: userAuth, refetch} = useGetAuthQuery()
+
 
     useEffect(() => {
-        if (auth.currentUser) {
+        if (userAuth) {
             redirectBack()
         }
-    }, [isAuthenticated])
+    }, [])
 
 
-    function handleClick(e) {
+    async function handleClick(e) {
         e.preventDefault()
         const email = emailRef.current.value
         const password = passwordRef.current.value
         console.log(email, password)
-        signInWithEmailAndPassword(auth, email, password)
-            .then(creds => {
-                setStatus(() => {
-                    return {
-                        type: "success",
-                        text: "Signed in successfully, redirecting..."
-                    }
-                })
+
+        try {
+            await signIn({ email, password }).unwrap()
+            setStatus({
+                type: "success",
+                text: "Signed in successfully, redirecting...",
+                visible: true
             })
-            .catch(err => {
-                setStatus(() => {
-                    return {
-                        type: "warning",
-                        text: err.code == "auth/wrong-password" ? "The password you entered is incorrect" :
-                            err.code == "auth/user-not-found" ?  "Incorrect email" :
-                            "Couldn't sign in, try again"
-                    }
-                })  
+            console.log("IN MIDDLE")
+            refetch()
+        } catch (err) {
+            setStatus({
+                type: "warning",
+                text: err.code == "auth/invalid-credentials" ? "Email and/or password incorrect" :
+                    err.code == "auth/invalid-credentials" ? "Email and/or password incorrect" :
+                        "Couldn't sign in, try again",
+                visible: true
             })
-            .finally(() => setStatus((prev) => {return {...prev, visible: true}}))
+        }
     }
 
     return(
         <div className='py-8'>
-            {!auth.currentUser ? (
+            {!userAuth ? (
                 <div className="flex flex-col gap-10 bg-[rgb(59,59,59)] p-6 w-80 mx-auto rounded">  
                     <h1 className='text-white self-center'>Login</h1>
 
