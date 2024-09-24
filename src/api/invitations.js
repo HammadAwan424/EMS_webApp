@@ -6,15 +6,10 @@ async function acceptInvitation({request}) {
     const invitation = await request.json()
   
     const batch = writeBatch(firestore)
+    const classId = invitation.id
 
     batch.update(doc(firestore, "teachers", teacherId), {
-        [`invitations.${invitation.invitationId}`]: deleteField(),
-        [`classes.${invitation.invitationId}`]: {
-            className: invitation.className,
-            classGroupId: invitation.classGroupId,
-            cgAdminEmail: invitation.email,
-            classId: invitation.invitationId
-        }
+        [`classes.${classId}`]: true
     })
 
     await batch.commit()
@@ -27,9 +22,10 @@ async function rejectInvitation({request}) {
     const invitation = await request.json()
   
     const batch = writeBatch(firestore)
+    const classId = invitation.id
 
     batch.update(doc(firestore, "teachers", teacherId), {
-        invitations: arrayRemove(invitation)
+        [`classes.${classId}`]: false
     })
 
     await batch.commit()  

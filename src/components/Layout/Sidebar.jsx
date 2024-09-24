@@ -5,6 +5,8 @@ import { useState } from "react"
 import { Link, Form, useFetcher } from "react-router-dom"
 import { createClassGroupLink } from "src/api/Utility"
 import { Teacher } from "src/api/classGroups"
+import { useSelector } from "react-redux"
+import { getAllClassIds } from "src/features/user/userSlice"
 
 export default function Sidebar({myRef}) {
 
@@ -15,7 +17,7 @@ export default function Sidebar({myRef}) {
     const { data: classGroups } = useGetClassGroupsQuery(Auth ? Auth.uid : skipToken)
 
     return (
-        <div ref={myRef} id="sidebar" className="fixed overflow-auto top-0 transition z-50
+        <div ref={myRef} id="sidebar" className="fixed overflow-auto top-0 transition z-50 bg-[--theme-primary] sm:bg-[--theme-secondary]
           left-0 bottom-0 flex flex-col gap-2 px-8 md:px-4 py-10 max-sm:-translate-x-full max-sm:w-[calc(100vw-80px)] sm:w-48 md:w-60">
             <span className="font-semibold text-lg">Hello {Auth ? Auth.email : "Stranger"}</span>
             
@@ -62,7 +64,7 @@ export default function Sidebar({myRef}) {
                         <div className="pl-2 flex flex-col text-[--text-secondary-col]">
                             {Teacher.hasClassGroups(classGroups) ? (
                                 classGroups.map(documentData => (
-                                    <Link key={documentData.id} to="/">{documentData.classGroupName}</Link>
+                                    <Link key={documentData.id} to={`/classgroup/${documentData.id}`}>{documentData.classGroupName}</Link>
                                 ))
             
                             ) : (
@@ -85,6 +87,9 @@ export default function Sidebar({myRef}) {
 function Invitations({ User }) {
 
     const [expanded, setExpanded] = useState(false)
+    const allClassIds = useSelector(getAllClassIds)
+
+    const hasInvitations = allClassIds.new.some(id => User.invitations[id].status == true)
 
 
     return (
@@ -95,14 +100,16 @@ function Invitations({ User }) {
             </div>
             <div className="flex flex-col gap-2 pl-2 text-[--text-secondary-col]">
                 {expanded && (
-                    Teacher.hasInvitations(User) ? (
-                        Object.keys(User.invitations).map((classId) =>
+                    hasInvitations ? (
+                        allClassIds.new.map((classId) =>
+                            // TODO: Show notification for invitations that are taken back
+                            User.invitations[classId].status == true && (
                             <div className="" key={Teacher.getInvitationId(classId, User.invitations)}>
                                 <div className="flex-col bg-[--theme-tertiary] rounded-md p-2 gap-1 flex">
                                     <span>{User.invitations[classId].email} has invited you to {User.invitations[classId].className}</span>
                                     <InvitationForm invitationId={classId} />
                                 </div>
-                            </div>
+                            </div>)
                         )
 
                     ) : <div className="text-sm">{"No invitaions for now :)"}</div>
@@ -123,7 +130,7 @@ function InvitationForm({ invitationId }) {
     const rejectFetcher = useFetcher()
     const {data: Auth} = useGetAuthQuery()
     const {data: User} = useGetUserQuery(Auth.uid)
-    const toSubmit = {invitationId, ...User.invitations[invitationId]}
+    const toSubmit = {id: invitationId, ...User.invitations[invitationId]}
 
     function acceptInvitation() {
         acceptFetcher.submit(toSubmit, { action: "/invitations/accept", method: "post", encType: "application/json" })

@@ -1,38 +1,40 @@
 import { skipToken } from "@reduxjs/toolkit/query"
-import { IconMenu2 } from "@tabler/icons-react"
-import { useState } from "react"
+import { IconCalendarOff, IconMenu2 } from "@tabler/icons-react"
+import { useLayoutEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery } from "src/api/apiSlice"
 import { Teacher } from "src/api/classGroups"
 import { getDateStr } from "src/api/Utility"
 import Pie from "../CommonUI/Pie"
 import Track from "./Track"
+import MediaQuery from "react-responsive"
+import { useSelector } from "react-redux"
+import { getAllClassIds } from "src/features/user/userSlice"
 
 function Classes() {
     const {data: Auth} = useGetAuthQuery()
     const {data: User} = useGetUserQuery(Auth.uid)
-    return (
-        Teacher.hasClasses(User) ? (
-            <div>
-                <h1>Classes</h1>
-                <hr className="py-2" />
-                <div className="grid grid-cols-2">
-                {Teacher.getClassIdArray(User).map(classId =>
-                    <Class key={classId} classId={classId} classGroupId={User.classes[classId].classGroupId} />
-                )}
-                </div>
+    const classIds = useSelector(getAllClassIds)
 
-            </div> 
+    return (
+        <div className="CLASSES_CONTAINER flex flex-col gap-4 bg-[--theme-secondary] rounded-md p-4">
+        {classIds.active.length > 0 ? (
+           <div className="ONLY-CLASSES grid overflow-hidden gap-3 grid-cols-2 auto-rows-[minmax(200px,auto)] lg:auto-rows-[minmax(250px,auto)]">
+                {classIds.active.map(classId =>
+                    <Class key={classId} classId={classId} classGroupId={User.invitations[classId].classGroupId} />
+                )}
+           </div>
         ) : (
             <div>You don't have any classes</div>
-        )
+        )}
+        </div>
 
     )
 }
 
 
 
-function Class({classId, classGroupId}) {
+function Class({classId, classGroupId, cssClasses=""}) {
 
     const [date, setDate] = useState(() => {
         const date = new Date()
@@ -166,15 +168,15 @@ function Class({classId, classGroupId}) {
 
 
     return(
-        <div data-id={classId} className="CLASS p-1 flex group overflow-hidden flex-col transition
-                border-solid border-2 items-start rounded-md hover:bg-[--bg-hover-col]"
+        <div data-id={classId} className={`CLASS p-2 flex group overflow-hidden flex-col transition
+                items-start rounded-md hover:bg-[--theme-quad] bg-[--theme-primary] ${cssClasses}`} 
         >
             <div className="wrapper flex justify-between self-stretch items-center relative">
                 <div className="font-semibold text-2xl"> {classData.className} </div>
                 {/* <div className="text-sm"> {} </div> */}     
                 <IconMenu2 onClick={() => setDropdown(true)} className="cursor-pointer" />
                 {dropdown && (
-                    <div id="Dropdown" className="absolute bg-slate-600 cursor-pointer min-w-20 rounded-md select-none top-6 right-6" onClick={() => setDropdown(false)}>
+                    <div id="Dropdown" className="absolute bg-slate-600 cursor-pointer z-20 min-w-20 rounded-md select-none top-6 right-6" onClick={() => setDropdown(false)}>
                         <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" to={`class/${classGroupId}/${classId}`}>Edit</Link></div>
                         <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" 
                             to={`/attendance/set/${classGroupId}/${classId}/${getDateStr({dateObj: new Date(), hyphenated: true})}`}
@@ -185,15 +187,19 @@ function Class({classId, classGroupId}) {
             </div>
 
             <div id="All Space" className="flex-auto self-stretch text-center flex items-center justify-center h-1">
-                <div className="SPACER md:flex-1"></div>
+                {/* md:flex-1 (below) */}
+                <div className="SPACER flex-1"></div>
 
                 <div className="flex-[2_1_0] flex items-center justify-center self-stretch">
                     <Track totalItems={totalItems} swipeBack={swipeBack} navigation={{next, previous}}>
 
                         {noMoreData && (
-                            <div className="bg-[--theme-secondary] rounded-full overflow-hidden w-full h-full inline-block relative select-none">
-                                <div className="flex items-center justify-center w-full h-full">
-                                    <h1>{"Empty :)"}</h1>
+                            <div className="bg-[--theme-tertiary] rounded-full overflow-hidden w-full h-full inline-block relative select-none">
+                                <div className="flex items-center justify-center w-full h-full flex-col">
+                                    <MediaQuery minWidth={640}>
+                                        {(matches) => <IconCalendarOff size={matches ? 30 : 20} />}
+                                    </MediaQuery>
+                                    <div className="md:text-lg">No previous data</div>
                                 </div>
                             </div>
                         )}
@@ -211,39 +217,58 @@ function Class({classId, classGroupId}) {
                             <div key={state[key].id} className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
                                 <Pie percentage={state[key].count / state[key].total * 100}>
                                     <div className="w-full h-full flex items-center justify-center">
-                                        <h1>{state[key].count}/{state[key].total}</h1>
+                                        <span className="text-3xl sm:text-4xl lg:text-5xl">{state[key].count}/{state[key].total}</span>
                                     </div>
                                 </Pie>
                             </div>
                         )}
 
-                        
-                       
 
                         {attendance.exists ? (
-                            <div className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
-                                <Pie percentage={presentCount / totalStuCount * 100}>
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <h1>{presentCount}/{totalStuCount}</h1>
-                                    </div>
-                                </Pie>
-                            </div>
+                            <Link className="text-inherit hover:text-inherit font-normal" draggable={false}
+                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr({ dateObj: new Date(), hyphenated: true })}`}
+                            >
+                                <div className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
+                                    <Pie percentage={presentCount / totalStuCount * 100}>
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <span className="text-3xl sm:text-4xl lg:text-5xl">{presentCount}/{totalStuCount}</span>
+                                        </div>
+                                    </Pie>
+                                </div>
+                            </Link>
                         ) : (
-                            <div className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
-                                <div>No data exists</div>
-                            </div>
+                            <Link className="text-inherit hover:text-inherit font-normal" draggable={false} 
+                                to={`/attendance/set/${classGroupId}/${classId}/${getDateStr({dateObj: new Date(), hyphenated: true})}`}
+                            >
+                                <div 
+                                    className="bg-[--theme-tertiary] rounded-full overflow-hidden w-full h-full inline-block relative select-none"
+        
+                                >
+                                    <div className="flex items-center justify-center w-full h-full flex-col">
+                                        <MediaQuery minWidth={640}>
+                                            {(matches) => <IconCalendarOff size={matches ? 30 : 20} />}
+                                        </MediaQuery>
+                                        <span className="md:text-lg pt-1">No data exists</span>
+                                        <span className="text-xs md:text-sm">Click me</span>
+                                    </div>
+                                </div>
+                            </Link>
+
                         )}
                     </Track>
                 </div>
+                
+                {/* remove below one */}
+                <div className="flex-1"></div>
 
-                <div className="hidden md:block flex-1 self-end justify-end text-end">
+                {/* <div className="hidden md:block flex-1 self-end justify-end text-end">
                     <span>{readAble}</span>
-                </div>
-
+                </div> */}
             </div>
-
-            <div className="md:hidden ml-auto text-xs">
-                {loadingDetails ? <div>Loading</div> : <div>Includes {2} Students</div>}
+                
+            {/* md:hidden */}
+            <div className="ml-auto text-xs md:text-sm lg:text-base">
+                <span>{readAble}</span>
             </div>
         </div>
     )

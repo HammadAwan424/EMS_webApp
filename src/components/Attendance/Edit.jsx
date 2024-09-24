@@ -17,7 +17,12 @@ function Edit() {
     const allStudents = todayAttendance.students
 
     const [renderWarning, setRenderWarning] = useState(false)
-    const dialogRef = useRef(null);
+
+    const [popup, setPopup] = useState({
+        text: "",
+        handler: () => {},
+        visible: false,
+    })
 
     const [attendance, setAttendance] = useImmer(() => {
         const students = {}
@@ -70,22 +75,12 @@ function Edit() {
         if (!hasUpdates) {
             setRenderWarning(true);
         } else {
-            dialogRef.current.showModal();
+            setPopup({
+                visible: true,
+                handler: confirmSubmitHandler,
+                text: status(absentCount, presentCount)
+            })
         }
-    }
-
-    // function handleSubmit({strict=null}) {
-    //     if (strict) {
-    //         // Other conditions that should be checked before proceeding
-    //         if (btnDisabled) {
-    //             setRenderWarning(true)
-    //         }
-    //     }
-    //     onSaveChangesClick()
-    // }
-
-    function closeDialog() {
-        dialogRef.current.close();
     }
 
     async function confirmSubmitHandler() {
@@ -107,20 +102,11 @@ function Edit() {
     )
 
     return (
-        <>
-            <Popup ref={dialogRef}>
-                <div className="flex flex-col gap-6 px-6 py-8">
-                    <div>
-                        <Status absentCount={absentCount} presentCount={presentCount} />
-                    </div>
-                    <div className="flex gap-4">
-                        <button autoFocus onClick={closeDialog}>
-                            Go back
-                        </button>
-                        <button onClick={confirmSubmitHandler}>Yes submit</button>
-                    </div>
-                </div>
-            </Popup>
+        <>            
+            <Popup
+                text={popup.text} visible={popup.visible} confirmHandler={popup.handler}
+                setVisible={(boolean) => setPopup({ ...popup, visible: boolean })} isLoading={isLoading}
+            />
 
             <h1>Edit</h1>
             <div className="flex items-center gap-2 flex-col sm:w-[--student-width-for-desktop] p-2">
@@ -147,13 +133,13 @@ function Edit() {
     );
 }
 
-function Status({ absentCount, presentCount }) {
+function status(absentCount, presentCount) {
     // if (presentCount == 0) {
     //     return <div>You updated all students as absent</div>
     // } else if (absentCount == 0) {
     //     return <div>You updated all students as present</div>
     // } else {
-        return <div>Updates include {absentCount} absent students and {presentCount} present students</div>
+        return `Updates include ${absentCount} absent students and ${presentCount} present students`
     }
 // }
 

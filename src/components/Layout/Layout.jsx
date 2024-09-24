@@ -11,11 +11,14 @@ import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/ap
 import { Teacher } from "src/api/classGroups.js";
 import { skipToken } from "@reduxjs/toolkit/query";
 import Sidebar from "./Sidebar.jsx";
+import { useDispatch } from "react-redux";
+import { setActiveClasses, setInactiveClasses } from "src/features/user/userSlice.js";
 
 export default function RootLayout() {
 
   const navigation  = useNavigation()
   const sidebarRef = useRef(null)
+  const dispatch = useDispatch()
   const [popupVisible, setPopupVisible] = useState(false)
 
     function openSidebar() {
@@ -42,8 +45,6 @@ export default function RootLayout() {
       return <h1>We are fetching you document after auth</h1>
     }
 
-
-
     return (
       <>
       <div className="h-full" id='layout'>
@@ -57,8 +58,6 @@ export default function RootLayout() {
 
         <div id="View" className="sm:pl-48 md:pl-60 h-full">
           <Outlet />
-          {/* <CreatePrompt popupVisible={popupVisible} setPopupVisible={setPopupVisible} rerender={rerender} /> */}
-   
         </div>
 
       </div>

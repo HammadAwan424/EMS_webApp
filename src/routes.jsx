@@ -87,7 +87,7 @@ function CustomRouterProvider() {
 
                     <Route
                     path="/classgroup/create"
-                    element={<ClassGroupCreate />}
+                    element={<AuthRequired><ClassGroupCreate /></AuthRequired>}
                     />
 
       
@@ -96,12 +96,12 @@ function CustomRouterProvider() {
                     path="class/:classGroupId/:classId" 
                     // loader={classEditLoader}
                     // action={classEditAction}
-                    element={<ClassInput />}
+                    element={<AuthRequired><ClassInput /></AuthRequired>}
                     />
 
                     <Route 
                     path="attendance/:type/:classGroupId/:classId/:date" 
-                    element={<Attendance />}
+                    element={<AuthRequired><Attendance /></AuthRequired>}
                     />
 
                     <Route

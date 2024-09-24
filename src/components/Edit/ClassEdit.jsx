@@ -5,7 +5,7 @@ import dot from "dot-object"
 import isEqual from "lodash.isequal"
 import { useState } from "react"
 import { useParams } from "react-router-dom"
-import { useAssignTeacherMutation, useDeleteClassMutation, useEditClassMutation, useGetAuthQuery, useGetClassByIdQuery } from "src/api/apiSlice"
+import { useAssignTeacherMutation, useDeleteClassMutation, useEditClassMutation, useGetAuthQuery, useGetClassByIdQuery, useUnAssignTeacherMutation } from "src/api/apiSlice"
 import { useImmerReducer } from "use-immer"
 import Button from "../CommonUI/Button"
 import { Cross } from "../CommonUI/Icons"
@@ -109,6 +109,7 @@ function ClassEdit({sampleData, id}) {
     const [formUpdates, dispatch] = useImmerReducer(classReducer, initialState)
     const [editClass, {isLoading: mutating}] = useEditClassMutation()
     const [assignTeacher, {isLoading: assigning, isError: assignError, error}] = useAssignTeacherMutation()
+    const [unassignTeacher, {isLoading: unassigning, isError: isUnassignError, error: unAssignError}] = useUnAssignTeacherMutation()
 
     const {data: details, isFetching: loadingDetails, isUninitialized} = useGetClassByIdQuery(
         hasExpandedOnce ? {classGroupId, classId: id} : skipToken
@@ -195,16 +196,20 @@ function ClassEdit({sampleData, id}) {
 
     console.log("UPDATES: ", formUpdates, "PREVIOUS STATE: ", details)
 
-    async function myAssing(isAssignedAlready) {
+
+    const isAssignedAlready = !!sampleData.assignedTeacher
+    async function myAssing() {
+        
         
         try {
             if (isAssignedAlready) {
-                await unAssignTeacher({})
+                const recepientEmail = sampleData.assignedTeacher
+                await unassignTeacher({recepientEmail, classGroupId, classId: id})
             } else {
-                await assignTeacher({recepientEmail: getValue("assignedTeacher"), hostEmail: auth.email, classGroupId, classId: id, className: getValue("className")}).unwrap()
-                dispatch({type: "reset"})
+                const recepientEmail = getValue("assignedTeacher")
+                await assignTeacher({recepientEmail, hostEmail: auth.email, classGroupId, classId: id, className: getValue("className")}).unwrap()
             }
-        
+            dispatch({type: "reset"})
         } catch (error) {
             console.log("THere was error while assigning: ", error)
         }
@@ -264,13 +269,13 @@ function ClassEdit({sampleData, id}) {
             <div className="p-2 flex items-center gap-x-2 gap-y-1 border-t border-[--text-disabled] flex-wrap">
                 <div className="font-semibold px-2 w-40">Assigned Teacher</div>
                 <IconEdit onClick={() => dispatch({type: "editToggle", specific: "teacher"})} />
-                    {getValue("assignedTeacher") || activeEdits.teacher ? (
+                    {isAssignedAlready || activeEdits.teacher ? (
                         <>
                         <input
                             className={[
-                                inputClasses({ editing: !activeEdits.teacher && getValue("assignedTeacher")}),
+                                inputClasses({ editing: activeEdits.teacher && !isAssignedAlready}),
                             ].join(" ")}
-                            required disabled={!activeEdits.teacher && getValue("assignedTeacher")} type="email"
+                            required disabled={!activeEdits.teacher || isAssignedAlready} type="email"
                             placeholder="Teacher's Id or their mail address" name="assignedTeacher"
                             value={getValue("assignedTeacher")}
                             onChange={(e) => dispatch({ e: e, type: "input_change" })} autoComplete="off" />
@@ -297,8 +302,8 @@ function ClassEdit({sampleData, id}) {
                         >Cancel</button>
                         <Button className="rounded-3xl bg-[--theme-secondary] py-1 px-3"
                             states={{ isLoading: assigning, isError: assignError }} 
-                            text={{ idleText: getValue("assignedTeacher") ? "Unassign" : "Assign" }}
-                            onClick={() => myAssing(!!getValue("assignedTeacher"))}
+                            text={{ idleText: isAssignedAlready ? "Unassign" : "Assign" }}
+                            onClick={myAssing}
                         />
                     </div>
                     {assignError && (
@@ -355,7 +360,7 @@ function ClassEdit({sampleData, id}) {
                                 {type == "removed" ? (
                                     <IconTrashOff className="text-red-500" onClick={() => dispatch({ type: "restore", id: studentId })} />
                                 ) : (
-                                    <IconTrash onClick={() => dispatch({ type: "remove_student", id: studentId })} />
+                                    activeEdits.students && <IconTrash className="text-white" stroke={1} onClick={() => dispatch({ type: "remove_student", id: studentId })} />
                                 )}
                                 <input className={inputClasses(arg)}
                                     required disabled={!activeEdits.students} value={getValue(`students.${studentId}.rollNo`, type)} type="number" min={0} placeholder="Roll No"

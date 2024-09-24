@@ -8,32 +8,57 @@ export const userSlice = createSlice({
         details: {},
         status: "idle",
         error: null,
-        classes: {}
-    },
-    reducers: {
-        setDetails(state, action) {
-            state.details = action.payload
-        },
-        setClasses(state, action) {
-            state.classes = action.payload
+        classes: {
+            active: [],
+            inactive: [],
+            new: [],
+            status: false
         }
     },
-    extraReducers(builder) {
-        builder
-          .addCase(fetchUser.pending, (state, action) => {
-            state.status = 'loading'
-          })
-          .addCase(fetchUser.fulfilled, (state, action) => {
-            state.status = 'succeeded'
-            // Add any fetched posts to the array
-            state.classes = state.classes = action.payload
-          })
-          .addCase(fetchUser.rejected, (state, action) => {
-            state.status = 'failed'
-            state.error = action.error.message
-          })
-      }
+    reducers: {
+        setActiveClasses(state, action) {
+            state.classes.active = action.payload
+        },
+        setInactiveClasses(state, action) {
+            state.classes.inactive = action.payload
+        },
+        setNewClasses(state, action) {
+            state.classes.new = action.payload
+        },
+        setClassesMarked(state, action) {
+            state.classes.status = action.payload
+        }
+        // setDetails(state, action) {
+        //     state.details = action.payload
+        // },
+        // setClasses(state, action) {
+        //     state.classes = action.payload
+        // }
+    },
+    // extraReducers : (builder) => {
+    //     builder
+    //       .addCase(fetchUser.pending, (state, action) => {
+    //         state.status = 'loading'
+    //       })
+    //       .addCase(fetchUser.fulfilled, (state, action) => {
+    //         state.status = 'succeeded'
+    //         // Add any fetched posts to the array
+    //         state.classes = state.classes = action.payload
+    //       })
+    //       .addCase(fetchUser.rejected, (state, action) => {
+    //         state.status = 'failed'
+    //         state.error = action.error.message
+    //       })
+    //   }
 })
+
+
+export const getAllClassIds = state => state.user.classes
+export const setActiveClasses = userSlice.actions.setActiveClasses
+export const setInactiveClasses = userSlice.actions.setInactiveClasses
+export const setNewClasses = userSlice.actions.setNewClasses
+export const setClassesMarked = userSlice.actions.setClassesMarked
+export default userSlice.reducer
 
 
 const fetchUser = createAsyncThunk("/user/classes", async () => {
@@ -45,12 +70,5 @@ const fetchUser = createAsyncThunk("/user/classes", async () => {
 
 export {fetchUser}
 
-
-
-
-export const getClasses = state => state.classes
-
-
 export const selectUser = state => state.details
 
-export default userSlice.reducer

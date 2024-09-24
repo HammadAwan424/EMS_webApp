@@ -8,13 +8,69 @@ service cloud.firestore {
     }
 
     match /classGroups/{classGroupID} {
-      function validateClassGroup(requestData) {
-        return requestData.classGroupName.size() < 21 &&
-        requestData.classGroupName.size() > 0;
+      function validateFields() {
+        let requestData = request.resource.data;
+        let resourceData = resource.data;
+        return requestData.keys().hasOnly(['editors', 'classes', 'classGroupName', 'cgAdmin', 'meta']) &&
+          requestData.editors is map &&
+          requestData.classes is map &&
+          requestData.classGroupName is string
+      }
+      
+      function validControlBack() {
+        let requestData = request.resource.data;
+        let metaId = requestData.get("meta", {}).get("metaId", null);
+        
+        let editorChanged = requestData.diff(resource.data).affectedKeys().hasAny(["editors"]);
+        let prevClasses = resource.data.editors.get(metaId, []);
+        let newClasses = requestData.editors.get(metaId, []);
+
+        return editorChanged == false || (
+          requestData.editors.diff(resource.data.editors).affectedKeys().hasOnly([metaId]) &&
+          prevClasses.size() > newClasses.size() ? (
+            prevClasses.removeAll(newClasses).size() == 1 && (
+              get(/databases/$(database)/documents/teachers/$(metaId)).data.invitations.get(prevClasses.removeAll(newClasses)[0], null) == null ||
+              getAfter(/databases/$(database)/documents/teachers/$(metaId)).data.invitations[prevClasses.removeAll(newClasses)[0]].status == false
+            )
+          ) : (
+            newClasses.removeAll(prevClasses).size() == 1 && (
+              // getAfter(/databases/$(database)/documents/teachers/$(metaId)).data.invitations.get(newClasses.removeAll(newClasses)[0], null) == null ||
+              getAfter(/databases/$(database)/documents/teachers/$(metaId)).data.invitations[newClasses.removeAll(prevClasses)[0]].status == true
+            )
+          )
+        );
       }
 
-      allow create: if request.resource.data.cgAdmin == request.auth.uid && true
-      allow update: if resource.data.cgAdmin == request.auth.uid && validateClassGroup(request.resource.data)
+      // // Doesn't account for mutation of class key, always returns true if no class is added or removed
+      // function validClassChange(requestData, resourceData) {
+      //   let diff = requestData.classes.diff(resourceData.classes);
+  
+      //   return 
+      //     (
+      //       diff.addedKeys().size() == diff.affectedKeys().size() &&
+      //       diff.addedKeys() == requestData.allClassIds.removeAll(resourceData.allClassIds).toSet()
+      //     ) || (
+      //       diff.removedKeys().size() == diff.affectedKeys().size() &&
+      //       diff.removedKeys() == resourceData.allClassIds.removeAll(requestData.allClassIds).toSet()
+      //     ) || (
+      //       diff.removedKeys().size() == 0 && diff.addedKeys().size() == 0
+      //     );
+     
+      // }
+
+      // function checks() {
+      //   let resourceData = resource.data;
+      //   let requestData = request.resource.data;
+      //   return (!requestData.diff(resourceData).affectedKeys().hasAny(["classes"])) || validClassChange(requestData, resourceData);
+      // }
+      
+
+      allow create: if request.resource.data.cgAdmin == request.auth.uid && validateFields()
+      allow update: if resource.data.cgAdmin == request.auth.uid && 
+        validateFields() && 
+        validControlBack()
+        // validControlBack() && 
+        // // checks()
       allow read: if resource.data.cgAdmin == request.auth.uid
       allow delete: if resource.data.cgAdmin == request.auth.uid
 
@@ -69,26 +125,6 @@ service cloud.firestore {
       //   return doc
       // }
 
-      function validClassChange() {
-        let requestData = request.resource.data;
-        let resourceData = resource.data;
-        let metaId = requestData.meta.get("metaId", null);
-
-        let rootChangesGood = requestData.diff(resourceData).affectedKeys().hasOnly(["notifications", "meta"]);
-        let notificationGood = requestData.notifications.diff(resourceData.get('notifications', {})).affectedKeys().hasOnly([metaId]);
-
-        let notification = requestData.notifications[metaId];
-
-        let doc = getAfter(/databases/$(database)/documents/classGroups/$(notification.classGroupId)).data;
-
-        return rootChangesGood && notificationGood &&
-          notification.type == "classRemoved" && 
-          notification.email == request.auth.token.email &&
-          notification.classId == metaId &&
-          notification.className == resourceData.classes[metaId].className &&
-          doc.cgAdmin == request.auth.uid
-      }
-
       function validInvitation() {
         
         let requestData = request.resource.data;
@@ -97,35 +133,29 @@ service cloud.firestore {
         
         let rootChanges = requestData.diff(resourceData).affectedKeys();
         let nestedChanges = requestData.get('invitations', {}).diff(resourceData.get('invitations', {})).affectedKeys();
-        let invitation = requestData.get('invitations', {}).get(metaId, null);
-        let resourseInvitation = resourceData.get('invitations', {}).get(metaId, null);
+        let invitation = requestData.get('invitations', {}).get(metaId, {});
+        let resourseInvitation = resourceData.get('invitations', {}).get(metaId, {});
 
-        let boolean = (invitation == null) && (resourseInvitation != null);
-        let doc = boolean ?
-          getAfter(/databases/$(database)/documents/classGroups/$(resourseInvitation.classGroupId)).data : 
-          getAfter(/databases/$(database)/documents/classGroups/$(invitation.classGroupId)).data;
+        let doc = getAfter(/databases/$(database)/documents/classGroups/$(invitation.classGroupId)).data;
 
         return (
           rootChanges.hasOnly(['invitations', 'meta']) && 
-          nestedChanges.hasOnly([metaId]) && (
+          nestedChanges.hasOnly([metaId]) &&
+          doc.classes.keys().hasAny([metaId]) &&
+          doc.cgAdmin == request.auth.uid && (
             (
-              invitation.email == request.auth.token.email &&
-              doc.cgAdmin == request.auth.uid && 
-              doc.classes.keys().hasAny([metaId]) &&
-              doc.classes[metaId].className == invitation.className &&
-              doc.editors[teacherID].hasAll([metaId])
-
+              invitation.status == true && 
+              doc.editors[teacherID].hasAll([metaId]) &&
+              resourseInvitation == {} ? (
+                invitation.email == request.auth.token.email &&
+                doc.classes[metaId].className == invitation.className
+              ) : (
+                invitation.diff(resourseInvitation).affectedKeys().hasOnly(["status"])
+              )
             ) || (
-              invitation == null && (
-                resourseInvitation == null ||
-                (
-                  resourseInvitation.email == request.auth.token.email &&
-                  doc.cgAdmin == request.auth.uid && 
-                  doc.classes.keys().hasAny([metaId]) &&
-                  doc.classes[metaId].className == resourseInvitation.className &&
-                  doc.editors[teacherID].hasAll([metaId]) == false
-                ) 
-              )  
+              invitation.status == false && 
+              invitation.diff(resourseInvitation).affectedKeys().hasOnly(["status"]) &&
+              doc.editors[teacherID].hasAll([metaId]) == false
             )
           )     
         )
@@ -135,9 +165,9 @@ service cloud.firestore {
       allow create: if signedIn() && isHimself()
       allow update: if signedIn() && (
         isHimself() || 
-        validInvitation() || 
-        validClassChange()
+        validInvitation() 
       )
+      allow delete: if true
     }
 
     match /teachersPublic/{teacherID} {
@@ -175,7 +205,7 @@ service cloud.firestore {
 
     function TeacherOrAdmin(classGroupId, myResource) {
       let classGroup = get(/databases/$(database)/documents/classGroups/$(classGroupId)).data;
-      return classGroup.editors.get(request.auth.uid, []).hasAll(myResource.classId) ||  
+      return classGroup.editors.get(request.auth.uid, []).hasAll([myResource.classId]) ||  
         classGroup.cgAdmin == request.auth.uid
     }
     
@@ -210,6 +240,10 @@ service cloud.firestore {
     match /monthlyAttendance/{document} {
       allow write: if false
       allow read: if resource == null || TeacherOrAdmin(resource.data.classGroupId, resource.data)
+    }
+
+    match /some/{document} {
+      allow read, write: if true
     }
 
     

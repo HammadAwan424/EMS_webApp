@@ -1,5 +1,5 @@
 import { auth, firestore } from "src/firebase/config";
-import { doc, collection } from "firebase/firestore";
+import { doc, collection, arrayUnion, writeBatch, arrayRemove } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { redirect } from "react-router-dom";
 
@@ -28,4 +28,36 @@ function getDateStr({dateObj=new Date(), hyphenated=false}) {
     }
 }
 
-export {createClassGroupLink, signOutAction, getDateStr}
+const invitation = (cid, email, cgid, cname) => ({
+    meta: {metaId: cid},
+    [`invitations.${cid}`]: {
+        classGroupId: cgid,
+        className: cname,
+        email,
+        status: true
+    }
+})
+
+const invite = (recepientId, recepientEmail, hostEmail, classGroupId, classId, className) => {
+    const batch = writeBatch(firestore)
+    batch.update(doc(firestore, "teachers", recepientId), invitation(classId, hostEmail, classGroupId, className))
+    batch.update(doc(firestore, "classGroups", classGroupId), {
+        [`editors.${recepientId}`]: arrayUnion(classId),
+        [`classes.${classId}.assignedTeacher`]: recepientEmail,
+        meta: {metaId: recepientId}
+    })
+    return batch
+}
+const removeInvite = (recepientId, classGroupId, classId) => {
+    const batch = writeBatch(firestore)
+    batch.update(doc(firestore, "teachers", recepientId), {[`invitations.${classId}.status`]: false, meta: {metaId: classId}})
+    batch.update(doc(firestore, "classGroups", classGroupId), {
+        [`editors.${recepientId}`]: arrayRemove(classId),
+        [`classes.${classId}.assignedTeacher`]: "",
+        meta: {metaId: recepientId}
+    })
+    return batch
+}
+
+
+export {createClassGroupLink, signOutAction, getDateStr, invite, removeInvite}

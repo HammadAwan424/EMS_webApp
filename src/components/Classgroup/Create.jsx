@@ -19,6 +19,7 @@ function ClassGroupCreate() {
     const {data: Auth} = useGetAuthQuery()
     const [updates, dispatch] = useImmerReducer(reducer, {
         classes: {}, 
+        editors: {},
         meta: {classIds: []},
         cgAdmin: Auth.uid 
     })

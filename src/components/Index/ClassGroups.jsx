@@ -67,9 +67,9 @@ function ClassGroup({classGroupId}) {
 
     return (
         <>
-        <div className="CLASSGROUP flex flex-col gap-4 border p-2" ref={classGroupRef} data-id={classGroupId}>
+        <div className="CLASSGROUP flex flex-col gap-4 bg-[--theme-secondary] rounded-md p-4" ref={classGroupRef} data-id={classGroupId}>
             <div className="flex items-center gap-2 relative">
-                <h2 className="font-semibold text-xl">{classGroup.classGroupName}</h2>
+                <h2 className="font-semibold text-2xl">{classGroup.classGroupName}</h2>
                 <div className="flex-auto"></div>
                 <IconMenu2 onClick={() => setDropdown(true)} className="cursor-pointer" />
                     {dropdown && (

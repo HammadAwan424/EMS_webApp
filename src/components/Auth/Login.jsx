@@ -21,14 +21,14 @@ function Login() {
         navigate(location.state?.from || "/", {replace: true});
     }
 
-    const {data: userAuth, refetch} = useGetAuthQuery()
+    const {data: userAuth} = useGetAuthQuery()
 
 
     useEffect(() => {
         if (userAuth) {
             redirectBack()
         }
-    }, [])
+    }, [userAuth])
 
 
     async function handleClick(e) {
@@ -44,8 +44,6 @@ function Login() {
                 text: "Signed in successfully, redirecting...",
                 visible: true
             })
-            console.log("IN MIDDLE")
-            refetch()
         } catch (err) {
             setStatus({
                 type: "warning",

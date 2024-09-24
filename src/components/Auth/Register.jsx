@@ -19,7 +19,7 @@ function Register() {
     const location = useLocation()
     const [register, {isLoading, isSuccess}] = useRegisterMutation()
     
-    const {data: userAuth, refetch} = useGetAuthQuery()
+    const {data: userAuth} = useGetAuthQuery()
 
 
     function redirectBack() {
@@ -33,7 +33,7 @@ function Register() {
         if (userAuth) {
             return redirectBack()
         }
-    }, [])
+    }, [userAuth])
 
     async function handleClick(e) {
         e.preventDefault()
@@ -46,7 +46,6 @@ function Register() {
         try {
             await register({ email, password }).unwrap()
             setStatus({type: "success", text: "Registered successfully, redirecting in a second...", visible: true})
-            refetch()
         } catch (err) {
             const errorMsg = err.code == "auth/invalid-credentials" ? "Email and/or password incorrect" :
                 "Couldn't register for now, try again later"

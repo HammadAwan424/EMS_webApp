@@ -198,10 +198,10 @@ function ClassInput() {
                         {hasStudents ? classObject.students.map(studentId => (
                             <div className="flex gap-2" key={studentId}>
                                 <input className={`text-[--text-primary-col] p-1 rounded-md border flex-1 px-2 outline-none min-w-0 group-[.isDeleted]:text-red-600
-                    ${editStates.studentEdit ? "bg-[--theme-tertiary] border-transparent" : 'bg-transparent border-[--theme-tertiary]'}`}
+                                ${editStates.studentEdit ? "bg-[--theme-tertiary] border-transparent" : 'bg-transparent border-[--theme-tertiary]'}`}
                                     required disabled={!editStates.studentEdit} value={classObject[studentId].rollNo} type="number" min={0} placeholder="Roll No" name="rollNo" onChange={(e) => studentChange(e, studentId)} autoComplete="off" />
                                 <input className={`text-[--text-primary-col] p-1 rounded-md border flex-1 px-2 outline-none min-w-0 group-[.isDeleted]:text-red-600
-                    ${editStates.studentEdit ? "bg-[--theme-tertiary] border-transparent" : 'bg-transparent border-[--theme-tertiary]'}`}
+                                ${editStates.studentEdit ? "bg-[--theme-tertiary] border-transparent" : 'bg-transparent border-[--theme-tertiary]'}`}
                                     required disabled={!editStates.studentEdit} value={classObject[studentId].studentName} type="text" placeholder="Name" name="studentName" onChange={(e) => studentChange(e, studentId)} autoComplete="off" />
                             </div>
                         )) : (

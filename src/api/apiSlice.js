@@ -3,7 +3,7 @@ import { createUserWithEmailAndPassword, EmailAuthProvider, onAuthStateChanged, 
 import { auth, firestore } from '#src/firebase/config.js'
 import { getDoc, doc, collection, getDocs, limit, query, where, onSnapshot, updateDoc, writeBatch, deleteField, DocumentSnapshot, setDoc, addDoc, Timestamp, serverTimestamp, documentId, orderBy, endAt, startAfter, limitToLast, endBefore, arrayUnion, deleteDoc, FieldPath } from 'firebase/firestore'
 import { flatten } from 'flat'
-import { getDateStr } from './Utility'
+import { getDateStr, invite, removeInvite } from './Utility'
 
 export const apiSlice = createApi({
     baseQuery: fetchBaseQuery({ baseUrl: "/" }),
@@ -26,6 +26,24 @@ export const apiSlice = createApi({
                     });
                 });
             },
+            onCacheEntryAdded: async (_, {updateCachedData, cacheDataLoaded}) => {
+                try {
+                    await cacheDataLoaded
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            updateCachedData(draft => ({
+                                email: user.email,
+                                uid: user.uid,
+                                displayName: user.displayName,
+                            }))
+                        } else {
+                            updateCachedData(draft => user)
+                        }
+                    })
+                } catch {
+                    // No-op
+                }         
+            }
         }),
         getUser: builder.query({
             queryFn: async (uid) => {
@@ -59,6 +77,8 @@ export const apiSlice = createApi({
                 const document = doc(firestore, "classGroups", classGroupId);
                 const batch = writeBatch(firestore);
                 const { classes, ...other } = patch;
+
+                console.log("RECEIVED PATH: ", patch)
 
                 let classGroupUpdates = { ...other };
 
@@ -379,6 +399,7 @@ export const apiSlice = createApi({
                 console.log("SIGN IN CALLED")
                 try {
                     const creds = await signInWithEmailAndPassword(auth, email, password)
+                    return {data: ""}
                 } catch (err) {
                     console.log("INTO EXCEPTION: ", err)
                     return {error: err.code}
@@ -420,27 +441,7 @@ export const apiSlice = createApi({
                         throw error;
                     }
                     const invitedTeacherUid = snapshot.id;
-                    const batch = writeBatch(firestore);
-
-                    const invitation = (cid, email, cgid, cname) => ({
-                        meta: {metaId: cid},
-                        [`invitations.${cid}`]: {
-                            classGroupId: cgid,
-                            className: cname,
-                            email
-                        }
-                    })
-
-                    batch.update(doc(firestore, "classGroups", classGroupId), {
-                        [`editors.${invitedTeacherUid}`]: arrayUnion(
-                            classId
-                        ),
-                        [`classes.${classId}.assignedTeacher`]: value,
-                    });
-                    batch.update(
-                        doc(firestore, "teachers", invitedTeacherUid),
-                        invitation(classId, hostEmail, classGroupId, className)
-                    );
+                    const batch = invite(invitedTeacherUid, recepientEmail, hostEmail, classGroupId, classId, className)
                     await batch.commit();
                 } catch (error) {
                     console.log("Error: ", error)
@@ -451,9 +452,23 @@ export const apiSlice = createApi({
                 return {data: ""};
             },
         }),
-        removeInvitation: builder.mutation({
-            queryFn: async ({index, classGroupId}) => {
-                
+        unAssignTeacher: builder.mutation({
+            queryFn: async ({recepientEmail, classGroupId, classId}) => {
+                const teacherQuery = query(
+                    collection(firestore, "teachersPublic"),
+                    where("email", "==", recepientEmail),
+                    limit(1)
+                );
+                const querySnapshot = await getDocs(teacherQuery)
+                const recepientId = querySnapshot.docs[0].id
+
+                const batch = removeInvite(recepientId, classGroupId, classId)
+                try {
+                    await batch.commit()
+                    return {data: ""}
+                } catch (err) {
+                    return {error: err.message}
+                }
             }
         })
     }),
@@ -462,7 +477,7 @@ export const apiSlice = createApi({
 export const { 
     useGetAuthQuery, useGetUserQuery, useGetClassGroupsQuery, useGetAttendanceQuery, 
     useGetMonthlyAttendanceQuery, useGetPublicTeacherByEmailQuery, useGetClassByIdQuery, 
-    useAssignTeacherMutation, useEditClassMutation, useEditClassGroupMutation, useRegisterMutation, useSignInMutation,
+    useAssignTeacherMutation, useUnAssignTeacherMutation, useEditClassMutation, useEditClassGroupMutation, useRegisterMutation, useSignInMutation,
     useSetAttendanceMutation, useUpdateAttendanceMutation, useDeleteClassMutation
 } = apiSlice
 

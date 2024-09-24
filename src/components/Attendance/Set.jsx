@@ -41,6 +41,12 @@ function Set() {
     const absentCount = attendance.ids.length - presentCount - unMarkedCount
     const isUnMarked = unMarkedCount > 0
 
+    const [popup, setPopup] = useState({
+        text: "",
+        handler: () => {},
+        visible: false,
+    })
+
 
 
 
@@ -48,22 +54,12 @@ function Set() {
         if (isUnMarked) {
             setRenderWarning(true);
         } else {
-            dialogRef.current.showModal();
+            setPopup({
+                visible: true,
+                handler: confirmSubmitHandler,
+                text: status(absentCount)
+            })
         }
-    }
-
-    // function handleSubmit({strict=null}) {
-    //     if (strict) {
-    //         // Other conditions that should be checked before proceeding
-    //         if (btnDisabled) {
-    //             setRenderWarning(true)
-    //         }
-    //     }
-    //     onSaveChangesClick()
-    // }
-
-    function closeDialog() {
-        dialogRef.current.close();
     }
 
     async function confirmSubmitHandler() {
@@ -86,20 +82,10 @@ function Set() {
 
     return (
         <>
-            <Popup ref={dialogRef}>
-                <div className="flex flex-col gap-6 px-6 py-8">
-                    <div>
-                        <Status absentCount={absentCount} />
-                    </div>
-                    <div className="flex gap-4">
-                        <button autoFocus onClick={closeDialog}>
-                            Go back
-                        </button>
-                        <button onClick={confirmSubmitHandler}>Yes submit</button>
-                    </div>
-                </div>
-            </Popup>
-
+            <Popup
+                text={popup.text} visible={popup.visible} confirmHandler={popup.handler}
+                setVisible={(boolean) => setPopup({ ...popup, visible: boolean })} isLoading={isLoading}
+            />
 
             <div className="flex items-center gap-2 flex-col sm:w-[--student-width-for-desktop] p-2">
                 {attendance.ids.map((id) =>
@@ -120,14 +106,14 @@ function Set() {
     );
 }
 
-function Status({ absentCount }) {
+function status(absentCount) {
     switch (absentCount) {
         case 0:
-            return <div>No student is absent</div>;
+            return "No student is absent";
         case 1:
-            return <div>1 student is absent</div>;
+            return "1 student is absent";
         default:
-            return <div>{absentCount} students are absent</div>;
+            return `${absentCount} students are absent`;
     }
 }
 

@@ -45,7 +45,6 @@ function Attendance() {
         } else {
             return <Apology />
         }
-        
     }
 }
 
