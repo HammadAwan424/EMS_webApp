@@ -5,7 +5,7 @@ import { deleteDoc, doc } from "firebase/firestore"
 import { useState, useRef } from "react"
 import { Link } from "react-router-dom"
 import { useGetAuthQuery, useGetClassGroupsQuery } from "src/api/apiSlice"
-import { Teacher } from "src/api/classGroups"
+import { Teacher } from "src/api/Teacher"
 import Alert from "../CommonUI/Alert"
 import { Class } from "./Classes"
 

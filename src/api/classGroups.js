@@ -1,59 +1,70 @@
-import { collection, where, limit, query, getDocs, getDoc, doc } from "firebase/firestore"
-import { firestore, auth } from "src/firebase/config"
+import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore"
+import { flatten } from "flat";
 
-async function getClassGroupById(classGroupId) {
-    return getDoc(doc(firestore, `classGroups/${classGroupId}`))
+const getClassGroupsQuery = ({firestore, uid}) =>  query(
+    collection(firestore, "classGroups"),
+    where("cgAdmin", "==", uid)
+);
+
+const getClassGroups = async ({firestore, uid}) => {
+    const query = getClassGroupsQuery({firestore, uid})
+    const querySnapshot = await getDocs(query);
+    const returnVal = querySnapshot.docs.map((docSnapshot) => ({
+        ...docSnapshot.data(),
+        id: docSnapshot.id,
+    }));
+    return { data: returnVal };
 }
-function getCurrentClassGroups() {
-    if (auth.currentUser) {
-        const classGroupsQuery = query(
-            collection(firestore, "classGroups"),
-            where("cgAdmin", "==", auth.currentUser.uid),
-            limit(10))
-        return getDocs(classGroupsQuery)   
-        .then(snapshot => {
-            return snapshot
-        })
+
+const editClassGroup = async ({firestore, classGroupId, create, meta, ...patch }) => {
+    const document = doc(firestore, "classGroups", classGroupId);
+    const batch = writeBatch(firestore);
+    const { classes, ...other } = patch;
+
+    console.log("RECEIVED PATH: ", patch);
+
+    let classGroupUpdates = { ...other };
+
+    if (Object.keys(classes).length > 0) {
+        classGroupUpdates.classes = {};
+    }
+
+    for (const [id, classData] of Object.entries(classes)) {
+        // Extracting data for classGroup updates
+        const { className, assignedTeacher, ...classUpdates } =
+            classData;
+        classGroupUpdates.classes[id] = {
+            assignedTeacher,
+            className,
+        };
+
+        // Creating document for each class
+        batch.set(doc(document, "classes", id), {
+            ...classUpdates,
+            className,
+        });
+    }
+
+    if (create) {
+        classGroupUpdates.classes = classGroupUpdates.classes
+            ? classGroupUpdates.classes
+            : {};
+        batch.set(document, classGroupUpdates);
     } else {
-        return null
+        const flattened = flatten(classGroupUpdates, {
+            safe: true,
+        });
+        batch.update(document, flattened);
     }
 
+    await batch.commit();
+
+    return { data: "" };
 }
 
 
-async function getPublicTeacherByEmail(email) {
-    const teacherQuery = query(
-        collection(firestore, "teachersPublic"),
-        where("email", "==", email),
-        limit(1)
-    );
-    return getDocs(teacherQuery)
+export default {
+    getClassGroupsQuery,
+    getClassGroups,
+    editClassGroup
 }
-
-const Teacher =  {
-    getInvitationId(classId, invitations) {
-        return invitations[classId].classGroupId + classId
-    },
-    hasInvitations(user) {
-        return Object.keys(user.invitations).length > 0
-    },
-    hasClasses(user) {
-        return Object.keys(user.classes).length > 0
-    },
-    getClassIdArray(user) {
-        return Object.keys(user.classes)
-    },
-    hasClassGroups(classGroup) {
-        return classGroup.length > 0
-    }
-}
-
-export { Teacher }
-
-
-
-async function getClassById(classGroupId, classId) {
-    return getDoc(doc(firestore, "classGroups", classGroupId, "classes", classId))
-}
-
-export {getClassGroupById, getClassById, getPublicTeacherByEmail, getCurrentClassGroups}

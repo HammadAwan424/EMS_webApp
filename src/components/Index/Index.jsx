@@ -1,7 +1,7 @@
 import { query, collection, where, limit, getDocs } from "firebase/firestore";
 import { auth, firestore } from "src/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
-import { getCurrentClassGroups } from "src/api/classGroups";
+import { getCurrentClassGroups } from "src/api/Teacher";
 import User from "./User"
 import Guest from "./Guest"
 import { useGetAuthQuery, useGetClassGroupsQuery } from "src/api/apiSlice";

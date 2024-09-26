@@ -8,7 +8,7 @@ import { auth, firestore } from "src/firebase/config.js";
 import CreatePrompt from "../CommonUI/CreatePopup.jsx";
 import { createClassGroupLink } from "src/api/Utility.js";
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice.js";
-import { Teacher } from "src/api/classGroups.js";
+import { Teacher } from "src/api/Teacher.js";
 import { skipToken } from "@reduxjs/toolkit/query";
 import Sidebar from "./Sidebar.jsx";
 import { useDispatch } from "react-redux";

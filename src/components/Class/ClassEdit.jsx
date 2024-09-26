@@ -2,7 +2,7 @@ import { IconEdit, IconCircleMinus, IconCircleArrowDownFilled, IconCircleArrowUp
 import { writeBatch, doc, arrayUnion, collection, deleteField, updateDoc } from "firebase/firestore"
 import { useState } from "react"
 import { redirect, useLoaderData, useNavigation, useParams, useRouteLoaderData, useSubmit } from "react-router-dom"
-import { getPublicTeacherByEmail, getClassById } from "src/api/classGroups"
+import { getPublicTeacherByEmail, getClassById } from "src/api/Teacher"
 import { firestore, auth } from "src/firebase/config"
 
 async function loader({request, params}) {

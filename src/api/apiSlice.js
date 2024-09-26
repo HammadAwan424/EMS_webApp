@@ -1,9 +1,20 @@
-import { createApi, fetchBaseQuery, retry } from '@reduxjs/toolkit/query/react'
-import { createUserWithEmailAndPassword, EmailAuthProvider, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth'
-import { auth, firestore } from '#src/firebase/config.js'
-import { getDoc, doc, collection, getDocs, limit, query, where, onSnapshot, updateDoc, writeBatch, deleteField, DocumentSnapshot, setDoc, addDoc, Timestamp, serverTimestamp, documentId, orderBy, endAt, startAfter, limitToLast, endBefore, arrayUnion, deleteDoc, FieldPath } from 'firebase/firestore'
-import { flatten } from 'flat'
-import { getDateStr, invite, removeInvite } from './Utility'
+import { createApi, fetchBaseQuery, retry } from "@reduxjs/toolkit/query/react";
+import {
+    createUserWithEmailAndPassword,
+    EmailAuthProvider,
+    onAuthStateChanged,
+    sendPasswordResetEmail,
+    signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth, firestore } from "#src/firebase/config.js";
+import {
+    getDoc, doc, collection, getDocs, limit, query, where, 
+    onSnapshot, updateDoc, writeBatch, deleteField, DocumentSnapshot, setDoc, 
+    addDoc, Timestamp, serverTimestamp, documentId, orderBy, endAt, startAfter, 
+    limitToLast, endBefore, arrayUnion, deleteDoc, FieldPath,
+} from "firebase/firestore";
+import { flatten } from "flat";
+import { getDateStr, invite, removeInvite } from "./Utility.js";
 
 export const apiSlice = createApi({
     baseQuery: fetchBaseQuery({ baseUrl: "/" }),
@@ -26,24 +37,24 @@ export const apiSlice = createApi({
                     });
                 });
             },
-            onCacheEntryAdded: async (_, {updateCachedData, cacheDataLoaded}) => {
+            onCacheEntryAdded: async ( _, { updateCachedData, cacheDataLoaded } ) => { 
                 try {
-                    await cacheDataLoaded
+                    await cacheDataLoaded;
                     onAuthStateChanged(auth, (user) => {
                         if (user) {
-                            updateCachedData(draft => ({
+                            updateCachedData((draft) => ({
                                 email: user.email,
                                 uid: user.uid,
                                 displayName: user.displayName,
-                            }))
+                            }));
                         } else {
-                            updateCachedData(draft => user)
+                            updateCachedData((draft) => user);
                         }
-                    })
+                    });
                 } catch {
                     // No-op
-                }         
-            }
+                }
+            },
         }),
         getUser: builder.query({
             queryFn: async (uid) => {
@@ -78,7 +89,7 @@ export const apiSlice = createApi({
                 const batch = writeBatch(firestore);
                 const { classes, ...other } = patch;
 
-                console.log("RECEIVED PATH: ", patch)
+                console.log("RECEIVED PATH: ", patch);
 
                 let classGroupUpdates = { ...other };
 
@@ -103,13 +114,16 @@ export const apiSlice = createApi({
                 }
 
                 if (create) {
-                    classGroupUpdates.classes = classGroupUpdates.classes ? classGroupUpdates.classes : {}
-                    batch.set(document, classGroupUpdates)
+                    classGroupUpdates.classes = classGroupUpdates.classes
+                        ? classGroupUpdates.classes
+                        : {};
+                    batch.set(document, classGroupUpdates);
                 } else {
-                    const flattened = flatten(classGroupUpdates, { safe: true });
+                    const flattened = flatten(classGroupUpdates, {
+                        safe: true,
+                    });
                     batch.update(document, flattened);
                 }
-                
 
                 await batch.commit();
 
@@ -118,13 +132,7 @@ export const apiSlice = createApi({
         }),
         editClass: builder.mutation({
             queryFn: async ({ classId, classGroupId, meta, ...patch }) => {
-                const document = doc(
-                    firestore,
-                    "classGroups",
-                    classGroupId,
-                    "classes",
-                    classId
-                );
+                const document = doc( firestore, "classGroups", classGroupId, "classes", classId );
                 console.log("DOCUEMTN PATH IS : ", document.path);
                 const batch = writeBatch(firestore);
                 const { students, ...other } = patch;
@@ -159,16 +167,7 @@ export const apiSlice = createApi({
                         value.constructor == deleteFieldInstance.constructor,
                 });
 
-                batch.update(
-                    doc(
-                        firestore,
-                        "classGroups",
-                        classGroupId,
-                        "classes",
-                        classId
-                    ),
-                    flattened
-                );
+                batch.update( doc( firestore, "classGroups", classGroupId, "classes", classId ), flattened );
 
                 other.className &&
                     batch.update(doc(firestore, "classGroups", classGroupId), {
@@ -182,65 +181,37 @@ export const apiSlice = createApi({
         }),
         deleteClass: builder.mutation({
             queryFn: async (path) => {
-                const classDocPath = doc(
-                    firestore,
-                    "classGroups",
-                    path.classGroupId,
-                    "classes",
-                    path.classId
-                );
-                const batch = writeBatch(firestore)
-                const fp = new FieldPath("classes", path.classId)
-                batch.update(doc(firestore, "classGroups", path.classGroupId), fp, deleteField())
-                batch.delete(classDocPath)
-                await batch.commit()
-                return {data: ""}
-            }
+                const classDocPath = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
+                const batch = writeBatch(firestore);
+                const fp = new FieldPath("classes", path.classId);
+                batch.update( doc(firestore, "classGroups", path.classGroupId), fp, deleteField() );
+                batch.delete(classDocPath);
+                await batch.commit();
+                return { data: "" };
+            },
         }),
         getClassById: builder.query({
             queryFn: async (path) => {
-                const docPath = doc(
-                    firestore,
-                    "classGroups",
-                    path.classGroupId,
-                    "classes",
-                    path.classId
-                );
+                const docPath = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
                 const docSnapshot = await getDoc(docPath);
 
                 return { data: { id: docSnapshot.id, ...docSnapshot.data() } };
             },
             onCacheEntryAdded: async (path, cacheLifecycleApi) => {
-                const docRef = doc(
-                    firestore,
-                    "classGroups",
-                    path.classGroupId,
-                    "classes",
-                    path.classId
-                );
+                const docRef = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
                 await cachedDocumentListener(docRef, cacheLifecycleApi);
             },
         }),
 
         setAttendance: builder.mutation({
-            queryFn: async ({
-                ids,
-                classId,
-                classGroupId,
-                dateStr,
-                ...patch
-            }) => {
+            queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
                 const dateObj = new Date(dateStr);
                 const dateStrUnhyphenated = getDateStr({
                     dateObj,
                     hyphenated: false,
                 });
                 await setDoc(
-                    doc(
-                        firestore,
-                        "attendance",
-                        `${classId}${dateStrUnhyphenated}`
-                    ),
+                    doc( firestore, "attendance", `${classId}${dateStrUnhyphenated}` ),
                     {
                         ...patch,
                         classId,
@@ -255,13 +226,7 @@ export const apiSlice = createApi({
         }),
 
         updateAttendance: builder.mutation({
-            queryFn: async ({
-                ids,
-                classId,
-                classGroupId,
-                dateStr,
-                ...patch
-            }) => {
+            queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
                 const flattened = flatten(patch);
                 const dateObj = new Date(dateStr);
                 const dateStrUnhyphenated = getDateStr({
@@ -270,11 +235,7 @@ export const apiSlice = createApi({
                 });
 
                 await updateDoc(
-                    doc(
-                        firestore,
-                        "attendance",
-                        `${classId}${dateStrUnhyphenated}`
-                    ),
+                    doc( firestore, "attendance", `${classId}${dateStrUnhyphenated}` ),
                     {
                         ...flattened,
                         lastModified: serverTimestamp(),
@@ -292,36 +253,17 @@ export const apiSlice = createApi({
                     dateObj,
                     hyphenated: false,
                 });
-                console.log(
-                    "One day attendance: ",
-                    `${classId}${dateStrUnhyphenated}`,
-                    dateStr
-                );
                 const document = await getDoc(
-                    doc(
-                        firestore,
-                        "attendance",
-                        `${classId}${dateStrUnhyphenated}`
-                    )
+                    doc( firestore, "attendance", `${classId}${dateStrUnhyphenated}` )
                 );
                 // console.clear()
                 // console.log("CONVERTED IS: ", document.data())
                 return { data: attendanceConverter(document) };
             },
-            async onCacheEntryAdded(
-                { classId, classGroupId, dateStr },
-                cacheLifecycleApi
-            ) {
+            async onCacheEntryAdded( { classId, classGroupId, dateStr }, cacheLifecycleApi ) {
                 const dateObj = new Date(dateStr);
-                const dateStrUnhyphenated = getDateStr({
-                    dateObj,
-                    hyphenated: false,
-                });
-                const docRef = doc(
-                    firestore,
-                    "attendance",
-                    `${classId}${dateStrUnhyphenated}`
-                );
+                const dateStrUnhyphenated = getDateStr({ dateObj, hyphenated: false, });
+                const docRef = doc( firestore, "attendance", `${classId}${dateStrUnhyphenated}` );
                 await cachedDocumentListener(
                     docRef,
                     cacheLifecycleApi,
@@ -372,67 +314,82 @@ export const apiSlice = createApi({
                     where("email", "==", email),
                     limit(1)
                 );
-                const querySnapshot = await getDocs(teacherQuery)
-              
-                const data = {exists: !querySnapshot.empty, ...querySnapshot.docs[0]?.data()}
-                return {data}
-            }
+                const querySnapshot = await getDocs(teacherQuery);
+
+
+                const data = {
+                    exists: !querySnapshot.empty,
+                    ...querySnapshot.docs[0]?.data(),
+                    id: querySnapshot.docs[0]?.id
+                };
+                return { data };
+            },
         }),
         register: builder.mutation({
-            queryFn: async ({email, password}) => {
+            queryFn: async ({ email, password }) => {
                 try {
-                    const creds = await createUserWithEmailAndPassword(auth, email, password)
-                    const batch = writeBatch(firestore)
-                    batch.set(doc(firestore, "teachers", creds.user.uid), {invitations: {}, classes: {}})
-                    batch.set(doc(firestore, "teachersPublic", creds.user.uid), {email: creds.user.email})
-                    await batch.commit()
-                    return {data: ""}
+                    const creds = await createUserWithEmailAndPassword(
+                        auth,
+                        email,
+                        password
+                    );
+                    const batch = writeBatch(firestore);
+                    batch.set(doc(firestore, "teachers", creds.user.uid), {
+                        invitations: {},
+                        classes: {},
+                    });
+                    batch.set(
+                        doc(firestore, "teachersPublic", creds.user.uid),
+                        { email: creds.user.email }
+                    );
+                    await batch.commit();
+                    return { data: "" };
+                } catch (err) {
+                    return { error: err.code };
                 }
-                catch (err) {
-                    return {error: err.code}
-                }
-                
-            }
+            },
         }),
         signIn: builder.mutation({
-            queryFn: async ({email, password}) => {
-                console.log("SIGN IN CALLED")
+            queryFn: async ({ email, password }) => {
+                console.log("SIGN IN CALLED");
                 try {
-                    const creds = await signInWithEmailAndPassword(auth, email, password)
-                    return {data: ""}
+                    const creds = await signInWithEmailAndPassword(
+                        auth,
+                        email,
+                        password
+                    );
+                    return { data: "" };
                 } catch (err) {
-                    console.log("INTO EXCEPTION: ", err)
-                    return {error: err.code}
+                    console.log("INTO EXCEPTION: ", err);
+                    return { error: err.code };
                 }
-                
-            }
+            },
         }),
         assignTeacher: builder.mutation({
-            queryFn: async ({recepientEmail, hostEmail, classId, classGroupId, className}) => {
-                console.log("Values received are: ", {recepientEmail, classId, classGroupId, className})
+            queryFn: async ({
+                recepientEmail,
+                hostEmail,
+                classId,
+                classGroupId,
+                className,
+            }, {dispatch}) => {
+                // console.log("Values received are: ", {
+                //     recepientEmail,
+                //     classId,
+                //     classGroupId,
+                //     className,
+                // });
                 const value = recepientEmail || "";
                 const regex = /^\w+@[a-z]+\.com$/;
                 try {
                     if (!regex.test(value)) {
                         throw new Error("The format is incorrect for an email");
                     } else if (value == auth.currentUser.email) {
-                        throw new Error("You can't use you own email")
+                        throw new Error("You can't use you own email");
                     }
-                    // const promise = store.dispatch(apiSlice.endpoints.getPublicTeacherByEmail.initiate(email))
-                    // promise.unsubscribe()
-                    // const {data: snapshot} = await promise
-                    console.log("Before anything")
-                    const teacherQuery = query(
-                        collection(firestore, "teachersPublic"),
-                        where("email", "==", recepientEmail),
-                        limit(1)
-                    );
-                    const querySnapshot = await getDocs(teacherQuery)
-              
-                    const snapshot = {
-                        exists: !querySnapshot.empty, 
-                        ...(querySnapshot.empty ? {} : {...querySnapshot.docs[0].data(), id: querySnapshot.docs[0].id})
-                    }
+                    const promise = dispatch(apiSlice.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
+                    promise.unsubscribe()
+                    const {data: snapshot} = await promise
 
                     if (!snapshot.exists) {
                         const error = new Error(
@@ -441,114 +398,143 @@ export const apiSlice = createApi({
                         throw error;
                     }
                     const invitedTeacherUid = snapshot.id;
-                    const batch = invite(invitedTeacherUid, recepientEmail, hostEmail, classGroupId, classId, className)
+                    const batch = invite(
+                        invitedTeacherUid,
+                        recepientEmail,
+                        hostEmail,
+                        classGroupId,
+                        classId,
+                        className
+                    );
                     await batch.commit();
                 } catch (error) {
-                    console.log("Error: ", error)
+                    console.log("Error: ", error);
                     if (error.code == "permission-denied") {
-                        return {error: "You don't have any permission to do this"};
-                    } else return {error: error.message};
+                        return {
+                            error: "You don't have any permission to do this",
+                        };
+                    } else return { error: error.message };
                 }
-                return {data: ""};
+                return { data: "" };
             },
         }),
         unAssignTeacher: builder.mutation({
-            queryFn: async ({recepientEmail, classGroupId, classId}) => {
+            queryFn: async ({ recepientEmail, classGroupId, classId }) => {
                 const teacherQuery = query(
                     collection(firestore, "teachersPublic"),
                     where("email", "==", recepientEmail),
                     limit(1)
                 );
-                const querySnapshot = await getDocs(teacherQuery)
-                const recepientId = querySnapshot.docs[0].id
+                const querySnapshot = await getDocs(teacherQuery);
+                const recepientId = querySnapshot.docs[0].id;
 
-                const batch = removeInvite(recepientId, classGroupId, classId)
+                const batch = removeInvite(recepientId, classGroupId, classId);
                 try {
-                    await batch.commit()
-                    return {data: ""}
+                    await batch.commit();
+                    return { data: "" };
                 } catch (err) {
-                    return {error: err.message}
+                    return { error: err.message };
                 }
-            }
-        })
+            },
+        }),
     }),
 });
 
-export const { 
-    useGetAuthQuery, useGetUserQuery, useGetClassGroupsQuery, useGetAttendanceQuery, 
-    useGetMonthlyAttendanceQuery, useGetPublicTeacherByEmailQuery, useGetClassByIdQuery, 
-    useAssignTeacherMutation, useUnAssignTeacherMutation, useEditClassMutation, useEditClassGroupMutation, useRegisterMutation, useSignInMutation,
-    useSetAttendanceMutation, useUpdateAttendanceMutation, useDeleteClassMutation
-} = apiSlice
+export const {
+    useGetAuthQuery,
+    useGetUserQuery,
+    useGetClassGroupsQuery,
+    useGetAttendanceQuery,
+    useGetMonthlyAttendanceQuery,
+    useGetPublicTeacherByEmailQuery,
+    useGetClassByIdQuery,
+    useAssignTeacherMutation,
+    useUnAssignTeacherMutation,
+    useEditClassMutation,
+    useEditClassGroupMutation,
+    useRegisterMutation,
+    useSignInMutation,
+    useSetAttendanceMutation,
+    useUpdateAttendanceMutation,
+    useDeleteClassMutation,
+} = apiSlice;
 
-
-
-async function cachedDocumentListener (
-    docRef, {cacheDataLoaded, cacheEntryRemoved, updateCachedData}, converter
+async function cachedDocumentListener(
+    docRef,
+    { cacheDataLoaded, cacheEntryRemoved, updateCachedData },
+    converter
 ) {
     let unsubscribe = null;
-  
+
     try {
-        unsubscribe = onSnapshot(
-            docRef,
-            {source: "cache"}, (snapshot) => {
-                updateCachedData(draft => {
-                    console.log("RUNNING SINGLE UPDATER, path: ", docRef.path)
-                    if (converter) {
-                        console.log("CONVERTER WAS PRESENT")
-                        return converter(snapshot)
-                    } else {
-                        console.log("ABSENT CONVERTER")
-                        return {...snapshot.data({serverTimestamps: "estimate"}), id: snapshot.id}
-                    }
-            })
-        })
-        await cacheDataLoaded
+        unsubscribe = onSnapshot(docRef, { source: "cache" }, (snapshot) => {
+            updateCachedData((draft) => {
+                console.log("RUNNING SINGLE UPDATER, path: ", docRef.path);
+                if (converter) {
+                    console.log("CONVERTER WAS PRESENT");
+                    return converter(snapshot);
+                } else {
+                    console.log("ABSENT CONVERTER");
+                    return {
+                        ...snapshot.data({ serverTimestamps: "estimate" }),
+                        id: snapshot.id,
+                    };
+                }
+            });
+        });
+        await cacheDataLoaded;
     } catch {
-        unsubscribe ?? unsubscribe()
+        unsubscribe ?? unsubscribe();
     }
-    await cacheEntryRemoved
-    unsubscribe ?? unsubscribe()
+    await cacheEntryRemoved;
+    unsubscribe ?? unsubscribe();
 }
 
-
-async function cachedQueryListener (
-    query, {cacheDataLoaded, cacheEntryRemoved, updateCachedData}
+async function cachedQueryListener(
+    query,
+    { cacheDataLoaded, cacheEntryRemoved, updateCachedData }
 ) {
     let unsubscribe = null;
     try {
-        unsubscribe = onSnapshot(query, {source: "cache"}, (snapshot) => {
+        unsubscribe = onSnapshot(query, { source: "cache" }, (snapshot) => {
             // console.log("Initial: ", snapshot.docs[0].data(), snapshot.metadata.fromCache, snapshot.metadata.hasPendingWrites)
             // console.log("Changed: ", snapshot.docChanges().length, snapshot.docChanges())
             // console.log("ONSNAPSHOT RAN: ", snapshot.docChanges().length)
-            updateCachedData(draft => {
-                console.log("RUNNING MULTIPLE UPDATES")
+            updateCachedData((draft) => {
+                console.log("RUNNING MULTIPLE UPDATES");
 
-                snapshot.docChanges().forEach(docChange => {
+                snapshot.docChanges().forEach((docChange) => {
                     if (docChange.type == "added") {
-                        draft.push({...docChange.doc.data(), id: docChange.doc.id})
+                        draft.push({
+                            ...docChange.doc.data(),
+                            id: docChange.doc.id,
+                        });
                     } else if (docChange.type == "modified") {
-                        const updatedIndex = draft.findIndex(doc => doc.id == docChange.doc.id)
-                        draft[updatedIndex] = {id: docChange.doc.id, ...docChange.doc.data()}
+                        const updatedIndex = draft.findIndex(
+                            (doc) => doc.id == docChange.doc.id
+                        );
+                        draft[updatedIndex] = {
+                            id: docChange.doc.id,
+                            ...docChange.doc.data(),
+                        };
                     } else {
-                        draft.filter(doc => doc.id != docChange.doc.id)
+                        draft.filter((doc) => doc.id != docChange.doc.id);
                     }
-                })
-            })
-        })
-        await cacheDataLoaded
+                });
+            });
+        });
+        await cacheDataLoaded;
     } catch {
-        unsubscribe ?? unsubscribe()
+        unsubscribe ?? unsubscribe();
     }
-    await cacheEntryRemoved
-    unsubscribe ?? unsubscribe()
+    await cacheEntryRemoved;
+    unsubscribe ?? unsubscribe();
 }
 
-
 function attendanceConverter(snapshot) {
-    console.log("CONVERTER OF ENTRYADDED")
-    console.log("Data is: ", snapshot.data())
-    const data = snapshot.data({serverTimestamps: "estimate"});
+    console.log("CONVERTER OF ENTRYADDED");
+    console.log("Data is: ", snapshot.data());
+    const data = snapshot.data({ serverTimestamps: "estimate" });
     if (snapshot.exists()) {
         return {
             ...data,

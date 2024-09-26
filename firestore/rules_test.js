@@ -7,6 +7,8 @@ import { setDoc, getDoc, updateDoc, doc, writeBatch, deleteDoc, deleteField, arr
 import fs from "fs"
 import { setLogLevel } from "firebase/app"
 import path from "path"
+// import { apiSlice } from "#src/api/apiSlice.js"
+// import store from "#src/app/store.js"
 
 setLogLevel("error")
 
@@ -110,7 +112,7 @@ async function someTests() {
 }
 
 
-invitationsTest()
+// invitationsTest()
 async function invitationsTest() {
     // Invitations work by updating two docs simultaneously
     // 1) As soon as someone is invited, he is given access to modify class data by updating classGroupDoc
@@ -179,8 +181,8 @@ async function invitationsTest() {
         const batch = writeBatch(firestore)
         batch.update(doc(firestore, invitationPath), invitation(classId, hostId, hostId+"Group", className))
         batch.update(doc(firestore, "classGroups", hostId+"Group"), {
-            [`editors.${recepientId}`]: arrayUnion(classId),
-            meta: {metaId: recepientId}
+            [`editors.${classId}`]: arrayUnion(recepientId),
+            meta: {metaId: classId}
         })
         return batch.commit()
     }
@@ -190,18 +192,21 @@ async function invitationsTest() {
         const batch = writeBatch(firestore)
         batch.update(doc(firestore, invitationPath), {[`invitations.${classId}.status`]: false, meta: {metaId: classId}})
         batch.update(doc(firestore, "classGroups", hostId+"Group"), {
-            [`editors.${recepientId}`]: arrayRemove(classId),
-            meta: {metaId: recepientId}
+            [`editors.${classId}`]: arrayRemove(recepientId),
+            meta: {metaId: classId}
         })
         return batch.commit()
     }
     const jakeInvitationsPath = 'teachers/jake'
+    const mikeInvitationsPath = 'teachers/mike'
 
     // Invitation fail if invited person doesn't exists
     await assertFails(invite(byAlice, jakeInvitationsPath, "alice", "aliceClassId", "alice's Class"))
+    await assertFails(invite(byAlice, mikeInvitationsPath, "alice", "aliceClassId", "alice's Class"))
 
     // TEACHER NOW EXISTS
     await setDoc(doc(byJake, "teachers/jake"), {"msg": "hi I am adding data for myself", invitations: {}})
+    await setDoc(doc(byMike, "teachers/mike"), {"msg": "hi I am adding data for myself", invitations: {}})
 
     // Invitations now works
     await assertSucceeds(invite(byAlice, jakeInvitationsPath, "alice", "aliceClassId", "alice's Class"))
@@ -209,10 +214,14 @@ async function invitationsTest() {
     // inviting with the same invitation doesn't raises an error 
     await assertSucceeds(invite(byAlice, jakeInvitationsPath, "alice", "aliceClassId", "alice's Class"))
 
-    // Inviting 1)on behalf of others fail 2)without giving access fails 3) for a class that you don't own fail
+    // Inviting (TOD: "ALLOW MULTIPLE PERSON FOR SINGLE CLASS")
+    // 1)on behalf of others fail 2)without giving access fails 
+    // 3) for a class that you don't own fail 4) inviting multiple person to single class fails for now
     await assertFails(invite(byMike, jakeInvitationsPath, "alice", "aliceClassId", "alice's Class"))
     await assertFails(updateDoc(doc(byAlice, jakeInvitationsPath), invitation('alice2ndClassId', "alice", "aliceGroup", "alice's 2nd Class")))
     await assertFails(invite(byMike, jakeInvitationsPath, "alice", "ALICE_DOESNT_OWNTHIS", "alice's Class"))
+    // Inviting mike to a class already assigned to jake fails
+    await assertFails(invite(byAlice, mikeInvitationsPath, "alice", "aliceClassId", "alice's Class")) 
 
     // SETTING MORE INVITATIONS
     await assertSucceeds(invite(byAlice, jakeInvitationsPath, "alice", "alice2ndClassId", "alice's 2nd Class"))
@@ -240,7 +249,6 @@ async function invitationsTest() {
     }));
     // The above conditions 1) metaField 2) changing recepient doc are required only when changing editors
     await assertSucceeds(updateDoc(doc(byAlice, "classGroups", "aliceGroup"), {classGroupName: "I can change this without meta"}));
-
     await assertSucceeds(updateDoc(doc(byJake, jakeInvitationsPath), {classStatus: {"alice2ndClassId": false}}))
 
     await env.cleanup()
@@ -282,7 +290,20 @@ async function teacherPublicTests() {
 
 
 
-// classGroupTests()
+// checking()
+// async function checking() {
+//     try {
+//         await store.dispatch(apiSlice.endpoints.register.initiate({email: "djs@gmail.com", password: "somepass"})).unwrap()
+//         console.log("SUCCESS")
+//     }
+//     catch (err) {
+//         console.log("ERROR: ", err)
+//     }
+//     console.log("AFTER")
+//     store.dispatch(apiSlice.util.resetApiState()); 
+// }
+
+classGroupTests()
 async function classGroupTests() {
 
     let env = await getEnv({older: false})
@@ -309,6 +330,20 @@ async function classGroupTests() {
         // Can only get doucment that he owns
         await assertFails(getDoc(doc(byJake, aliceGroup)))
         await assertSucceeds(getDoc(doc(byAlice, aliceGroup)))
+
+        // classes: { 
+        //     aliceClassId: {
+        //         students: {},
+        //         className: "alice's Class"
+        //     }, 
+        //     alice2ndClassId: {
+        //         students: {},
+        //         className: "alice's 2nd Class"
+        //     },
+            
+        // }
+
+        
     
         await env.cleanup()
     }

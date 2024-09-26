@@ -10,7 +10,7 @@ service cloud.firestore {
     match /classGroups/{classGroupID} {
       function validateFields() {
         let requestData = request.resource.data;
-        let resourceData = resource.data;
+        // let resourceData = resource.data;
         return requestData.keys().hasOnly(['editors', 'classes', 'classGroupName', 'cgAdmin', 'meta']) &&
           requestData.editors is map &&
           requestData.classes is map &&
@@ -19,23 +19,26 @@ service cloud.firestore {
       
       function validControlBack() {
         let requestData = request.resource.data;
-        let metaId = requestData.get("meta", {}).get("metaId", null);
+        let classId = requestData.get("meta", {}).get("metaId", null);
         
         let editorChanged = requestData.diff(resource.data).affectedKeys().hasAny(["editors"]);
-        let prevClasses = resource.data.editors.get(metaId, []);
-        let newClasses = requestData.editors.get(metaId, []);
+        let prevClasses = resource.data.editors.get(classId, []);
+        let newClasses = requestData.editors.get(classId, []);
 
         return editorChanged == false || (
-          requestData.editors.diff(resource.data.editors).affectedKeys().hasOnly([metaId]) &&
+          requestData.editors.diff(resource.data.editors).affectedKeys().hasOnly([classId]) &&
           prevClasses.size() > newClasses.size() ? (
+            // Editor removed
             prevClasses.removeAll(newClasses).size() == 1 && (
-              get(/databases/$(database)/documents/teachers/$(metaId)).data.invitations.get(prevClasses.removeAll(newClasses)[0], null) == null ||
-              getAfter(/databases/$(database)/documents/teachers/$(metaId)).data.invitations[prevClasses.removeAll(newClasses)[0]].status == false
+              // get(/databases/$(database)/documents/teachers/$(prevClasses.removeAll(newClasses)[0])).data.invitations.get(classId, null) == null ||
+              getAfter(/databases/$(database)/documents/teachers/$(prevClasses.removeAll(newClasses)[0])).data.invitations[classId].status == false
             )
           ) : (
+            // Editor Added
             newClasses.removeAll(prevClasses).size() == 1 && (
-              // getAfter(/databases/$(database)/documents/teachers/$(metaId)).data.invitations.get(newClasses.removeAll(newClasses)[0], null) == null ||
-              getAfter(/databases/$(database)/documents/teachers/$(metaId)).data.invitations[newClasses.removeAll(prevClasses)[0]].status == true
+              // getAfter(/databases/$(database)/documents/teachers/$(newClasses.removeAll(prevClasses)[0])).data.invitations.get(classId, null) == null ||
+              getAfter(/databases/$(database)/documents/teachers/$(newClasses.removeAll(prevClasses)[0])).data.invitations[classId].status == true &&
+              (!resource.data.editors.keys().hasAny([classId]))
             )
           )
         );
@@ -81,12 +84,10 @@ service cloud.firestore {
           let classGroup = getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data;
           return classGroup.editors.get([request.auth.uid], []).hasAll([classID])
         }
-
         function isClassAdmin() {
           let classGroup = getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data;
           return classGroup.cgAdmin == request.auth.uid;
         }
-
         function validateFields(requestData) {
           return requestData.className.size() > 0 &&
           requestData.className.size() < 20;
@@ -98,7 +99,11 @@ service cloud.firestore {
 
         allow update: if (classAssignedToTeacher() || isClassAdmin()) && validateFields(request.resource.data)  
 
-        allow delete: if isClassAdmin()
+        allow delete: if isClassAdmin() && 
+          (
+            !getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data.editors.hasAny([classID]) ||
+            getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data.editors[classID].size() == 0
+          )
 
         match /{allSubCollections=**} {
           allow read, write: if false
@@ -145,7 +150,7 @@ service cloud.firestore {
           doc.cgAdmin == request.auth.uid && (
             (
               invitation.status == true && 
-              doc.editors[teacherID].hasAll([metaId]) &&
+              doc.editors[metaId].hasAll([teacherID]) &&
               resourseInvitation == {} ? (
                 invitation.email == request.auth.token.email &&
                 doc.classes[metaId].className == invitation.className
@@ -155,7 +160,7 @@ service cloud.firestore {
             ) || (
               invitation.status == false && 
               invitation.diff(resourseInvitation).affectedKeys().hasOnly(["status"]) &&
-              doc.editors[teacherID].hasAll([metaId]) == false
+              doc.editors[metaId].hasAll([teacherID]) == false
             )
           )     
         )

@@ -4,7 +4,7 @@ import { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled } from "@tabler/ico
 import { useState } from "react"
 import { Link, Form, useFetcher } from "react-router-dom"
 import { createClassGroupLink } from "src/api/Utility"
-import { Teacher } from "src/api/classGroups"
+import { Teacher } from "src/api/Teacher"
 import { useSelector } from "react-redux"
 import { getAllClassIds } from "src/features/user/userSlice"
 

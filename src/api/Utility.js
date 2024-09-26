@@ -1,4 +1,4 @@
-import { auth, firestore } from "src/firebase/config";
+import { auth, firestore } from "#src/firebase/config.js";
 import { doc, collection, arrayUnion, writeBatch, arrayRemove } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { redirect } from "react-router-dom";

@@ -8,7 +8,7 @@ import { useLoaderData, useNavigation, useRouteLoaderData, useSearchParams } fro
 import DashBoard from "./Dashboard.jsx"
 import NewUser from "./NewUser.jsx"
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice.js"
-import { Teacher } from "src/api/classGroups.js"
+import { Teacher } from "src/api/Teacher.js"
 import { skipToken } from "@reduxjs/toolkit/query"
 import { getAllClassIds, setActiveClasses, setClassesMarked, setInactiveClasses, setNewClasses } from "src/features/user/userSlice.js"
 import { useDispatch, useSelector } from "react-redux"
