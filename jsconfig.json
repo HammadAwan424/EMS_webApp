@@ -1,13 +1,13 @@
 {
     "compilerOptions": {
-      "checkJs": true,
       "jsx": "react-jsx",
       "baseUrl": ".",
+      "checkJs": false,
       "paths": {
         "src/*": ["src/*"],
         "#src/*": ["src/*"]
       }
     },
-    "include": ["./src/**/*", "./firestore/*"],
+    "include": ["./src/**/*", "./firestore/*", "tests/**/*"],
     "exclude": ["node_modules", "**/node_modules/*"],
 }

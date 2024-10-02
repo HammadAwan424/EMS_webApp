@@ -9,7 +9,7 @@ import Pie from "../CommonUI/Pie"
 import Track from "./Track"
 import MediaQuery from "react-responsive"
 import { useSelector } from "react-redux"
-import { getAllClassIds } from "src/features/user/userSlice"
+import { getAllClassIds } from "src/api/userSlice"
 
 function Classes() {
     const {data: Auth} = useGetAuthQuery()
@@ -25,7 +25,7 @@ function Classes() {
                 )}
            </div>
         ) : (
-            <div>You don't have any classes</div>
+            <div>{"You don't have any classes"}</div>
         )}
         </div>
 
@@ -52,6 +52,8 @@ function Class({classId, classGroupId, cssClasses=""}) {
     const {data: classData, isLoading: loadingDetails} = useGetClassByIdQuery({classId, classGroupId})
     const dateStr = getDateStr({dateObj: new Date(date.ISOString), hyphenated: true})
     const todayDateStr = getDateStr({dateObj: new Date(meta.today), hyphenated: true})
+
+    console.log("CLASS DATA: ", classData)
   
     const {data: attendance, isFetching: fetchingAttendance, isLoading: loadingAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr: todayDateStr})
     const param = date.year+date.month
@@ -67,7 +69,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
             setMeta({...meta, loadingMonthly: true})
         }
     }
-    console.log("Params: ", param, "state: ", state)  
+    // console.log("Params: ", param, "state: ", state)  
     const {data: monthly, isFetching: fetchingMonthly} = useGetMonthlyAttendanceQuery(isSkip)
 
 
@@ -75,7 +77,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
         return <h1>Abracadabra</h1>
     }
 
-    console.log("Today is: ", attendance)
+    // console.log("Today is: ", attendance)
     // console.log("state s: ", state)  
     
 
@@ -104,7 +106,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
     function setter() {
         
         if (monthly && (!fetchingMonthly)) {
-            console.log("setting meta", param, monthly)
+            // console.log("setting meta", param, monthly)
             setMeta({...meta, loadingMonthly: false})
             if (monthly.exists) {
                 const monthData = monthly.stats
@@ -135,10 +137,10 @@ function Class({classId, classGroupId, cssClasses=""}) {
     }
     setter()
 
-    console.log("NOR MORE DATA: ", noMoreData)
+    // console.log("NOR MORE DATA: ", noMoreData)
 
 
-    console.log("total is: ", totalItems, " swipe back is: ", swipeBack, "COndition is: ", fetchingMonthly || noMoreData, monthly, state)
+    // console.log("total is: ", totalItems, " swipe back is: ", swipeBack, "COndition is: ", fetchingMonthly || noMoreData, monthly, state)
 
     let readAble;
     
@@ -151,14 +153,14 @@ function Class({classId, classGroupId, cssClasses=""}) {
         readAble = "Older"
     } else if (!atEnd) {
         if (-swipeBack < totalItems) {
-            console.log("SWIPE BACK IS: ", swipeBack, "AND OTHER IS: ", arrAsc, "total items is: ", totalItems)
+            // console.log("SWIPE BACK IS: ", swipeBack, "AND OTHER IS: ", arrAsc, "total items is: ", totalItems)
             const copy = new Date(date.ISOString)
             copy.setUTCMonth(parseInt(arrAsc.at(swipeBack).slice(-4,-2))-1)
             copy.setUTCFullYear(parseInt(arrAsc.at(swipeBack).slice(-8, -4)))
             copy.setUTCDate(parseInt(arrAsc.at(swipeBack).slice(-2,)))
             readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long"})
         } else {
-            console.log("There is some unexpected goto, swipeBack: ", swipeBack, 'total items: ', totalItems)
+            // console.log("There is some unexpected goto, swipeBack: ", swipeBack, 'total items: ', totalItems)
         }
       
     }

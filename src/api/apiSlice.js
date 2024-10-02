@@ -14,7 +14,11 @@ import {
     limitToLast, endBefore, arrayUnion, deleteDoc, FieldPath,
 } from "firebase/firestore";
 import { flatten } from "flat";
-import { getDateStr, invite, removeInvite } from "./Utility.js";
+import { getDateStr } from "./Utility.js";
+import { signupFirestoreInteraction } from "./signup.js";
+import { getTeacherUid, inviteTeacher, removeTeacher } from "./invitation.js";
+import classGroups from "./classGroups.js";
+
 
 export const apiSlice = createApi({
     baseQuery: fetchBaseQuery({ baseUrl: "/" }),
@@ -52,82 +56,40 @@ export const apiSlice = createApi({
                         }
                     });
                 } catch {
+                    console.log("No no")
                     // No-op
                 }
             },
         }),
         getUser: builder.query({
             queryFn: async (uid) => {
-                const document = await getDoc(doc(firestore, "teachers", uid));
-                return { data: document.data() };
+                console.log("getUser: ", uid)
+                try {
+                    const document = await getDoc(doc(firestore, "teachers", uid));
+                    return { data: document.data() };
+                } catch (err) {
+                    console.error("error in getUser: ", err.message)
+                    return {error: err.message}
+                }
+      
             },
+            async onCacheEntryAdded(uid, cacheLifecycleApi) {
+                await cachedDocumentListener(doc(firestore, "teachers", uid), cacheLifecycleApi)
+            }
         }),
         getClassGroups: builder.query({
-            queryFn: async (uid) => {
-                const classGroupsQuery = query(
-                    collection(firestore, "classGroups"),
-                    where("cgAdmin", "==", uid)
-                );
-                const querySnapshot = await getDocs(classGroupsQuery);
-                const returnVal = querySnapshot.docs.map((docSnapshot) => ({
-                    ...docSnapshot.data(),
-                    id: docSnapshot.id,
-                }));
-                return { data: returnVal };
-            },
-            async onCacheEntryAdded(args, cacheLifecycleApi) {
-                const classGroupsQuery = query(
-                    collection(firestore, "classGroups"),
-                    where("cgAdmin", "==", args)
-                );
-                await cachedQueryListener(classGroupsQuery, cacheLifecycleApi);
+            queryFn: async (uid) => classGroups.getClassGroups({firestore, uid}),
+            async onCacheEntryAdded(uid, cacheLifecycleApi) {
+                await cachedQueryListener(classGroups.getClassGroupsQuery({firestore, uid}), cacheLifecycleApi);
             },
         }),
         editClassGroup: builder.mutation({
             queryFn: async ({ classGroupId, create, meta, ...patch }) => {
-                const document = doc(firestore, "classGroups", classGroupId);
-                const batch = writeBatch(firestore);
-                const { classes, ...other } = patch;
-
-                console.log("RECEIVED PATH: ", patch);
-
-                let classGroupUpdates = { ...other };
-
-                if (Object.keys(classes).length > 0) {
-                    classGroupUpdates.classes = {};
-                }
-
-                for (const [id, classData] of Object.entries(classes)) {
-                    // Extracting data for classGroup updates
-                    const { className, assignedTeacher, ...classUpdates } =
-                        classData;
-                    classGroupUpdates.classes[id] = {
-                        assignedTeacher,
-                        className,
-                    };
-
-                    // Creating document for each class
-                    batch.set(doc(document, "classes", id), {
-                        ...classUpdates,
-                        className,
-                    });
-                }
-
-                if (create) {
-                    classGroupUpdates.classes = classGroupUpdates.classes
-                        ? classGroupUpdates.classes
-                        : {};
-                    batch.set(document, classGroupUpdates);
-                } else {
-                    const flattened = flatten(classGroupUpdates, {
-                        safe: true,
-                    });
-                    batch.update(document, flattened);
-                }
-
-                await batch.commit();
-
-                return { data: "" };
+                return classGroups.editClassGroup({
+                    firestore, uid:auth.currentUser.uid, 
+                    classGroupId, create,
+                    meta, ...patch
+                })
             },
         }),
         editClass: builder.mutation({
@@ -186,6 +148,7 @@ export const apiSlice = createApi({
                 const fp = new FieldPath("classes", path.classId);
                 batch.update( doc(firestore, "classGroups", path.classGroupId), fp, deleteField() );
                 batch.delete(classDocPath);
+                
                 await batch.commit();
                 return { data: "" };
             },
@@ -193,15 +156,21 @@ export const apiSlice = createApi({
         getClassById: builder.query({
             queryFn: async (path) => {
                 const docPath = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
-                const docSnapshot = await getDoc(docPath);
-
-                return { data: { id: docSnapshot.id, ...docSnapshot.data() } };
+                try {
+                    const docSnapshot = await getDoc(docPath);
+                    return { data: { id: docSnapshot.id, ...docSnapshot.data() } };
+                } catch (err) {
+                    console.error("error in getClassById: ", err.message)
+                    return {error: err.message}
+                }
+                
             },
             onCacheEntryAdded: async (path, cacheLifecycleApi) => {
                 const docRef = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
                 await cachedDocumentListener(docRef, cacheLifecycleApi);
             },
         }),
+
 
         setAttendance: builder.mutation({
             queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
@@ -309,21 +278,13 @@ export const apiSlice = createApi({
         }),
         getPublicTeacherByEmail: builder.query({
             queryFn: async (email) => {
-                const teacherQuery = query(
-                    collection(firestore, "teachersPublic"),
-                    where("email", "==", email),
-                    limit(1)
-                );
-                const querySnapshot = await getDocs(teacherQuery);
-
-
-                const data = {
-                    exists: !querySnapshot.empty,
-                    ...querySnapshot.docs[0]?.data(),
-                    id: querySnapshot.docs[0]?.id
-                };
-                return { data };
-            },
+                try {
+                    const id = await getTeacherUid(firestore, email)
+                    return {data: id}
+                } catch (err) {
+                    return {error: err.message}
+                }
+            }
         }),
         register: builder.mutation({
             queryFn: async ({ email, password }) => {
@@ -333,16 +294,7 @@ export const apiSlice = createApi({
                         email,
                         password
                     );
-                    const batch = writeBatch(firestore);
-                    batch.set(doc(firestore, "teachers", creds.user.uid), {
-                        invitations: {},
-                        classes: {},
-                    });
-                    batch.set(
-                        doc(firestore, "teachersPublic", creds.user.uid),
-                        { email: creds.user.email }
-                    );
-                    await batch.commit();
+                    await signupFirestoreInteraction(firestore, creds.user.uid, creds.user.email)
                     return { data: "" };
                 } catch (err) {
                     return { error: err.code };
@@ -373,68 +325,35 @@ export const apiSlice = createApi({
                 classGroupId,
                 className,
             }, {dispatch}) => {
-                // console.log("Values received are: ", {
-                //     recepientEmail,
-                //     classId,
-                //     classGroupId,
-                //     className,
-                // });
-                const value = recepientEmail || "";
-                const regex = /^\w+@[a-z]+\.com$/;
-                try {
-                    if (!regex.test(value)) {
-                        throw new Error("The format is incorrect for an email");
-                    } else if (value == auth.currentUser.email) {
-                        throw new Error("You can't use you own email");
+                return await inviteTeacher({
+                    firestore,
+                    recepientEmail, hostEmail,
+                    classId, classGroupId,
+                    className, 
+                    getTeacherUid: async () => {
+                        const promise = dispatch(apiSlice.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
+                        promise.unsubscribe()
+                        const {data: id, isError, error} = await promise
+                        if (isError) {
+                            throw error
+                        } else return id
                     }
-                    const promise = dispatch(apiSlice.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
-                    promise.unsubscribe()
-                    const {data: snapshot} = await promise
-
-                    if (!snapshot.exists) {
-                        const error = new Error(
-                            "No teacher exists with this email"
-                        );
-                        throw error;
-                    }
-                    const invitedTeacherUid = snapshot.id;
-                    const batch = invite(
-                        invitedTeacherUid,
-                        recepientEmail,
-                        hostEmail,
-                        classGroupId,
-                        classId,
-                        className
-                    );
-                    await batch.commit();
-                } catch (error) {
-                    console.log("Error: ", error);
-                    if (error.code == "permission-denied") {
-                        return {
-                            error: "You don't have any permission to do this",
-                        };
-                    } else return { error: error.message };
-                }
-                return { data: "" };
+                })
             },
         }),
         unAssignTeacher: builder.mutation({
-            queryFn: async ({ recepientEmail, classGroupId, classId }) => {
-                const teacherQuery = query(
-                    collection(firestore, "teachersPublic"),
-                    where("email", "==", recepientEmail),
-                    limit(1)
-                );
-                const querySnapshot = await getDocs(teacherQuery);
-                const recepientId = querySnapshot.docs[0].id;
-
-                const batch = removeInvite(recepientId, classGroupId, classId);
-                try {
-                    await batch.commit();
-                    return { data: "" };
-                } catch (err) {
-                    return { error: err.message };
-                }
+            queryFn: async ({ recepientEmail, classGroupId, classId }, {dispatch}) => {
+                removeTeacher({
+                    firestore, classGroupId, classId,
+                    getTeacherUid: async () => {
+                        const promise = dispatch(apiSlice.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
+                        promise.unsubscribe()
+                        const {data, isError, error} = await promise
+                        if (isError) {
+                            throw error
+                        } else return data.id
+                    }
+                })
             },
         }),
     }),

@@ -5,6 +5,7 @@ import Index from "./components/Index/Index.jsx"
 import RootErrorPage from "./components/Layout/Error-page.jsx"
 import Login from "./components/Auth/Login.jsx";
 import Register from "./components/Auth/Register.jsx";
+import React from "react";
 import { action as createCGAction } from "./components/Index/Create-card.jsx";
 import { auth, firestore } from "./firebase/config.js";
 import { onAuthStateChanged, connectAuthEmulator } from "firebase/auth";

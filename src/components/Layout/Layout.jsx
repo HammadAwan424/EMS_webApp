@@ -12,7 +12,7 @@ import { Teacher } from "src/api/Teacher.js";
 import { skipToken } from "@reduxjs/toolkit/query";
 import Sidebar from "./Sidebar.jsx";
 import { useDispatch } from "react-redux";
-import { setActiveClasses, setInactiveClasses } from "src/features/user/userSlice.js";
+import { setActiveClasses, setInactiveClasses } from "src/api/userSlice.js";
 
 export default function RootLayout() {
 

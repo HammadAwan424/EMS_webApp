@@ -69,7 +69,7 @@ service cloud.firestore {
       
 
       allow create: if request.resource.data.cgAdmin == request.auth.uid && validateFields()
-      allow update: if resource.data.cgAdmin == request.auth.uid && 
+      allow update: if resource.data.cgAdmin == request.auth.uid && request.resource.data.cgAdmin == resource.data.cgAdmin && 
         validateFields() && 
         validControlBack()
         // validControlBack() && 
@@ -82,7 +82,7 @@ service cloud.firestore {
 
         function classAssignedToTeacher() {
           let classGroup = getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data;
-          return classGroup.editors.get([request.auth.uid], []).hasAll([classID])
+          return classGroup.editors.get([classID], []).hasAll([request.auth.uid])
         }
         function isClassAdmin() {
           let classGroup = getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data;
@@ -101,7 +101,7 @@ service cloud.firestore {
 
         allow delete: if isClassAdmin() && 
           (
-            !getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data.editors.hasAny([classID]) ||
+            !getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data.editors.keys().hasAny([classID]) ||
             getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data.editors[classID].size() == 0
           )
 

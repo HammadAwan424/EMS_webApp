@@ -9,9 +9,10 @@ import { Teacher } from "src/api/Teacher"
 import Alert from "../CommonUI/Alert"
 import { Class } from "./Classes"
 
-function ClassGroups() {
+function ClassGroups({id}) {
     const {data: Auth} = useGetAuthQuery()
     const {data: classGroups } = useGetClassGroupsQuery(Auth.uid)
+
     return(
         Teacher.hasClassGroups(classGroups) ? (
             classGroups.map((documentData) => {
@@ -20,7 +21,7 @@ function ClassGroups() {
                 )
             })
         ) : (
-            <div>You don't have any classGroups</div>
+            <div>{"You don't have any classGroups"}</div>
         )
 
     )
@@ -33,7 +34,7 @@ const selectClassGroup = createSelector(
 )
 
 
-function ClassGroup({classGroupId}) {
+function ClassGroup({id: classGroupId}) {
     const [dropdown, setDropdown] = useState(false)
     const classGroupRef = useRef(null)
     const [exists, setExists] = useState(true)
@@ -110,3 +111,4 @@ function ClassGroup({classGroupId}) {
 }
 
 export default ClassGroups
+export { ClassGroup }

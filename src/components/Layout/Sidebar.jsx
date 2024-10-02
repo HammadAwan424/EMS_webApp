@@ -6,7 +6,7 @@ import { Link, Form, useFetcher } from "react-router-dom"
 import { createClassGroupLink } from "src/api/Utility"
 import { Teacher } from "src/api/Teacher"
 import { useSelector } from "react-redux"
-import { getAllClassIds } from "src/features/user/userSlice"
+import { getAllClassIds } from "src/api/userSlice"
 
 export default function Sidebar({myRef}) {
 

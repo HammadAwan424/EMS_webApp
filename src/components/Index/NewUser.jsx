@@ -1,4 +1,4 @@
-import { getAllClassIds } from "src/features/user/userSlice"
+import { getAllClassIds } from "src/api/userSlice"
 import CardWithReset from "./Card"
 import CreateCardReset from "./Create-card"
 import { useSelector } from "react-redux"

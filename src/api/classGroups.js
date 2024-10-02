@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore"
+import { collection, doc, getDocs, query, where, writeBatch, serverTimestamp } from "firebase/firestore"
 import { flatten } from "flat";
 
 const getClassGroupsQuery = ({firestore, uid}) =>  query(
@@ -16,12 +16,10 @@ const getClassGroups = async ({firestore, uid}) => {
     return { data: returnVal };
 }
 
-const editClassGroup = async ({firestore, classGroupId, create, meta, ...patch }) => {
+const editClassGroup = async ({firestore, uid="", classGroupId, create, meta, ...patch }) => {
     const document = doc(firestore, "classGroups", classGroupId);
     const batch = writeBatch(firestore);
     const { classes, ...other } = patch;
-
-    console.log("RECEIVED PATH: ", patch);
 
     let classGroupUpdates = { ...other };
 
@@ -50,6 +48,9 @@ const editClassGroup = async ({firestore, classGroupId, create, meta, ...patch }
             ? classGroupUpdates.classes
             : {};
         batch.set(document, classGroupUpdates);
+        batch.update(doc(firestore, "teachers", uid), {
+            [`classGroups.${classGroupId}`]: classGroupUpdates.classGroupName 
+        })
     } else {
         const flattened = flatten(classGroupUpdates, {
             safe: true,

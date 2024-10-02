@@ -10,7 +10,7 @@ import NewUser from "./NewUser.jsx"
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice.js"
 import { Teacher } from "src/api/Teacher.js"
 import { skipToken } from "@reduxjs/toolkit/query"
-import { getAllClassIds, setActiveClasses, setClassesMarked, setInactiveClasses, setNewClasses } from "src/features/user/userSlice.js"
+import { getAllClassIds, setActiveClasses, setClassesMarked, setInactiveClasses, setNewClasses } from "src/api/userSlice.js"
 import { useDispatch, useSelector } from "react-redux"
 
 
@@ -64,7 +64,8 @@ function User() {
             dispatch(setInactiveClasses(inactive));
             dispatch(setNewClasses(newInvitationsKeyArray))
         }
-    }, [User, dispatch]);
+    }, [User.invitations, User.classes, dispatch]);
+
 
 
 

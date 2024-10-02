@@ -1,24 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
-import Track from "./Track.jsx"
-import { IconMenu2 } from "@tabler/icons-react"
-import { deleteDoc, doc } from "firebase/firestore"
-import { auth, firestore } from "src/firebase/config.js"
-import Alert from "../CommonUI/Alert.jsx"
-import { Link, useFetcher, useLocation, useNavigate, useNavigation, useParams, useRouteLoaderData } from "react-router-dom"
-import { getClassById, Teacher } from "src/api/Teacher.js"
-import { apiSlice, useGetAttendanceQuery, useGetAuthQuery, useGetClassByIdQuery, useGetClassGroupsQuery, useGetMonthlyAttendanceQuery, useGetUserQuery } from "src/api/apiSlice.js"
-import { skipToken } from "@reduxjs/toolkit/query"
-import store from "src/app/store.js"
-import { createSelector } from "@reduxjs/toolkit"
-import Pie from "../CommonUI/Pie.jsx"
-import { produce } from "immer"
-import { getDateStr } from "src/api/Utility.js"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useLocation, useNavigate, useNavigation } from "react-router-dom"
+import { useGetAuthQuery, useGetUserQuery } from "src/api/apiSlice.js"
 import ClassGroups from "./ClassGroups.jsx"
-import Classes from "./Classes.jsx"
 import classNames from "classnames"
 import { useSelector } from "react-redux"
-import { getAllClassIds } from "src/features/user/userSlice.js"
+import { getAllClassIds } from "src/api/userSlice.js"
 import ClassView from "./ClassView.jsx"
+import ClassGroupView from "./ClassGroupVIew.jsx"
 
 
 function DashBoard() {
@@ -33,15 +21,25 @@ function DashBoard() {
     //     mine()
     // })()
 
-    const navigation = useNavigation()
     const {data: Auth} = useGetAuthQuery()
     const {data: User} = useGetUserQuery(Auth.uid)
     const classIds = useSelector(getAllClassIds)
-    const selectRef = useRef(null)
+    const lastVisitedSelect = useRef({lastGroupId: "", lastClassId: ""})
 
     const {hash} = useLocation()
-    const navigate = useNavigate()
     const classGroupActive = hash == "#classgroups" ? true : false
+
+    const navigateTo = useNavigate()
+    // Set ids on lastVisitedSelect with which it is called
+    const navigate = useCallback((pathname, options) => {
+        const origin = new URL(window.location).origin
+        const url = origin + pathname
+        const id = new URL(url).searchParams.get("id")
+        classGroupActive ? lastVisitedSelect.current.lastGroupId = id : lastVisitedSelect.current.lastClassId = id
+        navigateTo(pathname, options)
+    }, [navigateTo, classGroupActive])
+
+    console.log("LAST VISITED: ", lastVisitedSelect.current)
 
     const setSelectInUrl = (e) => {
         const id = e.target.value
@@ -50,19 +48,27 @@ function DashBoard() {
     
 
     const selectOptions = useMemo(() => {
-        let tmp = []
-        classIds.active.length > 0 ? tmp = [...classIds.active, "all"] : tmp.push("noclass")
-        return tmp
-    }, [classIds])
+        let classesList = []
+        classIds.active.length > 0 ? classesList = [...classIds.active, "all"] : classesList.push("noclass")
+        let classGroupList = Object.keys(User.classGroups)
+        classGroupList.length > 0 ? classGroupList = [...classGroupList, "all"] : classGroupList.push("nogroup")
+        return classGroupActive ? classGroupList : classesList
+    }, [classIds.active, User.classGroups, classGroupActive])
+    
+
+
     
 
     useEffect(() => {
         const url = new URL(window.location)
         const id = url.searchParams.get("id")
+        // default 'first item in selectOptions' if id is not valid
         url.searchParams.set("id", selectOptions.includes(id) ? id : selectOptions[0]);
-        url.hash = url.hash == "classes" || url.hash == "classgroups" ? url.hash : "classes"
-        navigate(url.pathname+url.search+url.hash)
-    }, [selectOptions])
+        // default 'classes' if # section is not valid
+        url.hash =( url.hash == "#classes" || url.hash == "#classgroups") ? url.hash : "classes"
+        console.log("INSIDE HASH IS: ", url.hash)
+        navigate(url.pathname+url.search+url.hash, {replace: true})
+    }, [navigate, selectOptions])
 
     const classnames = (active) => {
         return classNames(
@@ -79,6 +85,7 @@ function DashBoard() {
     console.log(selectOptions.includes(id))
 
     if (!selectOptions.includes(id) || !(hash == "#classes" || hash == "#classgroups")) {
+        console.log("HASH WAS: ", hash)
         return null
     }
 
@@ -117,19 +124,23 @@ function DashBoard() {
                 <div className="flex-1 self-stretch text-end">
                     {/* <label htmlFor="topBarSelect">Select: </label> */}
                     <select 
-                        className="bg-transparent focus:bg-[--theme-secondary] py-1 px-2 rounded-md text-left h-full" ref={selectRef}
+                        className="bg-transparent focus:bg-[--theme-secondary] py-1 px-2 rounded-md text-left h-full"
                         name="classSelect" id="topBarSelect" onInput={(e) => setSelectInUrl(e)}
                         >
                         {selectOptions.map(value => (
                             <option key={value} value={value} selected={value == id}>
-                                {value == "noclass" ? "--No class" : value == "all" ? "All" : `Class ${User.invitations[value].className}`}
+                                {value == "noclass" ? "--No class" 
+                                :value == "nogroup" ? "--No group"
+                                : value == "all" ? "All" 
+                                : classGroupActive ? `Group ${User.classGroups[value]}`
+                                : `Class ${User.invitations[value].className}`}
                             </option>
                         ))}
                     </select>
                 </div>
             </div>
 
-            {classGroupActive ? <ClassGroups /> : <ClassView id={id} />}
+            {classGroupActive ? <ClassGroupView id={id} /> : <ClassView id={id} />}
             {/* <Try /> */}
         </div>
     )

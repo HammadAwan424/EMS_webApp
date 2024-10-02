@@ -394,5 +394,7 @@ async function getEnv({older = true} = {}) {
     return env
 }
 
+export {getEnv}
+
 
 

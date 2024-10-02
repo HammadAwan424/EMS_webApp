@@ -17,7 +17,6 @@ function getCurrentClassGroups() {
     } else {
         return null
     }
-
 }
 
 
