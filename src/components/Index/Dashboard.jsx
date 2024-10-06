@@ -7,6 +7,8 @@ import { useSelector } from "react-redux"
 import { getAllClassIds } from "src/api/userSlice.js"
 import ClassView from "./ClassView.jsx"
 import ClassGroupView from "./ClassGroupVIew.jsx"
+import { useImmer } from "use-immer"
+import { classInvitationSelector } from "src/api/invitation.js"
 
 
 function DashBoard() {
@@ -23,52 +25,25 @@ function DashBoard() {
 
     const {data: Auth} = useGetAuthQuery()
     const {data: User} = useGetUserQuery(Auth.uid)
-    const classIds = useSelector(getAllClassIds)
-    const lastVisitedSelect = useRef({lastGroupId: "", lastClassId: ""})
+    const { acceptedAllowed: activeClasses } = classInvitationSelector(User)
 
-    const {hash} = useLocation()
-    const classGroupActive = hash == "#classgroups" ? true : false
+    let classesList = []
+    activeClasses.length > 0 ? classesList = [...activeClasses, "all"] : classesList.push("noclass")
+    let classGroupList = Object.keys(User.classGroups)
+    classGroupList.length > 0 ? classGroupList = [...classGroupList, "all"] : classGroupList.push("nogroup")
 
-    const navigateTo = useNavigate()
-    // Set ids on lastVisitedSelect with which it is called
-    const navigate = useCallback((pathname, options) => {
-        const origin = new URL(window.location).origin
-        const url = origin + pathname
-        const id = new URL(url).searchParams.get("id")
-        classGroupActive ? lastVisitedSelect.current.lastGroupId = id : lastVisitedSelect.current.lastClassId = id
-        navigateTo(pathname, options)
-    }, [navigateTo, classGroupActive])
+    const [lastVisited, setLastVisited] = useImmer({lastGroupId: classGroupList[0], lastClassId: classesList[0]})
+    const [groupActive, setGroupActive] = useState(false)
 
-    console.log("LAST VISITED: ", lastVisitedSelect.current)
 
     const setSelectInUrl = (e) => {
         const id = e.target.value
-        navigate(`/?id=${id}${hash}`)
+        setLastVisited(prev => {
+            groupActive ? prev.lastGroupId = id : prev.lastClassId = id
+        })
     }
-    
+    const id = groupActive ? lastVisited.lastGroupId : lastVisited.lastClassId
 
-    const selectOptions = useMemo(() => {
-        let classesList = []
-        classIds.active.length > 0 ? classesList = [...classIds.active, "all"] : classesList.push("noclass")
-        let classGroupList = Object.keys(User.classGroups)
-        classGroupList.length > 0 ? classGroupList = [...classGroupList, "all"] : classGroupList.push("nogroup")
-        return classGroupActive ? classGroupList : classesList
-    }, [classIds.active, User.classGroups, classGroupActive])
-    
-
-
-    
-
-    useEffect(() => {
-        const url = new URL(window.location)
-        const id = url.searchParams.get("id")
-        // default 'first item in selectOptions' if id is not valid
-        url.searchParams.set("id", selectOptions.includes(id) ? id : selectOptions[0]);
-        // default 'classes' if # section is not valid
-        url.hash =( url.hash == "#classes" || url.hash == "#classgroups") ? url.hash : "classes"
-        console.log("INSIDE HASH IS: ", url.hash)
-        navigate(url.pathname+url.search+url.hash, {replace: true})
-    }, [navigate, selectOptions])
 
     const classnames = (active) => {
         return classNames(
@@ -77,17 +52,7 @@ function DashBoard() {
             "cursor-pointer"
         )
     }
-    
-    const url = new URL(window.location);
-    // Hash and id both are available
-    const id = url.searchParams.get("id")
 
-    console.log(selectOptions.includes(id))
-
-    if (!selectOptions.includes(id) || !(hash == "#classes" || hash == "#classgroups")) {
-        console.log("HASH WAS: ", hash)
-        return null
-    }
 
     return (
         <div className="sm:p-2">
@@ -111,28 +76,28 @@ function DashBoard() {
             <div id="Topbar" className="flex items-center px-4 py-2">
                 <div className="SPACER flex-1"></div>
                 <div className="flex w-48 mx-auto ">
-                    <a 
-                        className={"noLink rounded-l-2xl flex-1 px-2 py-1 border-r-[--theme-primary] border-r-2 text-center " + classnames(!classGroupActive)}
-                        href="#classes" id="classes"
-                    >Classes</a>
-                    <a 
-                        className={"noLink rounded-r-2xl flex-1 px-2 py-1 text-center " + classnames(classGroupActive)}
-                        href="#classgroups" id="classgroups"
-                    >ClassGroups</a>
+                    <div 
+                        className={"noLink rounded-l-2xl flex-1 px-2 py-1 border-r-[--theme-primary] border-r-2 text-center " + classnames(!groupActive)}
+                        id="classes" onClick={() => setGroupActive(false)}
+                    >Classes</div>
+                    <div 
+                        className={"noLink rounded-r-2xl flex-1 px-2 py-1 text-center " + classnames(groupActive)}
+                        id="classgroups" onClick={() => setGroupActive(true)}
+                    >ClassGroups</div>
                 </div>
 
                 <div className="flex-1 self-stretch text-end">
                     {/* <label htmlFor="topBarSelect">Select: </label> */}
                     <select 
                         className="bg-transparent focus:bg-[--theme-secondary] py-1 px-2 rounded-md text-left h-full"
-                        name="classSelect" id="topBarSelect" onInput={(e) => setSelectInUrl(e)}
+                        name="classSelect" value={id} id="topBarSelect" onInput={(e) => setSelectInUrl(e)}
                         >
-                        {selectOptions.map(value => (
-                            <option key={value} value={value} selected={value == id}>
+                        {(groupActive ? classGroupList : classesList).map(value => (
+                            <option key={value} value={value}>
                                 {value == "noclass" ? "--No class" 
-                                :value == "nogroup" ? "--No group"
+                                : value == "nogroup" ? "--No group"
                                 : value == "all" ? "All" 
-                                : classGroupActive ? `Group ${User.classGroups[value]}`
+                                : groupActive ? `Group ${User.classGroups[value]}`
                                 : `Class ${User.invitations[value].className}`}
                             </option>
                         ))}
@@ -140,7 +105,7 @@ function DashBoard() {
                 </div>
             </div>
 
-            {classGroupActive ? <ClassGroupView id={id} /> : <ClassView id={id} />}
+            {groupActive ? <ClassGroupView id={id} /> : <ClassView id={id} />}
             {/* <Try /> */}
         </div>
     )

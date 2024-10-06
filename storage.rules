@@ -210,7 +210,7 @@ service cloud.firestore {
 
     function TeacherOrAdmin(classGroupId, myResource) {
       let classGroup = get(/databases/$(database)/documents/classGroups/$(classGroupId)).data;
-      return classGroup.editors.get(request.auth.uid, []).hasAll([myResource.classId]) ||  
+      return classGroup.editors.get(myResource.classId, []).hasAll([request.auth.uid]) ||  
         classGroup.cgAdmin == request.auth.uid
     }
     

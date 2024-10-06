@@ -111,4 +111,7 @@ button:focus-visible {
   .noLink {
     @apply text-inherit hover:text-inherit font-normal
   }
+  .title {
+    @apply font-semibold text-2xl
+  }
 }

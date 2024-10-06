@@ -53,7 +53,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
     const dateStr = getDateStr({dateObj: new Date(date.ISOString), hyphenated: true})
     const todayDateStr = getDateStr({dateObj: new Date(meta.today), hyphenated: true})
 
-    console.log("CLASS DATA: ", classData)
+    // console.log("CLASS DATA: ", classData)
   
     const {data: attendance, isFetching: fetchingAttendance, isLoading: loadingAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr: todayDateStr})
     const param = date.year+date.month

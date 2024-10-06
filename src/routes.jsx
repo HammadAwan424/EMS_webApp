@@ -12,13 +12,13 @@ import { onAuthStateChanged, connectAuthEmulator } from "firebase/auth";
 import { connectFirestoreEmulator } from "firebase/firestore"
 import { editAction, editLoader } from "./components/Edit/Edit.jsx"
 import EditErrorPage from "./components/Edit/ErrorPage.jsx";
-import { acceptInvitation, rejectInvitation } from "./api/invitations.js";
 import { signOutAction } from "./api/Utility.js";
 // import { classAction, classLoader } from "./components/Index/Dashboard.jsx";
 import ClassInput, {loader as classEditLoader, action as classEditAction} from "./components/Class/ClassEdit.jsx";
 import Attendance from "./components/Attendance/Attendance.jsx";
 import ClassGroupEdit from "./components/Classgroup/Edit.jsx";
 import ClassGroupCreate from "./components/Classgroup/Create.jsx";
+import Notifications from "./components/Notifications/Notifications.jsx";
 
 
 // function loaderWrapper(loader) {
@@ -106,13 +106,10 @@ function CustomRouterProvider() {
                     />
 
                     <Route
-                    path="/invitations/reject"
-                    action={rejectInvitation}
+                    path="/notifications" element={<AuthRequired><Notifications /></AuthRequired>}
                     />
-                    <Route
-                    path="/invitations/accept"
-                    action={acceptInvitation}
-                    />
+
+        
                         
                 </Route>
             </Route>

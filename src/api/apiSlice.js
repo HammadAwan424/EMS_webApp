@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery, retry } from "@reduxjs/toolkit/query/react";
+import { buildCreateApi, createApi, fetchBaseQuery, retry } from "@reduxjs/toolkit/query/react";
 import {
     createUserWithEmailAndPassword,
     EmailAuthProvider,
@@ -16,8 +16,10 @@ import {
 import { flatten } from "flat";
 import { getDateStr } from "./Utility.js";
 import { signupFirestoreInteraction } from "./signup.js";
-import { getTeacherUid, inviteTeacher, removeTeacher } from "./invitation.js";
+import { acceptInvitation, clearNotifications, getTeacherUid, inviteTeacher, rejectInvitation, removeTeacher } from "./invitation.js";
 import classGroups from "./classGroups.js";
+
+let k = 32
 
 
 export const apiSlice = createApi({
@@ -333,10 +335,12 @@ export const apiSlice = createApi({
                     getTeacherUid: async () => {
                         const promise = dispatch(apiSlice.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
                         promise.unsubscribe()
-                        const {data: id, isError, error} = await promise
-                        if (isError) {
-                            throw error
-                        } else return id
+                        const {isSuccess, ...other} = await promise
+                        if (isSuccess) {
+                            return other.data
+                        } else {
+                            throw other.error
+                        }
                     }
                 })
             },
@@ -348,14 +352,35 @@ export const apiSlice = createApi({
                     getTeacherUid: async () => {
                         const promise = dispatch(apiSlice.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
                         promise.unsubscribe()
-                        const {data, isError, error} = await promise
-                        if (isError) {
-                            throw error
-                        } else return data.id
+                        const {isSuccess, ...other} = await promise
+                        console.log("OTHER IS: ", other)
+                        if (isSuccess) {
+                            return other.data
+                        } else {
+                            throw other.error
+                        }
                     }
                 })
             },
         }),
+        acceptInvitation: builder.mutation({
+            queryFn: async (invitationId) => {
+                const uid = auth.currentUser.uid
+                return acceptInvitation({firestore, uid, invitationId})
+            }
+        }),
+        rejectInvitation: builder.mutation({
+            queryFn: async (invitationId) => {
+                const uid = auth.currentUser.uid
+                return rejectInvitation({firestore, uid, invitationId})
+            }
+        }),
+        clearNotifications: builder.mutation({
+            queryFn: async (listOfIds) => {
+                const uid = auth.currentUser.uid
+                return clearNotifications({firestore, uid, listOfIds})
+            }
+        })
     }),
 });
 
@@ -376,6 +401,9 @@ export const {
     useSetAttendanceMutation,
     useUpdateAttendanceMutation,
     useDeleteClassMutation,
+    useAcceptInvitationMutation,
+    useRejectInvitationMutation,
+    useClearNotificationsMutation
 } = apiSlice;
 
 async function cachedDocumentListener(
@@ -451,8 +479,8 @@ async function cachedQueryListener(
 }
 
 function attendanceConverter(snapshot) {
-    console.log("CONVERTER OF ENTRYADDED");
-    console.log("Data is: ", snapshot.data());
+    // console.log("CONVERTER OF ENTRYADDED");
+    // console.log("Data is: ", snapshot.data());
     const data = snapshot.data({ serverTimestamps: "estimate" });
     if (snapshot.exists()) {
         return {

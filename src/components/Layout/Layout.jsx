@@ -1,6 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Outlet, useFetcher, useOutletContext } from "react-router-dom";
-import { useEffect } from "react";
 import { Link, useLoaderData, Form, NavLink, useNavigation, useSubmit } from "react-router-dom";
 import { IconArrowDownCircle, IconCircleArrowDown, IconArrowBadgeRight, IconArrowUp, IconCircleArrowUpFilled, IconArrowDown, IconMenu2, IconArrowBadgeRightFilled, IconArrowBadgeLeftFilled, IconArrowBadgeDownFilled } from '@tabler/icons-react';
 import { useNavigate } from "react-router-dom";
@@ -11,8 +10,8 @@ import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/ap
 import { Teacher } from "src/api/Teacher.js";
 import { skipToken } from "@reduxjs/toolkit/query";
 import Sidebar from "./Sidebar.jsx";
-import { useDispatch } from "react-redux";
-import { setActiveClasses, setInactiveClasses } from "src/api/userSlice.js";
+import { useDispatch, useSelector } from "react-redux";
+import { setActiveClasses, setInactiveClasses, setClassesMarked, setNewClasses, getAllClassIds } from "src/api/userSlice.js";
 
 export default function RootLayout() {
 
@@ -40,10 +39,13 @@ export default function RootLayout() {
     const shouldSkip = Auth ? Auth.uid : skipToken
     const {data: User, isFetching} = useGetUserQuery(shouldSkip)
     const {isFetching: loadingGroups} = useGetClassGroupsQuery(shouldSkip)
+    const classIds = useSelector(getAllClassIds)
 
-    if (isFetching || loadingGroups) {
-      return <h1>We are fetching you document after auth</h1>
-    }
+
+  // TODO: show skeleton UI
+  if (isFetching || loadingGroups) {
+    return <h1>We are fetching you document after auth</h1>
+  }
 
     return (
       <>

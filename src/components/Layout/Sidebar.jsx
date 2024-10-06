@@ -1,12 +1,14 @@
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice"
 import { skipToken } from "@reduxjs/toolkit/query"
-import { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled } from "@tabler/icons-react"
+import { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconHome2, IconNotification } from "@tabler/icons-react"
 import { useState } from "react"
-import { Link, Form, useFetcher } from "react-router-dom"
+import { Link, Form, useFetcher, useNavigate } from "react-router-dom"
 import { createClassGroupLink } from "src/api/Utility"
 import { Teacher } from "src/api/Teacher"
 import { useSelector } from "react-redux"
 import { getAllClassIds } from "src/api/userSlice"
+import { Notification } from "../CommonUI/Icons"
+import { classInvitationSelector } from "src/api/invitation"
 
 export default function Sidebar({myRef}) {
 
@@ -15,6 +17,14 @@ export default function Sidebar({myRef}) {
     const { data: Auth } = useGetAuthQuery()
     const { data: User } = useGetUserQuery(Auth ? Auth.uid : skipToken)
     const { data: classGroups } = useGetClassGroupsQuery(Auth ? Auth.uid : skipToken)
+    const navigate = useNavigate()
+
+    // Either some invitations was sent (maybe removed now) or access from some class is revoked
+    const {
+        acceptedRevoked, invitationsAllowed, invitationsRevoked
+    } = classInvitationSelector(User)
+    const hasNotifications = acceptedRevoked.length > 0 || invitationsRevoked.length > 0 || invitationsAllowed.length > 0
+
 
     return (
         <div ref={myRef} id="sidebar" className="fixed overflow-auto top-0 transition z-50 bg-[--theme-primary] sm:bg-[--theme-secondary]
@@ -43,7 +53,7 @@ export default function Sidebar({myRef}) {
                                     <Link key={id} to="/">{User.classes[id].className}</Link>
                                 )
                             ) : (
-                                <div className="text-sm">You don't have any classes :(</div>
+                                <div className="text-sm">{"You don't have any classes :("}</div>
                             )}
                         </div>
                     )}
@@ -68,7 +78,7 @@ export default function Sidebar({myRef}) {
                                 ))
             
                             ) : (
-                                <div className="text-sm">You don't have any classGroups :(</div>
+                                <div className="text-sm">{"You don't have any classGroups :("}</div>
                             )}
                         </div>
                     )}
@@ -77,74 +87,24 @@ export default function Sidebar({myRef}) {
                 </>
             )}
             
-            {Auth && <Invitations User={User} />}
-        </div>
-    )
-}
+            {/* {Auth && <Invitations User={User} />} */}
 
-
-
-function Invitations({ User }) {
-
-    const [expanded, setExpanded] = useState(false)
-    const allClassIds = useSelector(getAllClassIds)
-
-    const hasInvitations = allClassIds.new.some(id => User.invitations[id].status == true)
-
-
-    return (
-        <div className="self-stretch flex flex-col">
-            <div className="flex justify-start items-center select-none" onClick={() => setExpanded(!expanded)}>
-                {expanded ? <IconArrowBadgeDownFilled /> : <IconArrowBadgeRightFilled />}
-                <h2 className="font-medium">Invitations</h2>
+            <div className="flex items-center" onClick={() => navigate("/")}>
+                <IconHome/>    
+                <span>Home</span>
             </div>
-            <div className="flex flex-col gap-2 pl-2 text-[--text-secondary-col]">
-                {expanded && (
-                    hasInvitations ? (
-                        allClassIds.new.map((classId) =>
-                            // TODO: Show notification for invitations that are taken back
-                            User.invitations[classId].status == true && (
-                            <div className="" key={Teacher.getInvitationId(classId, User.invitations)}>
-                                <div className="flex-col bg-[--theme-tertiary] rounded-md p-2 gap-1 flex">
-                                    <span>{User.invitations[classId].email} has invited you to {User.invitations[classId].className}</span>
-                                    <InvitationForm invitationId={classId} />
-                                </div>
-                            </div>)
-                        )
 
-                    ) : <div className="text-sm">{"No invitaions for now :)"}</div>
-
+            <div className="flex items-center" onClick={() => navigate("/notifications")}>
+                <IconNotification/>    
+                <span>Notifications</span>
+                {hasNotifications && (
+                    <div className="w-3 ml-1 h-3 relative self-start">
+                        <div className="absolute rounded-full inset-0 bg-blue-500"></div>
+                        <div className="absolute rounded-full inset-0 bg-blue-500 animate-ping"></div>
+                    </div>
                 )}
+       
             </div>
-
         </div>
-
-    )
-}
-
-
-
-function InvitationForm({ invitationId }) {
-
-    const acceptFetcher = useFetcher()
-    const rejectFetcher = useFetcher()
-    const {data: Auth} = useGetAuthQuery()
-    const {data: User} = useGetUserQuery(Auth.uid)
-    const toSubmit = {id: invitationId, ...User.invitations[invitationId]}
-
-    function acceptInvitation() {
-        acceptFetcher.submit(toSubmit, { action: "/invitations/accept", method: "post", encType: "application/json" })
-    }
-
-    function rejectInvitation() {
-        rejectFetcher.submit(toSubmit, { action: "/invitations/reject", method: "post", encType: "application/json" })
-    }
-
-
-    return (
-        < div className="flex gap-2" >
-            <button className="px-2 py-1 rounded-2xl bg-red-800" onClick={rejectInvitation}>Cancel</button>
-            <button className="px-2 py-1 rounded-2xl bg-green-800" onClick={acceptInvitation}>Accept</button>
-        </div >
     )
 }
