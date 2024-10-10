@@ -8,7 +8,6 @@ import { IconAlertCircle, IconCirclePlus, IconEdit } from "@tabler/icons-react"
 import dot from "dot-object"
 import isEqual from "lodash.isequal"
 import Button from "../CommonUI/Button"
-import ClassEdit from "../Edit/ClassEdit"
 import { firestore } from "src/firebase/config"
 import { collection, doc } from "firebase/firestore"
 

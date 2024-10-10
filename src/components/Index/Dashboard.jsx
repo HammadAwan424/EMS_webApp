@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useLocation, useNavigate, useNavigation } from "react-router-dom"
+import { Link, useLocation, useNavigate, useNavigation } from "react-router-dom"
 import { useGetAuthQuery, useGetUserQuery } from "src/api/apiSlice.js"
 import ClassGroups from "./ClassGroups.jsx"
 import classNames from "classnames"
@@ -9,7 +9,6 @@ import ClassView from "./ClassView.jsx"
 import ClassGroupView from "./ClassGroupVIew.jsx"
 import { useImmer } from "use-immer"
 import { classInvitationSelector } from "src/api/invitation.js"
-
 
 function DashBoard() {
 
@@ -33,14 +32,29 @@ function DashBoard() {
     classGroupList.length > 0 ? classGroupList = [...classGroupList, "all"] : classGroupList.push("nogroup")
 
     const [lastVisited, setLastVisited] = useImmer({lastGroupId: classGroupList[0], lastClassId: classesList[0]})
-    const [groupActive, setGroupActive] = useState(false)
+
+    const {hash, pathname, search} = useLocation()
+    const groupActive = hash == "#classgroups" ? true : false
+
+    const navigateTo = useNavigate()
+
+    // Set ids on lastVisitedSelect with which it is called
+    const navigate = useCallback((pathname, options) => {
+        const [before, searchWithHash] = pathname.split("?")
+        const [search, later] = searchWithHash.split("#")
+        const searchParams = new URLSearchParams(search)
+        const id = searchParams.get("id")
+        console.log("NAVIGATE WILL SET ID: ", id)
+        setLastVisited(prev => {
+            groupActive ? prev.lastGroupId = id : prev.lastClassId = id
+        })
+        navigateTo(pathname, options)
+    }, [navigateTo, groupActive, setLastVisited])
 
 
     const setSelectInUrl = (e) => {
         const id = e.target.value
-        setLastVisited(prev => {
-            groupActive ? prev.lastGroupId = id : prev.lastClassId = id
-        })
+        navigate(`/?id=${id}${hash}`)
     }
     const id = groupActive ? lastVisited.lastGroupId : lastVisited.lastClassId
 
@@ -51,6 +65,25 @@ function DashBoard() {
             {"bg-[--theme-tertiary]": !active},
             "cursor-pointer"
         )
+    }
+
+    useEffect(() => {
+        const searchParams = new URLSearchParams(search)
+        // default to 'id' if searchParam is not equal to id
+        // searchParams.get("id") == id ? id : searchParams.set("id", id);
+        // default 'classes' if # section is not valid
+        const newHash = (hash == "#classes" || hash == "#classgroups") ? hash : "#classes"
+        console.log("INSIDE EFFECT: ", searchParams.toString(), hash, id)
+        if (newHash != hash || searchParams.get("id") != id) {
+            searchParams.set("id", id);
+            console.log("CALLING NAVIGATE: ", searchParams.toString(), newHash, id)
+            navigate(pathname+'?'+searchParams+newHash, {replace: true})
+        }
+    }, [navigate, id, hash, pathname, search])
+
+    if ((new URLSearchParams(search).get("id") != id) || !(hash == "#classes" || hash == "#classgroups")) {
+        console.log("HASH WAS: ", hash)
+        return null
     }
 
 
@@ -76,14 +109,14 @@ function DashBoard() {
             <div id="Topbar" className="flex items-center px-4 py-2">
                 <div className="SPACER flex-1"></div>
                 <div className="flex w-48 mx-auto ">
-                    <div 
+                    <Link 
                         className={"noLink rounded-l-2xl flex-1 px-2 py-1 border-r-[--theme-primary] border-r-2 text-center " + classnames(!groupActive)}
-                        id="classes" onClick={() => setGroupActive(false)}
-                    >Classes</div>
-                    <div 
+                        id="classes" to="#classes"
+                    >Classes</Link>
+                    <Link 
                         className={"noLink rounded-r-2xl flex-1 px-2 py-1 text-center " + classnames(groupActive)}
-                        id="classgroups" onClick={() => setGroupActive(true)}
-                    >ClassGroups</div>
+                        id="classgroups" to="#classgroups"
+                    >ClassGroups</Link>
                 </div>
 
                 <div className="flex-1 self-stretch text-end">
@@ -105,7 +138,7 @@ function DashBoard() {
                 </div>
             </div>
 
-            {groupActive ? <ClassGroupView id={id} /> : <ClassView id={id} />}
+            {groupActive ? <ClassGroupView firstButtonClassName="bg-" id={id} /> : <ClassView id={id} />}
             {/* <Try /> */}
         </div>
     )

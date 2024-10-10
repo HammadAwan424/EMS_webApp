@@ -2,6 +2,7 @@ import { useGetAuthQuery, useGetUserQuery } from "src/api/apiSlice"
 import Classes, { Class } from "./Classes"
 import { IconUserFilled } from "@tabler/icons-react"
 import { useLayoutEffect } from "react"
+import Apology from "../Apology/Apology"
 
 function ClassView({id}) {
     
@@ -9,15 +10,17 @@ function ClassView({id}) {
     const {data: User} = useGetUserQuery(Auth.uid)
     console.log("RECEIVED VALUE: ", id)
 
-    if (id == "all") {
-        return <Classes />
-    } else if (id == "noclass") {
-        return null
-    } else {
-        return (
-            <DetailedClass classId={id} classGroupId={User.invitations[id].classGroupId} />
-        )
-    }
+    return (
+        <>
+        <span className="title pt-0">Classes</span>
+        {
+            id == "all" ? <Classes />
+                : id == "noclass" ? <Apology text={`You don't have any classes for now. 
+                    Classes that you join will appear here.`} /> 
+                : <DetailedClass classId={id} classGroupId={User.invitations[id].classGroupId} />
+        }
+        </>
+    )
 }
 
 

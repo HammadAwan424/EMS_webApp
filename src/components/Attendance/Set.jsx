@@ -1,13 +1,32 @@
 import classNames from "classnames"
 import { useState, useRef } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { useGetAttendanceQuery, useGetClassByIdQuery, useSetAttendanceMutation } from "src/api/apiSlice"
 import { useImmer } from "use-immer"
 import Popup from "../CommonUI/Popup"
 import Student from "./Student"
+import Apology from "../Apology/Apology"
 
-function Set() {
+function Set({isValid}) {
+    const {date} = useParams()
+    const dateFromUrl = new Date(date)
+    const urlReadable = dateFromUrl.toLocaleString("en-GB", {"day": "numeric", "month": "long", "year": "numeric"})
 
+    return (
+        <>
+        <span className="title">{"Set Attendance"}</span>
+        <span>For {urlReadable.slice(0,-5)}</span>
+        {isValid ? (
+            <Main /> 
+        ) : (
+            // User requesting attendance for some previous day that doesn't exist
+            <Apology text={`No record found for ${urlReadable}`} />
+        )}
+        </>
+    )
+}
+
+function Main() {
     const { classId, classGroupId, date: dateStr } = useParams()
     const navigate = useNavigate()
 
@@ -35,6 +54,7 @@ function Set() {
         })
     }
 
+    const hasStudents = attendance.ids.length > 0
 
     const unMarkedCount = Object.values(attendance.students).filter(v => v.status == -1).length
     const presentCount = Object.values(attendance.students).filter(v => v.status == 1).length
@@ -87,21 +107,32 @@ function Set() {
                 setVisible={(boolean) => setPopup({ ...popup, visible: boolean })} isLoading={isLoading}
             />
 
-            <div className="flex items-center gap-2 flex-col sm:w-[--student-width-for-desktop] p-2">
-                {attendance.ids.map((id) =>
-                    <Student details={attendance.students[id]} id={id} key={id} markStudent={markStudent} />
-                )}
-                {renderWarning &&
-                    <div className="w-full bg-red-900 text-red-400 rounded-lg p-1">
-                        <p>
-                            Please mark all the students above
-                        </p>
-                    </div>}
+            
+            {hasStudents ? (
+                <div className="flex gap-2 flex-col p-2">
+                    <div className="studentLayout">
+                        {attendance.ids.map((id) =>
+                            <Student details={attendance.students[id]} id={id} key={id} markStudent={markStudent} />
+                        )}
+                    </div>
+                    {renderWarning &&
+                        <div className="bg-red-900 text-red-400 self-start rounded-lg p-1">
+                            <p>
+                                Please mark all the students above
+                            </p>
+                        </div>}
 
-                <button className={buttonClasses} onClick={initialSubmitHandler}>
-                    Submit
-                </button>
-            </div>
+                    <button className={buttonClasses} onClick={initialSubmitHandler}>
+                        Submit
+                    </button>
+                </div>
+            ) : (
+                <Apology>
+                    <span>{"It look's like you forgot to add students for this class. "}</span>
+                    <Link to={`/classgroup/${classGroupId}`}>{"Add them here"}</Link>
+                </Apology>
+            )}
+
         </>
     );
 }

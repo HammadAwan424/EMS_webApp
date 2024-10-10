@@ -37,28 +37,19 @@ function Student({details, id, markStudent}) {
     }
 
     const className = classNames(
-        {"hover:border-[--border-hover-col] border-[--border-col]": !details.edited},
-        {"border-yellow-500": details.edited},
-    )
-    const overlay = classNames(
-        "pointer-events-none absolute z-10 bg-black opacity-20 inset-0",
-        {"bg-black": !details.edited},
-        {"bg-yellow-500": details.edited}
+        {"hover:border-[--border-hover-col] bg-theme-300 hover:bg-theme-100 border-transparent": !marked && !details.edited},
+        {"border-yellow-500 bg-theme-500": details.edited && !marked},
+        {"border-green-500 bg-theme-500": marked && !details.edited && details.status == states.present},
+        {"border-red-500 bg-theme-500": marked && !details.edited && details.status != states.present}
     )
 
-
-   
     
-
-
     return (
         <div className={"relative flex h-16 w-full items-center gap-1 overflow-hidden rounded-xl border p-1 transition duration-300 " + className}>
-
-            { marked && <div className={overlay}></div> }        
             
             <div className="flex flex-initial h-full items-center">
-                <div className="relative h-[80%] aspect-square select-none rounded-full bg-emerald-500">
-                    <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-semibold">{rollNo}</span>
+                <div className="relative h-[80%] aspect-square select-none rounded-full bg-emerald-600">
+                    <span className="absolute text-white top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-semibold">{rollNo}</span>
                 </div>                
             </div>
 

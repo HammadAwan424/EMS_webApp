@@ -6,6 +6,15 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        theme: {
+          100: '#404040',
+          300: '#363636;',
+          500: '#303030',
+          700: '#1f1e1e',
+          900: '#1f1e1e'
+        }
+      },
       keyframes: {
         mine: {
           "0%, 100%": {width: "0px", flex: "1 1 auto", position: "absolute"},

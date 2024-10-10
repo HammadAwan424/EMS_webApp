@@ -4,6 +4,7 @@ import Edit from "./Edit"
 import View from "./View"
 import Set from "./Set"
 import { getDateStr } from "src/api/Utility"
+import Apology from "../Apology/Apology"
 
 
 function Attendance() {
@@ -12,6 +13,7 @@ function Attendance() {
 
 
     const dateFromUrl = new Date(date)
+    const urlReadable = dateFromUrl.toLocaleString("en-GB", {"day": "numeric", "month": "long", "year": "numeric"})
     const dateStr = getDateStr({dateObj: dateFromUrl, hyphenated: true})
     const todayDate = new Date()
     todayDate.setUTCHours(0, 0, 0, 0)
@@ -40,18 +42,9 @@ function Attendance() {
             return <View />
         }
     } else {
-        if (todayUrl) {
-            return <Set />
-        } else {
-            return <Apology />
-        }
+        return <Set isValid={todayUrl}/>
     }
 }
 
-export function Apology() {
-    return (
-        <h1>There is no data for this class, edit it at <Link to="/">ClassEdit</Link></h1>
-    )
-}
 
 export default Attendance

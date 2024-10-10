@@ -11,7 +11,7 @@ service cloud.firestore {
       function validateFields() {
         let requestData = request.resource.data;
         // let resourceData = resource.data;
-        return requestData.keys().hasOnly(['editors', 'classes', 'classGroupName', 'cgAdmin', 'meta']) &&
+        return requestData.keys().hasOnly(['editors', 'classes', 'classGroupName', 'cgAdmin', 'meta', 'tmp']) &&
           requestData.editors is map &&
           requestData.classes is map &&
           requestData.classGroupName is string
@@ -38,7 +38,7 @@ service cloud.firestore {
             newClasses.removeAll(prevClasses).size() == 1 && (
               // getAfter(/databases/$(database)/documents/teachers/$(newClasses.removeAll(prevClasses)[0])).data.invitations.get(classId, null) == null ||
               getAfter(/databases/$(database)/documents/teachers/$(newClasses.removeAll(prevClasses)[0])).data.invitations[classId].status == true &&
-              (!resource.data.editors.keys().hasAny([classId]))
+              (!resource.data.editors.keys().hasAny([classId]) || resource.data.editors[classId].size() == 0)
             )
           )
         );
@@ -102,7 +102,7 @@ service cloud.firestore {
         allow delete: if isClassAdmin() && 
           (
             !getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data.editors.keys().hasAny([classID]) ||
-            getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data.editors[classID].size() == 0
+            getAfter(/databases/$(database)/documents/classGroups/$(classGroupID)).data.editors.get(classID, []).size() == 0
           )
 
         match /{allSubCollections=**} {
@@ -142,11 +142,12 @@ service cloud.firestore {
         let resourseInvitation = resourceData.get('invitations', {}).get(metaId, {});
 
         let doc = getAfter(/databases/$(database)/documents/classGroups/$(invitation.classGroupId)).data;
+        let docBefore = get(/databases/$(database)/documents/classGroups/$(invitation.classGroupId)).data;
 
         return (
           rootChanges.hasOnly(['invitations', 'meta']) && 
           nestedChanges.hasOnly([metaId]) &&
-          doc.classes.keys().hasAny([metaId]) &&
+          docBefore.classes.keys().hasAny([metaId]) &&
           doc.cgAdmin == request.auth.uid && (
             (
               invitation.status == true && 
@@ -160,7 +161,7 @@ service cloud.firestore {
             ) || (
               invitation.status == false && 
               invitation.diff(resourseInvitation).affectedKeys().hasOnly(["status"]) &&
-              doc.editors[metaId].hasAll([teacherID]) == false
+              doc.editors.get(metaId, []).hasAll([teacherID]) == false
             )
           )     
         )
@@ -186,28 +187,6 @@ service cloud.firestore {
       allow update, delete: if isHimself()
     }
 
-
-
-
-
-
-
-
-
-    // match /test/first {
-    //   function my() {
-    //     let j = ([0, 0, {"hello": "there is something asdf"}]).toSet();
-    //     let k = ({"a": "hello", "b": {"ini": "some", "ano": "another"}}).diff({"a": "hello", "b": {"ini": "sdfsdd"}, "c": "another"}).affectedKeys();
-    //     let another = ['a', 'b'];
-    //     return debug(debug(j) == debug([1, 2, 3].toSet()));
-    //   }
-      
-    //   allow read: if my() || true;
-    //   allow write: if true;
-    // }
-
-
-
     function TeacherOrAdmin(classGroupId, myResource) {
       let classGroup = get(/databases/$(database)/documents/classGroups/$(classGroupId)).data;
       return classGroup.editors.get(myResource.classId, []).hasAll([request.auth.uid]) ||  
@@ -215,28 +194,39 @@ service cloud.firestore {
     }
     
     match /attendance/{sheetID} {
-      // function verify() {
-      //   let classGroup = get(/databases/$(database)/documents/classGroups/$(request.resource.data.classGroupId)).data;
-      //   return classGroup.editors.get(request.auth.uid).hasAll(request.resource.data.classId) && 
-      //     classGroup.students.size() == request.resource.data.stats.size() &&
-      //     request.resource.data.createdAt == request.time.date() && 
-      //     request.resource.data.lastModified == request.time
+      // if hours == 22 for date 5 in utc, then they are 3 hours in date 6 in pak
+      // so 0 hours in date 6 in pak == 19 hours for date 5 in utc i.e., subtract 3 hours from both
+      // function utc5time(myResource) {
+      //   let hours = request.time.hours();
+      //   let diffHours = hours >= 19 ? hours-19 : 5;
+      //   let newTimestamp = timestamp.value(request.time.date().toMillis() - (diffHours * 60 * 60 * 1000));
+      //   return newTimestamp == myResource.createdAt
       // }
+
+      function utcplus5time() {
+        let milli = 5 * 60 * 60 * 1000;
+        let plusFiveTimestamp = timestamp.value(request.time.toMillis() + milli);
+        let requestedTimestamp = timestamp.date(int(sheetID[20:24]), int(sheetID[24:26]), int(sheetID[26:28]));
+        return plusFiveTimestamp.day() == requestedTimestamp.day() &&
+          plusFiveTimestamp.day() == requestedTimestamp.day() &&
+          plusFiveTimestamp.day() == requestedTimestamp.day()
+      }
 
       allow update: if TeacherOrAdmin(resource.data.classGroupId, resource.data) &&
 
-        timestamp.date(int(sheetID[20:24]), int(sheetID[24:26]), int(sheetID[26:28]), ) == request.time.date() &&
+        utcplus5time() &&
+        request.resource.data.createdAt == resource.data.createdAt &&
         request.resource.data.classId == resource.data.classId &&
         request.resource.data.classGroupId == resource.data.classGroupId &&
         request.resource.data.students.size() == resource.data.students.size() &&
-        request.resource.data.createdAt == resource.data.createdAt && 
 
         request.resource.data.lastModified == request.time 
+      
         
-      allow create: if TeacherOrAdmin(request.resource.data.classGroupId, request.resource.data) && 
+      allow create: if TeacherOrAdmin(request.resource.data.classGroupId, request.resource.data) &&
         // get(/databases/$(database)/documents/classGroups/$(request.resource.data.classGroupId)/classes/$(request.resource.data.classId)).data.students.size() == request.resource.data.students.size() &&
-        request.resource.data.createdAt == request.time.date() && 
-        
+        utcplus5time() &&
+        request.resource.data.createdAt == sheetID[20:28] &&
         request.resource.data.lastModified == request.time 
 
       allow read: if TeacherOrAdmin(resource.data.classGroupId, resource.data) || resource == null
@@ -246,15 +236,5 @@ service cloud.firestore {
       allow write: if false
       allow read: if resource == null || TeacherOrAdmin(resource.data.classGroupId, resource.data)
     }
-
-    match /some/{document} {
-      allow read, write: if true
-    }
-
-    
-
-    // match /teacher/{teacherID} {
-    //   // all class groups the teacher is admin of and class groups which he has joined
-    // }
   }
 }

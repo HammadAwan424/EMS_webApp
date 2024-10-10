@@ -18,6 +18,9 @@ import { getDateStr } from "./Utility.js";
 import { signupFirestoreInteraction } from "./signup.js";
 import { acceptInvitation, clearNotifications, getTeacherUid, inviteTeacher, rejectInvitation, removeTeacher } from "./invitation.js";
 import classGroups from "./classGroups.js";
+import { produce } from "immer";
+import { deleteClass } from "./classes.js";
+import { getAttendance, updateAttendance } from "./attendance.js";
 
 let k = 32
 
@@ -144,15 +147,11 @@ export const apiSlice = createApi({
             },
         }),
         deleteClass: builder.mutation({
-            queryFn: async (path) => {
-                const classDocPath = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
-                const batch = writeBatch(firestore);
-                const fp = new FieldPath("classes", path.classId);
-                batch.update( doc(firestore, "classGroups", path.classGroupId), fp, deleteField() );
-                batch.delete(classDocPath);
-                
-                await batch.commit();
-                return { data: "" };
+            queryFn: async (path, {getState}) => {
+                const uid = auth.currentUser.uid
+                const group = apiSlice.endpoints.getClassGroups.select(uid)(getState()).data.find(ele => ele.id == path.classGroupId)
+                const recepientId = group.editors[path.classId] && group.editors[path.classId][0]
+                return await deleteClass(firestore, path.classId, path.classGroupId, recepientId)
             },
         }),
         getClassById: builder.query({
@@ -176,65 +175,23 @@ export const apiSlice = createApi({
 
         setAttendance: builder.mutation({
             queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
-                const dateObj = new Date(dateStr);
-                const dateStrUnhyphenated = getDateStr({
-                    dateObj,
-                    hyphenated: false,
-                });
-                await setDoc(
-                    doc( firestore, "attendance", `${classId}${dateStrUnhyphenated}` ),
-                    {
-                        ...patch,
-                        classId,
-                        classGroupId,
-                        createdAt: Timestamp.fromMillis(dateObj.getTime()),
-                        lastModified: serverTimestamp(),
-                    }
-                );
-
-                return { data: "" };
+                return await getAttendance({firestore, ids, classId, classGroupId, dateStr, ...patch})
             },
         }),
 
         updateAttendance: builder.mutation({
             queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
-                const flattened = flatten(patch);
-                const dateObj = new Date(dateStr);
-                const dateStrUnhyphenated = getDateStr({
-                    dateObj,
-                    hyphenated: false,
-                });
-
-                await updateDoc(
-                    doc( firestore, "attendance", `${classId}${dateStrUnhyphenated}` ),
-                    {
-                        ...flattened,
-                        lastModified: serverTimestamp(),
-                    }
-                );
-
-                return { data: "" };
+                return await updateAttendance({firestore, ids, classId, classGroupId, dateStr, ...patch})
             },
         }),
 
         getAttendance: builder.query({
             queryFn: async ({ classId, classGroupId, dateStr }) => {
-                const dateObj = new Date(dateStr);
-                const dateStrUnhyphenated = getDateStr({
-                    dateObj,
-                    hyphenated: false,
-                });
-                const document = await getDoc(
-                    doc( firestore, "attendance", `${classId}${dateStrUnhyphenated}` )
-                );
-                // console.clear()
-                // console.log("CONVERTED IS: ", document.data())
-                return { data: attendanceConverter(document) };
+                // expects dateStr to be utc +05:00 because server maintians +05:00, will use day, month and year as is
+                return await getAttendance({firestore, classId, classGroupId, dateStr})
             },
             async onCacheEntryAdded( { classId, classGroupId, dateStr }, cacheLifecycleApi ) {
-                const dateObj = new Date(dateStr);
-                const dateStrUnhyphenated = getDateStr({ dateObj, hyphenated: false, });
-                const docRef = doc( firestore, "attendance", `${classId}${dateStrUnhyphenated}` );
+                const docRef = doc( firestore, "attendance", `${classId}${dateStr}` );
                 await cachedDocumentListener(
                     docRef,
                     cacheLifecycleApi,

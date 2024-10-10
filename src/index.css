@@ -82,8 +82,7 @@ button:focus-visible {
   --theme-secondary: #303030;
   --theme-tertiary: #404040;
   --theme-quad: #1f1e1e;
-
-  --student-width-for-desktop: 22rem;
+  --theme-fifth: #363636;
 }
 
 
@@ -112,6 +111,9 @@ button:focus-visible {
     @apply text-inherit hover:text-inherit font-normal
   }
   .title {
-    @apply font-semibold text-2xl
+    @apply font-semibold text-2xl sm:text-3xl md:text-4xl inline-block p-2
+  }
+  .studentLayout {
+    @apply grid sm:grid-cols-2 lg:grid-cols-3 gap-2
   }
 }

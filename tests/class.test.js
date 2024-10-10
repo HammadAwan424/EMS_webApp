@@ -3,8 +3,11 @@ import { signupFirestoreInteraction } from "#src/api/signup";
 import classGroups from "#src/api/classGroups";
 import { inviteTeacher, removeTeacher, getTeacherUid } from "#src/api/invitation";
 import path from "path"
-import { arrayRemove, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { arrayRemove, deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
+import { deleteClass } from "#src/api/classes";
+import { setLogLevel } from "firebase/app";
 
+setLogLevel("error")
 
 let alice; 
 let byAlice;
@@ -65,6 +68,19 @@ test(`Mock data is valid for rules, ready to proceed`, async () => {
     await expect(mockDataResult).toEqual({data: ""})
 })
 
+test("Alice can delete class", async () => {
+    expect(await deleteClass(byAlice, "aliceClassId", "aliceGroup")).toEqual({data: ""})
+    const document = await getDoc(doc(byAlice, "classGroups", "aliceGroup", "classes", "aliceClassId"))
+    expect(document.exists()).toBe(false)
+})
+
+test("Alice can delete class", async () => {
+    expect(await deleteClass(byAlice, "aliceClassId", "aliceGroup", undefined)).toEqual({data: ""})
+    const document = await getDoc(doc(byAlice, "classGroups", "aliceGroup", "classes", "aliceClassId"))
+    expect(document.exists()).toBe(false)
+})
+
+
 
 
 describe("Alice has invited jake", () => {
@@ -103,6 +119,8 @@ describe("Alice has invited jake", () => {
             'classGroupId': "aliceGroup",
             'getTeacherUid': async () => "jake"
         })).toEqual({data: ""})
+        const document = (await getDoc(doc(byAlice, 'classGroups/aliceGroup'))).data()
+        expect(document.classes.aliceClassId.assignedTeacher).toBe("")
     })
 
     test("Alice can only delete class if he uninvite jake", async () => {
@@ -114,6 +132,18 @@ describe("Alice has invited jake", () => {
         })
         return deleteDoc(doc(byAlice, "classGroups/aliceGroup/classes/aliceClassId"))
     })
+
+    test("deleteClass func deletes class and uninvite simultaneously", async () => {
+        expect(await deleteClass(byAlice, "aliceClassId", "aliceGroup", "jake")).toEqual({data: ""})
+        const groupDoc = (await getDoc(doc(byAlice, "classGroups", "aliceGroup"))).data()
+        expect(groupDoc.editors.aliceClassId).toBe(undefined)
+        expect(groupDoc.classes.aliceClassId).toBe(undefined)
+        const classDoc = await getDoc(doc(byAlice, "classGroups", "aliceGroup", "classes", "aliceClassId"))
+        expect(classDoc.exists()).toBe(false)
+    })
+
+
+
 
     test("Alice can't invite jake to class he doesn't own", () => expect(inviteTeacher({
         firestore: byAlice,

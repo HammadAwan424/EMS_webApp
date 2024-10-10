@@ -10,11 +10,11 @@ import { action as createCGAction } from "./components/Index/Create-card.jsx";
 import { auth, firestore } from "./firebase/config.js";
 import { onAuthStateChanged, connectAuthEmulator } from "firebase/auth";
 import { connectFirestoreEmulator } from "firebase/firestore"
-import { editAction, editLoader } from "./components/Edit/Edit.jsx"
-import EditErrorPage from "./components/Edit/ErrorPage.jsx";
+// import { editAction, editLoader } from "./components/Edit/Edit.jsx"
+// import EditErrorPage from "./components/Edit/ErrorPage.jsx";
 import { signOutAction } from "./api/Utility.js";
 // import { classAction, classLoader } from "./components/Index/Dashboard.jsx";
-import ClassInput, {loader as classEditLoader, action as classEditAction} from "./components/Class/ClassEdit.jsx";
+// import ClassInput, {loader as classEditLoader, action as classEditAction} from "./components/Class/ClassEdit.jsx";
 import Attendance from "./components/Attendance/Attendance.jsx";
 import ClassGroupEdit from "./components/Classgroup/Edit.jsx";
 import ClassGroupCreate from "./components/Classgroup/Create.jsx";
@@ -69,7 +69,7 @@ function CustomRouterProvider() {
 
                 <Route 
                     path="/signout"
-                    action={signOutAction}
+                    action={() => signOutAction(auth)}
                 />
     
                 <Route
@@ -82,8 +82,8 @@ function CustomRouterProvider() {
     
                     <Route path="/classgroup/:Id" 
                     element={<AuthRequired><ClassGroupEdit /></AuthRequired>} 
-                    action={editAction} loader={editLoader} 
-                    errorElement={<EditErrorPage />}
+                    // action={editAction} loader={editLoader} 
+                    // errorElement={<EditErrorPage />}
                     />
 
                     <Route
@@ -93,12 +93,12 @@ function CustomRouterProvider() {
 
       
 
-                    <Route 
+                    {/* <Route 
                     path="class/:classGroupId/:classId" 
                     // loader={classEditLoader}
                     // action={classEditAction}
                     element={<AuthRequired><ClassInput /></AuthRequired>}
-                    />
+                    /> */}
 
                     <Route 
                     path="attendance/:type/:classGroupId/:classId/:date" 

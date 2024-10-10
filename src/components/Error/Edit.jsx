@@ -17,7 +17,6 @@ import isEqual from "lodash.isequal"
 import classNames from "classnames"
 import { flatten } from "flat"
 import Button from "../CommonUI/Button"
-import ClassEdit from "./ClassEdit"
 
 
 async function editLoader({request, params}) {

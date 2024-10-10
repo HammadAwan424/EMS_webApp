@@ -6,9 +6,7 @@ const getTeacherUid = async (firestore, email) => {
         where("email", "==", email),
         limit(1)
     );
-
     const querySnapshot = await getDocs(teacherQuery);
-
     // const data = {
     //     exists: !querySnapshot.empty,
     //     ...querySnapshot.docs[0]?.data(),
@@ -54,10 +52,12 @@ const removeInvite = (batch, firestore, recepientId, classGroupId, classId) => {
     })
     batch.update(doc(firestore, "classGroups", classGroupId), {
         [`editors.${classId}`]: arrayRemove(recepientId),
+        [`classes.${classId}.assignedTeacher`]: "",
         meta: {metaId: classId}
     })
     return batch
 }
+
 
 const inviteTeacher = async ({
     firestore,
@@ -88,7 +88,7 @@ const inviteTeacher = async ({
             className
         )
     } catch (error) {
-        console.log("Error: ", error);
+        // console.log("Error: ", error);
         if (error.code == "permission-denied") {
             return {
                 error: "You don't have any permission to do this",
@@ -99,20 +99,22 @@ const inviteTeacher = async ({
     return { data: "" };
 }
 
+
 const removeTeacher  = async ({ firestore, classGroupId, classId, getTeacherUid }) => {
-    console.log("REMOVET")
+    // console.log("REMOVET")
     try {
         const recepientId = await getTeacherUid()
         const batch = writeBatch(firestore)
         const batchWithRemove = removeInvite(batch, firestore, recepientId, classGroupId, classId);
-        console.log("BEFORE AWAIT")
+        // console.log("BEFORE AWAIT")
         await batchWithRemove.commit()
-        console.log("AFTER MATC")
+        // console.log("AFTER MATC")
         return { data: "" };
     } catch (err) {
         return { error: err.message };
     }
 }
+
 
 const acceptInvitation = async ({firestore, uid, invitationId}) => {
     const batch = writeBatch(firestore)
@@ -123,6 +125,7 @@ const acceptInvitation = async ({firestore, uid, invitationId}) => {
     return {data: ""}
 }
 
+
 const rejectInvitation = async ({firestore, uid, invitationId}) => {
     const batch = writeBatch(firestore)
     batch.update(doc(firestore, "teachers", uid), {
@@ -131,6 +134,7 @@ const rejectInvitation = async ({firestore, uid, invitationId}) => {
     await batch.commit()  
     return {data: ""}
 }
+
 
 const clearNotifications = async ({firestore, uid, listOfIds}) => {
     const updates = {}
@@ -141,6 +145,7 @@ const clearNotifications = async ({firestore, uid, listOfIds}) => {
     await updateDoc(doc(firestore, "teachers", uid), updates)
     return {data: ""}
 }
+
 
 const classInvitationSelector = (User) => {
     // invitationsKeyArray.remove(classesKeyArray) gives new invitations
@@ -189,4 +194,9 @@ const classInvitationSelector = (User) => {
     return {acceptedAllowed, acceptedRevoked, rejectedRevoked, invitationsAllowed, invitationsRevoked}
 };
 
-export {inviteTeacher, removeTeacher, getTeacherUid, acceptInvitation, rejectInvitation, clearNotifications, classInvitationSelector}
+
+export {
+    inviteTeacher, removeTeacher, getTeacherUid, removeInvite,
+    acceptInvitation, rejectInvitation, clearNotifications, 
+    classInvitationSelector
+}

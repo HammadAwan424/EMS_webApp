@@ -24,6 +24,11 @@ export default [
       "no-unused-vars": "warn",
       "react/prop-types": "off"
     },
+    languageOptions: {
+      globals: {
+        production: false
+      }
+    }
   }, 
   {
     files: ["**/*.test.js"],
@@ -45,14 +50,13 @@ export default [
     },
     plugins: { import: importPlugin },
     settings: {
-      // This will do the trick
       "import/parsers": {
         espree: [".js", ".cjs", ".mjs", ".jsx"],
       },
       "import/resolver": {
-        node: {
-          paths: ["./"]
-        },
+        "jsconfig": {
+          "config": "./jsconfig.json"
+        }
       },
     },
     rules: {

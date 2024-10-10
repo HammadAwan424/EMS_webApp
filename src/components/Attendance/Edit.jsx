@@ -11,6 +11,9 @@ function Edit() {
     const { classId, classGroupId, date: dateStr } = useParams()
     const navigate = useNavigate()
 
+    const dateFromUrl = new Date(dateStr)
+    const urlReadable = dateFromUrl.toLocaleString("en-GB", {"day": "numeric", "month": "long", "year": "numeric"})
+
     const {data: todayAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr})
     const [attendanceMutation, { isLoading }] = useUpdateAttendanceMutation()
 
@@ -102,24 +105,27 @@ function Edit() {
     )
 
     return (
-        <>            
+        <>         
+            <span className="title">{"Edit Attendance"}</span> 
+            <span>For {urlReadable.slice(0,-5)}</span>  
             <Popup
                 text={popup.text} visible={popup.visible} confirmHandler={popup.handler}
                 setVisible={(boolean) => setPopup({ ...popup, visible: boolean })} isLoading={isLoading}
             />
+            <div className="flex gap-2 flex-col p-2">
+                <div className="studentLayout">
+                    {attendance.ids.map((id) =>
+                        <Student 
+                        details={{
+                            ...attendance.students[id], ...attendanceUpdates.students[id],
+                            edited: (attendanceUpdates.students[id] != undefined)
+                        }} 
+                        id={id} key={id} markStudent={markStudent} />
+                    )}
+                </div>
 
-            <h1>Edit</h1>
-            <div className="flex items-center gap-2 flex-col sm:w-[--student-width-for-desktop] p-2">
-                {attendance.ids.map((id) =>
-                    <Student 
-                    details={{
-                        ...attendance.students[id], ...attendanceUpdates.students[id],
-                        edited: (attendanceUpdates.students[id] != undefined)
-                    }} 
-                    id={id} key={id} markStudent={markStudent} />
-                )}
                 {renderWarning &&
-                    <div className="w-full bg-red-900 text-red-400 rounded-lg p-1">
+                    <div className="self-start bg-red-900 text-red-400 rounded-lg p-1">
                         <p>
                             Please do atleast one single update
                         </p>

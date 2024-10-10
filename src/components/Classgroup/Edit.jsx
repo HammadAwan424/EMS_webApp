@@ -9,7 +9,7 @@ import { useParams } from "react-router-dom"
 import { useGetAuthQuery, useGetClassGroupsQuery, useEditClassGroupMutation, useDeleteClassMutation } from "src/api/apiSlice"
 import Button from "../CommonUI/Button"
 import Popup from "../CommonUI/Popup"
-import ClassEdit from "../Edit/ClassEdit"
+import ClassEdit from "../Class/ClassEdit"
 import { initialUiState, inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./Common"
 import { useImmer, useImmerReducer } from "use-immer"
 
