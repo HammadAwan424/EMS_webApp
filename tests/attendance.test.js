@@ -7,7 +7,7 @@ import { arrayRemove, deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from 
 import { deleteClass } from "#src/api/classes";
 import { setLogLevel } from "firebase/app";
 import { getAttendance, setAttendance, updateAttendance } from "#src/api/attendance";
-import { getDateStr, getUTCPlusFive } from "#src/api/Utility";
+import { getDateStr, getDateStr } from "#src/api/Utility";
 
 setLogLevel("error")
 
@@ -107,16 +107,16 @@ describe("Alice had set attendance for today", () => {
         const result = await getAttendance({
             firestore: byAlice, classId,
             classGroupId: "aliceGroup", 
-            dateStr: getUTCPlusFive() // getting for today in utc plus 5 offset
+            dateStr: getDateStr() // getting for today in utc plus 5 offset
         })
         expect(result.data.students).toEqual(mockAttendance.students)
         // createdAt is equal to whatever date is in utc +05:00
-        expect(result.data.createdAt).toBe(getUTCPlusFive())
+        expect(result.data.createdAt).toBe(getDateStr())
     })
 
     test("Alice can update today Attendance", async () => {
-        expect(await updateDoc(doc(byAlice, "attendance", `${classId}${getUTCPlusFive()}`), {
-            "students.1.status": 1, lastModified: serverTimestamp(), createdAt: getUTCPlusFive()
+        expect(await updateDoc(doc(byAlice, "attendance", `${classId}${getDateStr()}`), {
+            "students.1.status": 1, lastModified: serverTimestamp(), createdAt: getDateStr()
         })).toBeUndefined()
     })
 
@@ -130,7 +130,7 @@ describe("Alice had set attendance for today", () => {
         const result = await getAttendance({
             firestore: byAlice, classId,
             classGroupId: "aliceGroup", 
-            dateStr: getUTCPlusFive()
+            dateStr: getDateStr()
         })
         expect(result.data.students[1]).toEqual(mockUpdates.students[1]) //updated
     })

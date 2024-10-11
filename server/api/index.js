@@ -3,7 +3,7 @@ import { initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth"
 import { BulkWriter, getFirestore, FieldValue, FieldPath, Timestamp } from "firebase-admin/firestore"
 import { docFromApiRes, fireStoreParser } from "./helper.js";
-import { getDateStr, getUTCPlusFive } from "#src/api/Utility.js";
+import { getDateStr, getDateStr } from "#src/api/Utility.js";
 
 // ($env:production="true"; vercel dev) for production // ps
 // ($env:debug="true"; vercel dev) for debug // ps
@@ -96,11 +96,11 @@ const dailyMock = {
     classId: "aliceClassId12121212",
     classGroupId: "classGroupId",
     lastModified: Timestamp.fromDate(new Date()),
-    createdAt: getUTCPlusFive(-1) // "20240523" aka Yesterday
+    createdAt: getDateStr(-1) // "20240523" aka Yesterday
 }
 app.get("/cronjob/daily", async (req, res) => {
     const bulkWriter = firestore.bulkWriter()
-    const utcPlusFive = getUTCPlusFive(-1)
+    const utcPlusFive = getDateStr(-1)
     const day = utcPlusFive.slice(-2,)
     
     const querySnapshot = await firestore.collection("attendance").where("dateStr", "==", utcPlusFive).get()

@@ -6,13 +6,17 @@ import { useImmer } from "use-immer"
 import Popup from "../CommonUI/Popup"
 import Student from "./Student"
 import dot from "dot-object"
+import { parseDateStr } from "src/api/Utility"
 
 function Edit() {
     const { classId, classGroupId, date: dateStr } = useParams()
     const navigate = useNavigate()
-
-    const dateFromUrl = new Date(dateStr)
-    const urlReadable = dateFromUrl.toLocaleString("en-GB", {"day": "numeric", "month": "long", "year": "numeric"})
+    
+    const dateObj = parseDateStr(dateStr)
+    const urlReadable = dateObj.toLocaleString("en-GB", {
+        "day": "numeric", "month": 
+        "long", "year": "numeric", "timeZone": "UTC"
+    })
 
     const {data: todayAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr})
     const [attendanceMutation, { isLoading }] = useUpdateAttendanceMutation()

@@ -6,11 +6,17 @@ import { useImmer } from "use-immer"
 import Popup from "../CommonUI/Popup"
 import Student from "./Student"
 import Apology from "../Apology/Apology"
+import { parseDateStr } from "src/api/Utility"
+
 
 function Set({isValid}) {
-    const {date} = useParams()
-    const dateFromUrl = new Date(date)
-    const urlReadable = dateFromUrl.toLocaleString("en-GB", {"day": "numeric", "month": "long", "year": "numeric"})
+    // date represents utc +5:00 date
+    const {date: dateStr} = useParams()
+    const dateObj = parseDateStr(dateStr)
+    const urlReadable = dateObj.toLocaleString("en-GB", {
+        "day": "numeric", "month": 
+        "long", "year": "numeric", "timeZone": "UTC"
+    })
 
     return (
         <>
@@ -86,7 +92,6 @@ function Main() {
         console.log(attendance);
         try {
             const cmb = { classId, classGroupId, dateStr, ...attendance }
-            console.log("combined object: ", cmb)
             await attendanceMutation(cmb).unwrap()
             return navigate("/", {replace: true})
         } catch (e) {

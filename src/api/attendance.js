@@ -1,4 +1,4 @@
-import { getDateStr, getUTCPlusFive } from "./Utility";
+import { getDateStr } from "./Utility";
 import { setDoc, updateDoc, getDoc, doc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { flatten } from "flat";
 
@@ -8,34 +8,49 @@ const setAttendance = async ({firestore, ids, classId, classGroupId, dateStr, ..
     //     dateObj,
     //     hyphenated: false,
     // });
-    const utcPlusFive = getUTCPlusFive()
-    await setDoc(
-        doc( firestore, "attendance", `${classId}${utcPlusFive}` ),
-        {
-            ...patch,
-            classId,
-            createdAt: utcPlusFive,
-            classGroupId,
-            lastModified: serverTimestamp(),
-        }
-    );
+    const utcPlusFive = getDateStr()
 
-    return { data: "" };
+    console.log("INSIDE SET attendance with args: ", classId, utcPlusFive)
+
+    try {
+        await setDoc(
+            doc( firestore, "attendance", `${classId}${utcPlusFive}` ),
+            {
+                ...patch,
+                classId,
+                createdAt: utcPlusFive,
+                classGroupId,
+                lastModified: serverTimestamp(),
+            }
+        );
+        return { data: "" };
+    } catch (err) {
+        console.error("Error inside updateAttendance: ", err)
+        return { error: "" }
+    }
+     
 }
 
 const updateAttendance = async ({ firestore, ids, classId, classGroupId, dateStr, ...patch }) => {
-    const utcPlusFive = getUTCPlusFive()
+    const utcPlusFive = getDateStr()
     const flattened = flatten(patch);
     
-    await updateDoc(
-        doc( firestore, "attendance", `${classId}${utcPlusFive}` ),
-        {
-            ...flattened,
-            lastModified: serverTimestamp(),
-        }
-    );
+    try {
+        await updateDoc(
+            doc( firestore, "attendance", `${classId}${utcPlusFive}`),
+            {
+                ...flattened,
+                lastModified: serverTimestamp(),
+            }
+        );
+        return { data: "" };
+    } catch (err) {
+        console.error("Error inside updateAttendance: ", err)
+        return { error: "" }
+    }
+     
 
-    return { data: "" };
+
 }
 
 const getAttendance = async ({ firestore, classId, classGroupId, dateStr }) => {
@@ -64,4 +79,4 @@ function attendanceConverter(snapshot) {
     }
 }
 
-export {setAttendance, getAttendance, updateAttendance}
+export {setAttendance, getAttendance, updateAttendance, attendanceConverter}

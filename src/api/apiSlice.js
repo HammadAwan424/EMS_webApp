@@ -16,11 +16,18 @@ import {
 import { flatten } from "flat";
 import { getDateStr } from "./Utility.js";
 import { signupFirestoreInteraction } from "./signup.js";
-import { acceptInvitation, clearNotifications, getTeacherUid, inviteTeacher, rejectInvitation, removeTeacher } from "./invitation.js";
+import {
+    acceptInvitation,
+    clearNotifications,
+    getTeacherUid,
+    inviteTeacher,
+    rejectInvitation,
+    removeTeacher,
+} from "./invitation.js";
 import classGroups from "./classGroups.js";
 import { produce } from "immer";
 import { deleteClass } from "./classes.js";
-import { getAttendance, updateAttendance } from "./attendance.js";
+import { attendanceConverter, getAttendance, setAttendance, updateAttendance } from "./attendance.js";
 
 let k = 32
 
@@ -149,7 +156,9 @@ export const apiSlice = createApi({
         deleteClass: builder.mutation({
             queryFn: async (path, {getState}) => {
                 const uid = auth.currentUser.uid
-                const group = apiSlice.endpoints.getClassGroups.select(uid)(getState()).data.find(ele => ele.id == path.classGroupId)
+                const group = apiSlice.endpoints.getClassGroups.select(uid)(
+                    getState()).data.find(ele => ele.id == path.classGroupId
+                )
                 const recepientId = group.editors[path.classId] && group.editors[path.classId][0]
                 return await deleteClass(firestore, path.classId, path.classGroupId, recepientId)
             },
@@ -175,7 +184,8 @@ export const apiSlice = createApi({
 
         setAttendance: builder.mutation({
             queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
-                return await getAttendance({firestore, ids, classId, classGroupId, dateStr, ...patch})
+                console.log("SET attendance mutation is here")
+                return await setAttendance({firestore, ids, classId, classGroupId, dateStr, ...patch})
             },
         }),
 
@@ -187,7 +197,8 @@ export const apiSlice = createApi({
 
         getAttendance: builder.query({
             queryFn: async ({ classId, classGroupId, dateStr }) => {
-                // expects dateStr to be utc +05:00 because server maintians +05:00, will use day, month and year as is
+                // expects dateStr to be utc +05:00 (without hyphen) because 
+                // server maintians +05:00, will use day, month and year as is
                 return await getAttendance({firestore, classId, classGroupId, dateStr})
             },
             async onCacheEntryAdded( { classId, classGroupId, dateStr }, cacheLifecycleApi ) {
@@ -401,7 +412,8 @@ async function cachedQueryListener(
     let unsubscribe = null;
     try {
         unsubscribe = onSnapshot(query, { source: "cache" }, (snapshot) => {
-            // console.log("Initial: ", snapshot.docs[0].data(), snapshot.metadata.fromCache, snapshot.metadata.hasPendingWrites)
+            // console.log("Initial: ", snapshot.docs[0].data(),
+            //  snapshot.metadata.fromCache, snapshot.metadata.hasPendingWrites)
             // console.log("Changed: ", snapshot.docChanges().length, snapshot.docChanges())
             // console.log("ONSNAPSHOT RAN: ", snapshot.docChanges().length)
             updateCachedData((draft) => {
@@ -433,21 +445,4 @@ async function cachedQueryListener(
     }
     await cacheEntryRemoved;
     unsubscribe ?? unsubscribe();
-}
-
-function attendanceConverter(snapshot) {
-    // console.log("CONVERTER OF ENTRYADDED");
-    // console.log("Data is: ", snapshot.data());
-    const data = snapshot.data({ serverTimestamps: "estimate" });
-    if (snapshot.exists()) {
-        return {
-            ...data,
-            id: snapshot.id,
-            exists: snapshot.exists(),
-            createdAt: data.createdAt.toJSON(),
-            lastModified: data.lastModified.toJSON(),
-        };
-    } else {
-        return { exists: false };
-    }
 }

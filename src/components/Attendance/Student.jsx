@@ -36,11 +36,14 @@ function Student({details, id, markStudent}) {
         onClick: handleCrossClick
     }
 
+    console.log(marked)
+
     const className = classNames(
-        {"hover:border-[--border-hover-col] bg-theme-300 hover:bg-theme-100 border-transparent": !marked && !details.edited},
-        {"border-yellow-500 bg-theme-500": details.edited && !marked},
-        {"border-green-500 bg-theme-500": marked && !details.edited && details.status == states.present},
-        {"border-red-500 bg-theme-500": marked && !details.edited && details.status != states.present}
+        {"hover:border-[--border-hover-col] bg-theme-300 hover:bg-theme-100 border-transparent": !marked},
+        {"bg-theme-300": marked && !details.edited},
+        {"border-yellow-500 bg-theme-500": details.edited},
+        {"border-green-500": !details.edited && details.status == states.present},
+        {"border-red-500": !details.edited && details.status != states.present}
     )
 
     

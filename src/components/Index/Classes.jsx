@@ -4,7 +4,7 @@ import { useLayoutEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery } from "src/api/apiSlice"
 import { Teacher } from "src/api/Teacher"
-import { getDateStr } from "src/api/Utility"
+import { dateUTCPlusFive, getDateStr } from "src/api/Utility"
 import Pie from "../CommonUI/Pie"
 import Track from "./Track"
 import MediaQuery from "react-responsive"
@@ -37,21 +37,22 @@ function Classes() {
 function Class({classId, classGroupId, cssClasses=""}) {
 
     const [date, setDate] = useState(() => {
-        const date = new Date()
-        date.setUTCMonth(date.getUTCMonth() + 1) // to query for previous months, shift date to one month later
-        const month = String(date.getUTCMonth() + 1).padStart(2, "0") // to change 0-11 months to 1-12 for database 
-        const year = String(date.getUTCFullYear())
-        return {ISOString: date.toISOString(), month, year}
+        const dateWithOffset = dateUTCPlusFive()
+        dateWithOffset.setUTCMonth(dateWithOffset.getUTCMonth() + 1) // to query for previous months, shift date to one month later
+        const month = String(dateWithOffset.getUTCMonth() + 1).padStart(2, "0") // to change 0-11 months to 1-12 for database 
+        const year = String(dateWithOffset.getUTCFullYear())
+        return {ISOString: dateWithOffset.toISOString(), month, year}
     })
+    
     const [swipeBack, setSwipeBack] = useState(0)
     const [state, setState] = useState([])
-    const [meta, setMeta] = useState({loadingMonthly: true, today: new Date().toISOString()})
+    const [meta, setMeta] = useState({loadingMonthly: true, today: dateUTCPlusFive().toISOString()})
     const [noMoreData, setNoMoreData] = useState(false)
 
     const [dropdown, setDropdown] = useState(false)
     const {data: classData, isLoading: loadingDetails} = useGetClassByIdQuery({classId, classGroupId})
-    const dateStr = getDateStr({dateObj: new Date(date.ISOString), hyphenated: true})
-    const todayDateStr = getDateStr({dateObj: new Date(meta.today), hyphenated: true})
+    const dateStr = getDateStr(undefined, new Date(date.ISOString), true)
+    const todayDateStr = getDateStr() // today because no dateUTCPlusFive is provided
 
     // console.log("CLASS DATA: ", classData)
   
@@ -96,12 +97,6 @@ function Class({classId, classGroupId, cssClasses=""}) {
     const arrAsc = Object.keys(state).sort((a, b) => a.localeCompare(b))
     totalItems = fetchingMonthly || noMoreData ? totalItems+1 : totalItems 
  
-    
-    
-    
-
-    
-
 
     function setter() {
         
@@ -124,7 +119,6 @@ function Class({classId, classGroupId, cssClasses=""}) {
                 newDate.setUTCMonth(parseInt(newMonth)-1) // to change 1-12 from database to 0-11 months
                 newDate.setUTCFullYear(parseInt(newYear))
                 setDate({ISOString: newDate.toISOString(), month: newMonth, year: newYear})
-
             } else {
                 // console.log("setting second one")
                 setNoMoreData(true)
@@ -140,7 +134,10 @@ function Class({classId, classGroupId, cssClasses=""}) {
     // console.log("NOR MORE DATA: ", noMoreData)
 
 
-    // console.log("total is: ", totalItems, " swipe back is: ", swipeBack, "COndition is: ", fetchingMonthly || noMoreData, monthly, state)
+    // console.log("total is: ", totalItems, 
+    //     " swipe back is: ", swipeBack, "COndition is: ", 
+    //     fetchingMonthly || noMoreData, monthly, state
+    // )
 
     let readAble;
     
@@ -148,7 +145,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
     const atStart = swipeBack == 0
     if (atStart) {
         const copy = new Date(meta.today)
-        readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long"})
+        readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long", "timeZone": "UTC"})
     } else if (atEnd) {
         readAble = "Older"
     } else if (!atEnd) {
@@ -158,7 +155,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
             copy.setUTCMonth(parseInt(arrAsc.at(swipeBack).slice(-4,-2))-1)
             copy.setUTCFullYear(parseInt(arrAsc.at(swipeBack).slice(-8, -4)))
             copy.setUTCDate(parseInt(arrAsc.at(swipeBack).slice(-2,)))
-            readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long"})
+            readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long", "timeZone": "UTC"})
         } else {
             // console.log("There is some unexpected goto, swipeBack: ", swipeBack, 'total items: ', totalItems)
         }
@@ -181,7 +178,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
                     <div id="Dropdown" className="absolute bg-slate-600 cursor-pointer z-20 min-w-20 rounded-md select-none top-6 right-6" onClick={() => setDropdown(false)}>
                         <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" to={`class/${classGroupId}/${classId}`}>Edit</Link></div>
                         <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" 
-                            to={`/attendance/set/${classGroupId}/${classId}/${getDateStr({dateObj: new Date(), hyphenated: true})}`}
+                            to={`/attendance/set/${classGroupId}/${classId}/${getDateStr({dateUTCPlusFive: new Date(), hyphenated: true})}`}
                         >Attendance</Link></div>
                         <div className="p-2">Close</div>
                     </div>
@@ -215,6 +212,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
                         )}
 
                         
+                        {/* List from monthly attendance */}
                         {arrAsc.map(key => 
                             <div key={state[key].id} className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
                                 <Pie percentage={state[key].count / state[key].total * 100}>
@@ -226,10 +224,11 @@ function Class({classId, classGroupId, cssClasses=""}) {
                         )}
 
 
+                        {/* Today attendance from getAttendance */}
                         {attendance.exists ? (
                             <Link className="text-inherit hover:text-inherit font-normal" draggable={false}
-                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr({ dateObj: new Date(), hyphenated: true })}`}
-                            >
+                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr()}`}
+                            >   
                                 <div className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
                                     <Pie percentage={presentCount / totalStuCount * 100}>
                                         <div className="w-full h-full flex items-center justify-center">
@@ -240,7 +239,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
                             </Link>
                         ) : (
                             <Link className="text-inherit hover:text-inherit font-normal" draggable={false} 
-                                to={`/attendance/set/${classGroupId}/${classId}/${getDateStr({dateObj: new Date(), hyphenated: true})}`}
+                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr()}`}
                             >
                                 <div 
                                     className="bg-[--theme-tertiary] rounded-full overflow-hidden w-full h-full inline-block relative select-none"
