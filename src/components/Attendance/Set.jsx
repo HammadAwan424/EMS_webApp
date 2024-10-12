@@ -1,7 +1,7 @@
 import classNames from "classnames"
 import { useState, useRef } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
-import { useGetAttendanceQuery, useGetClassByIdQuery, useSetAttendanceMutation } from "src/api/apiSlice"
+import { useGetClassByIdQuery, useSetAttendanceMutation } from "src/api/apiSlice"
 import { useImmer } from "use-immer"
 import Popup from "../CommonUI/Popup"
 import Student from "./Student"

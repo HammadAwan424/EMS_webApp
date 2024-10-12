@@ -1,9 +1,6 @@
-import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { useEffect, useRef, useState } from 'react'
-import { auth, firestore } from "../../firebase/config.js"
 import Alert from "../CommonUI/Alert.jsx"
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { writeBatch, doc } from 'firebase/firestore'
 import { useGetAuthQuery, useRegisterMutation } from 'src/api/apiSlice.js'
 
 

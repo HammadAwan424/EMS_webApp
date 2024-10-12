@@ -1,5 +1,5 @@
 import { skipToken } from "@reduxjs/toolkit/query"
-import { IconEdit, IconCircleArrowDownFilled, IconCircleArrowUpFilled, IconAlertCircle, IconCircleMinus, IconCirclePlus, IconMenu2, IconTrashOff, IconTrash, IconCheck, IconCheckbox } from "@tabler/icons-react"
+import { IconEdit, IconCircleArrowDownFilled, IconCircleArrowUpFilled, IconAlertCircle, IconCirclePlus, IconMenu2, IconTrashOff, IconTrash, IconCheckbox } from "@tabler/icons-react"
 import classNames from "classnames"
 import dot from "dot-object"
 import isEqual from "lodash.isequal"

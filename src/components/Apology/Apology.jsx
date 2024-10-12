@@ -1,5 +1,4 @@
-import { IconAlertCircle, IconAlertCircleOff } from "@tabler/icons-react"
-
+import { IconAlertCircle } from "@tabler/icons-react"
 function Apology({text="", children}) {
     return (
         <div className="flex flex-col items-center justify-center p-2">

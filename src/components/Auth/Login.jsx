@@ -1,8 +1,6 @@
-import { signInWithEmailAndPassword, AuthErrorCodes as code, connectAuthEmulator, onAuthStateChanged, createUserWithEmailAndPassword } from 'firebase/auth'
 import { useRef, useState, useEffect } from 'react'
-import { auth } from "../../firebase/config.js"
 import Alert from "../CommonUI/Alert.jsx"
-import { Link, useLocation, useNavigate, useNavigation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useGetAuthQuery, useSignInMutation } from 'src/api/apiSlice.js'
 
 function Login() {

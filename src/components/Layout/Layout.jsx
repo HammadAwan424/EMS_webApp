@@ -1,17 +1,13 @@
-import { useState, useRef, useEffect } from "react";
-import { Outlet, useFetcher, useOutletContext } from "react-router-dom";
-import { Link, useLoaderData, Form, NavLink, useNavigation, useSubmit } from "react-router-dom";
-import { IconArrowDownCircle, IconCircleArrowDown, IconArrowBadgeRight, IconArrowUp, IconCircleArrowUpFilled, IconArrowDown, IconMenu2, IconArrowBadgeRightFilled, IconArrowBadgeLeftFilled, IconArrowBadgeDownFilled } from '@tabler/icons-react';
-import { useNavigate } from "react-router-dom";
-import { auth, firestore } from "src/firebase/config.js";
-import CreatePrompt from "../CommonUI/CreatePopup.jsx";
-import { createClassGroupLink } from "src/api/Utility.js";
+import { useState, useRef } from "react";
+import { Outlet, useNavigation } from "react-router-dom";
+
+import { IconMenu2 } from '@tabler/icons-react';
+
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice.js";
-import { Teacher } from "src/api/Teacher.js";
 import { skipToken } from "@reduxjs/toolkit/query";
 import Sidebar from "./Sidebar.jsx";
 import { useDispatch, useSelector } from "react-redux";
-import { setActiveClasses, setInactiveClasses, setClassesMarked, setNewClasses, getAllClassIds } from "src/api/userSlice.js";
+import { getAllClassIds } from "src/api/userSlice.js";
 
 export default function RootLayout() {
 

@@ -1,15 +1,12 @@
-import { createBrowserRouter, createRoutesFromElements, Route, Link, redirect, useNavigate, renderMatches, redirectDocument, Router, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
 import RootLayout from "./components/Layout/Layout.jsx"
 import Root, {RootLoader, AuthRequired} from "./components/Root.jsx";
 import Index from "./components/Index/Index.jsx"
 import RootErrorPage from "./components/Layout/Error-page.jsx"
 import Login from "./components/Auth/Login.jsx";
 import Register from "./components/Auth/Register.jsx";
-import React from "react";
 import { action as createCGAction } from "./components/Index/Create-card.jsx";
-import { auth, firestore } from "./firebase/config.js";
-import { onAuthStateChanged, connectAuthEmulator } from "firebase/auth";
-import { connectFirestoreEmulator } from "firebase/firestore"
+import { auth } from "./firebase/config.js";
 // import { editAction, editLoader } from "./components/Edit/Edit.jsx"
 // import EditErrorPage from "./components/Edit/ErrorPage.jsx";
 import { signOutAction } from "./api/Utility.js";

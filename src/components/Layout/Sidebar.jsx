@@ -1,23 +1,27 @@
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice"
 import { skipToken } from "@reduxjs/toolkit/query"
-import { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconHome2, IconNotification } from "@tabler/icons-react"
+import { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconNotification } from "@tabler/icons-react"
 import { useState } from "react"
-import { Link, Form, useFetcher, useNavigate } from "react-router-dom"
-import { createClassGroupLink } from "src/api/Utility"
+import { Link, Form, useNavigate, NavLink, useLocation } from "react-router-dom"
 import { Teacher } from "src/api/Teacher"
-import { useSelector } from "react-redux"
-import { getAllClassIds } from "src/api/userSlice"
-import { Notification } from "../CommonUI/Icons"
+import { Expand } from "../CommonUI/Icons"
 import { classInvitationSelector } from "src/api/invitation"
+import classNames from "classnames"
+
+const paths = {
+    '/classgroup/create': "actions"
+}
 
 export default function Sidebar({myRef}) {
-
     const [classExpanded, setClassExpanded] = useState(false)
     const [groupExpanded, setGroupExpanded] = useState(false)
     const { data: Auth } = useGetAuthQuery()
     const { data: User } = useGetUserQuery(Auth ? Auth.uid : skipToken)
     const { data: classGroups } = useGetClassGroupsQuery(Auth ? Auth.uid : skipToken)
     const navigate = useNavigate()
+    const {pathname} = useLocation()
+    const [expanded, setExpanded] = useState({actions: paths[pathname] == "actions"})
+
 
     // Either some invitations was sent (maybe removed now) or access from some class is revoked
     const {
@@ -25,6 +29,12 @@ export default function Sidebar({myRef}) {
     } = classInvitationSelector(User)
     const hasNotifications = acceptedRevoked.length > 0 || invitationsRevoked.length > 0 || invitationsAllowed.length > 0
 
+    function activeLink({isActive=false}={}) {
+        return classNames(
+            'flex items-center py-1 font-medium transition text-white/75 px-2 gap-2 rounded-md noLink',
+            {'bg-theme-100 text-white/100': isActive}
+        )
+    }
 
     return (
         <div ref={myRef} id="sidebar" className="fixed overflow-auto top-0 transition z-50 bg-[--theme-primary] sm:bg-[--theme-secondary]
@@ -86,15 +96,14 @@ export default function Sidebar({myRef}) {
                 <hr />
                 </>
             )}
-            
-            {/* {Auth && <Invitations User={User} />} */}
 
-            <div className="flex items-center" onClick={() => navigate("/")}>
+
+            <NavLink className={activeLink} to={"/"}>
                 <IconHome/>    
                 <span>Home</span>
-            </div>
+            </NavLink>
 
-            <div className="flex items-center" onClick={() => navigate("/notifications")}>
+            <NavLink className={activeLink} to={"/notifications"}>
                 <IconNotification/>    
                 <span>Notifications</span>
                 {hasNotifications && (
@@ -104,7 +113,27 @@ export default function Sidebar({myRef}) {
                     </div>
                 )}
        
+            </NavLink>
+
+            <div>
+                <div className={[
+                        activeLink(),
+                        paths[pathname] == "actions" && "text-white/100"
+                    ].join(" ")}
+                    onClick={() => setExpanded({...expanded, actions: !expanded.actions})}>
+                    <Expand expanded={expanded.actions} />   
+                    <span>Actions</span>
+                </div>
+                {expanded.actions && (
+                    <div className="text-sm pl-6 flex-col gap-2 flex">
+                        <NavLink to={"/classgroup/create"} className={activeLink}>
+                            <span></span>
+                            <span>Create Group</span>
+                        </NavLink>
+                    </div>
+                )}
             </div>
+
         </div>
     )
 }

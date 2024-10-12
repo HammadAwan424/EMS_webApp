@@ -1,5 +1,4 @@
-import { RouterProvider } from "react-router-dom"
-import "/src/index.css"
+import "src/index.css"
 import CustomRouterProvider from "./routes"
 
 function App() {

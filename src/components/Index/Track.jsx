@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useLayoutEffect } from "react"
+import { useRef, useState, useCallback, useLayoutEffect } from "react"
 
 function Track({swipeBack, totalItems, navigation, children}) {
 

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Alert from './Alert';
-import { Form, useNavigate, useNavigation } from 'react-router-dom';
+import { Form, useNavigation } from 'react-router-dom';
 import { IconArrowLeft } from '@tabler/icons-react';
 
 const CreatePrompt = ({popupVisible, setPopupVisible, rerender}) => {

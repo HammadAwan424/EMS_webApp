@@ -1,7 +1,4 @@
 import { useGetAuthQuery, useGetUserQuery } from "src/api/apiSlice"
-import Classes, { Class } from "./Classes"
-import { IconUserFilled } from "@tabler/icons-react"
-import { useLayoutEffect } from "react"
 import { ClassGroup } from "./ClassGroups"
 import Apology from "../Apology/Apology"
 import { Link } from "react-router-dom"

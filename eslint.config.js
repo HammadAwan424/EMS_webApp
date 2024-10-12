@@ -5,6 +5,7 @@ import pluginReact from "eslint-plugin-react";
 import pluginReactHooks from "eslint-plugin-react-hooks"
 import reactRefresh from "eslint-plugin-react-refresh";
 import importPlugin from 'eslint-plugin-import';
+import unusedImports from "eslint-plugin-unused-imports"
 
 
 
@@ -14,6 +15,7 @@ export default [
   pluginJs.configs.recommended,
   pluginReact.configs.flat.recommended,
   pluginReact.configs.flat['jsx-runtime'],
+  
   {
     plugins: {
       'react-hooks': fixupPluginRules(pluginReactHooks),
@@ -73,4 +75,22 @@ export default [
      // ... globals etc
     },
   },
+  {
+    plugins: {
+        "unused-imports": unusedImports,
+    },
+    rules: {
+        "no-unused-vars": "off", // or "@typescript-eslint/no-unused-vars": "off",
+        "unused-imports/no-unused-imports": "error",
+        "unused-imports/no-unused-vars": [
+            "warn",
+            {
+                "vars": "all",
+                "varsIgnorePattern": "^_",
+                "args": "after-used",
+                "argsIgnorePattern": "^_",
+            },
+        ]
+    }
+  }
 ];

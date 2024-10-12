@@ -1,17 +1,13 @@
-import { IconAlertCircle, IconCircleArrowUpFilled, IconCircleMinus, IconCirclePlus, IconEdit } from "@tabler/icons-react"
+import { IconAlertCircle, IconCirclePlus, IconEdit } from "@tabler/icons-react"
 import dot from "dot-object"
-import { firestore } from "src/firebase/config"
-import { doc, collection } from "firebase/firestore"
-import { produce } from "immer"
 import isEqual from "lodash.isequal"
-import { useState, useReducer, useRef } from "react"
 import { useParams } from "react-router-dom"
-import { useGetAuthQuery, useGetClassGroupsQuery, useEditClassGroupMutation, useDeleteClassMutation } from "src/api/apiSlice"
+import { useGetAuthQuery, useGetClassGroupsQuery, useEditClassGroupMutation } from "src/api/apiSlice"
 import Button from "../CommonUI/Button"
 import Popup from "../CommonUI/Popup"
 import ClassEdit from "../Class/ClassEdit"
 import { initialUiState, inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./Common"
-import { useImmer, useImmerReducer } from "use-immer"
+import { useImmerReducer } from "use-immer"
 
 function createInitialState(sampleClasses) {
     const initialState = {classes: {}, meta: {classIds: []}}

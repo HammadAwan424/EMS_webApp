@@ -23,6 +23,20 @@ function Spinner({svgClassNames="", width=25, height=25, strokeWidth=25}) {
     )
 }
 
+function Expand({className="", size=24, expanded=false}) {
+    const classes = classNames(
+        className,
+        'fill-transparent transition',
+        'stroke-white',
+        {'rotate-90': expanded}
+    )   
+    return (
+        <svg width={size} height={size} viewBox="0 0 100 100" className={classes}>
+            <path d="M40 35 L60 50 L40 65" strokeWidth={6} strokeLinecap="round" />
+        </svg>
+    )
+}
+
 // Below ones are taken from Tabler Icons
 function Notification({active, ...props}) {
     const className = classNames(
@@ -40,4 +54,4 @@ function Notification({active, ...props}) {
     )
 }
 
-export { Spinner, Cross, Notification }
+export { Spinner, Cross, Notification, Expand }

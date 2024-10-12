@@ -1,10 +1,9 @@
-import { Link, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { useGetAttendanceQuery, useGetClassByIdQuery } from "src/api/apiSlice"
 import Edit from "./Edit"
 import View from "./View"
 import Set from "./Set"
-import { getDateStr, parseDateStr } from "src/api/Utility"
-import Apology from "../Apology/Apology"
+import { getDateStr } from "src/api/Utility"
 
 
 function Attendance() {

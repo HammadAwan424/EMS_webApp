@@ -2,7 +2,6 @@ import { useSelector } from "react-redux"
 import { useAcceptInvitationMutation, useClearNotificationsMutation, useGetAuthQuery, useGetUserQuery, useRejectInvitationMutation } from "src/api/apiSlice.js"
 import { getAllClassIds } from "src/api/userSlice"
 import Button from "../CommonUI/Button.jsx"
-import { useNavigate } from "react-router-dom"
 import { classInvitationSelector } from "src/api/invitation.js"
 
 // Deals with inactive classes, newInvitations (both with status == true || false)

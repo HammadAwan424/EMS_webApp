@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { doc, getDoc } from "firebase/firestore";
-import { firestore, auth } from "#config";
+import { firestore, auth } from "#src/firebase/config.js";
 
 export const userSlice = createSlice({
     name: "user",

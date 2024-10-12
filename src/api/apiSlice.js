@@ -1,17 +1,14 @@
-import { buildCreateApi, createApi, fetchBaseQuery, retry } from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import {
     createUserWithEmailAndPassword,
-    EmailAuthProvider,
     onAuthStateChanged,
-    sendPasswordResetEmail,
     signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth, firestore } from "#src/firebase/config.js";
 import {
-    getDoc, doc, collection, getDocs, limit, query, where, 
-    onSnapshot, updateDoc, writeBatch, deleteField, DocumentSnapshot, setDoc, 
-    addDoc, Timestamp, serverTimestamp, documentId, orderBy, endAt, startAfter, 
-    limitToLast, endBefore, arrayUnion, deleteDoc, FieldPath,
+    getDoc, doc, collection, getDocs, query, where, 
+    onSnapshot, writeBatch, deleteField, documentId, orderBy, startAfter, 
+    limitToLast,
 } from "firebase/firestore";
 import { flatten } from "flat";
 import { getDateStr } from "./Utility.js";
@@ -25,10 +22,8 @@ import {
     removeTeacher,
 } from "./invitation.js";
 import classGroups from "./classGroups.js";
-import { produce } from "immer";
 import { deleteClass } from "./classes.js";
 import { attendanceConverter, getAttendance, setAttendance, updateAttendance } from "./attendance.js";
-
 let k = 32
 
 
