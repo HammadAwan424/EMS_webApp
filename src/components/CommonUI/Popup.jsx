@@ -1,4 +1,4 @@
-import { IconX } from "@tabler/icons-react"
+import {  IconX  } from "src/IconsReexported.jsx"
 import Button from "./Button"
 
 function Popup({

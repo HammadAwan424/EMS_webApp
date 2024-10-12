@@ -1,5 +1,5 @@
 import { skipToken } from "@reduxjs/toolkit/query"
-import { IconCalendarOff, IconMenu2 } from "@tabler/icons-react"
+import {  IconCalendarOff, IconMenu2  } from "src/IconsReexported.jsx"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import { useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery } from "src/api/apiSlice"

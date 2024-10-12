@@ -1,4 +1,4 @@
-import { IconAlertCircle, IconCirclePlus, IconEdit } from "@tabler/icons-react"
+import {  IconAlertCircle, IconCirclePlus, IconEdit  } from "src/IconsReexported.jsx"
 import dot from "dot-object"
 import isEqual from "lodash.isequal"
 import { useParams } from "react-router-dom"

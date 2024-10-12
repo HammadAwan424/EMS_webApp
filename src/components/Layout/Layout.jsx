@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Outlet, useNavigation } from "react-router-dom";
 
-import { IconMenu2 } from '@tabler/icons-react';
+import {  IconMenu2  } from "src/IconsReexported.jsx";
 
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice.js";
 import { skipToken } from "@reduxjs/toolkit/query";

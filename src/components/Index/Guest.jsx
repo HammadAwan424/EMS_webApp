@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { IconArrowRight } from "@tabler/icons-react"
+import {  IconArrowRight  } from "src/IconsReexported.jsx"
 
 function Guest() {
     return (

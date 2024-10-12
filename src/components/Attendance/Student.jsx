@@ -1,7 +1,7 @@
-import {
+import { 
     IconSquareRoundedCheck, IconSquareRoundedX, 
     IconSquareRoundedXFilled, IconSquareRoundedCheckFilled
-} from "@tabler/icons-react";
+ } from "src/IconsReexported.jsx";
 import classNames from "classnames";
 
 function Student({details, id, markStudent}) {            

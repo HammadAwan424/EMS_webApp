@@ -1,6 +1,6 @@
 import { useState , useRef } from "react";
 
-import { IconArrowLeft, IconFidgetSpinner } from "@tabler/icons-react"
+import {  IconArrowLeft, IconFidgetSpinner  } from "src/IconsReexported.jsx"
 import Popup from "src/components/CommonUI/Popup.jsx"
 import Alert from "src/components/CommonUI/Alert.jsx"
 import { auth, firestore } from "src/firebase/config";

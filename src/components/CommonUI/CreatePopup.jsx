@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import Alert from './Alert';
 import { Form, useNavigation } from 'react-router-dom';
-import { IconArrowLeft } from '@tabler/icons-react';
+import {  IconArrowLeft  } from "src/IconsReexported.jsx";
 
 const CreatePrompt = ({popupVisible, setPopupVisible, rerender}) => {
     

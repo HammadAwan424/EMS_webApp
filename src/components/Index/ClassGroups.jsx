@@ -1,5 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit"
-import { IconMenu2 } from "@tabler/icons-react"
+import {  IconMenu2  } from "src/IconsReexported.jsx"
 import { firestore } from "src/firebase/config"
 import { deleteDoc, doc } from "firebase/firestore"
 import { useState, useRef } from "react"

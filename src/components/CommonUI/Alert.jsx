@@ -1,4 +1,4 @@
-import { IconAlertTriangleFilled } from "@tabler/icons-react"
+import {  IconAlertTriangleFilled  } from "src/IconsReexported.jsx"
 
 /**
  * Alert component

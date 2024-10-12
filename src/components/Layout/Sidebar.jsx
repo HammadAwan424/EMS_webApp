@@ -1,6 +1,6 @@
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice"
 import { skipToken } from "@reduxjs/toolkit/query"
-import { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconNotification } from "@tabler/icons-react"
+import {  IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconNotification  } from "src/IconsReexported.jsx"
 import { useState } from "react"
 import { Link, Form, useNavigate, NavLink, useLocation } from "react-router-dom"
 import { Teacher } from "src/api/Teacher"

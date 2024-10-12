@@ -1,4 +1,4 @@
-import { IconCircleMinus, IconEdit, IconCircleArrowUpFilled } from "@tabler/icons-react"
+import {  IconCircleMinus, IconEdit, IconCircleArrowUpFilled  } from "src/IconsReexported.jsx"
 import classNames from "classnames"
 import dot from "dot-object"
 import { doc, collection } from "firebase/firestore"
