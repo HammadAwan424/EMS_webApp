@@ -18,7 +18,6 @@ function Track({swipeBack, totalItems, navigation, children}) {
     }, [newTransform])
 
     const mobile = 'ontouchstart' in window
-    console.log("ismobile: ", mobile)
 
     function handleSwipeStart(e) {
         const startTime = new Date().getTime()

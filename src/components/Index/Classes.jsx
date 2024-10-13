@@ -1,8 +1,8 @@
 import { skipToken } from "@reduxjs/toolkit/query"
 import {  IconCalendarOff, IconMenu2  } from "src/IconsReexported.jsx"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery } from "src/api/apiSlice"
+import { useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectAll, attendanceInitialState, selectTotal, selectIds } from "src/api/apiSlice"
 import { dateUTCPlusFive, getDateStr } from "src/api/Utility"
 import Pie from "../CommonUI/Pie"
 import Track from "./Track"
@@ -35,56 +35,49 @@ function Classes() {
 
 function Class({classId, classGroupId, cssClasses=""}) {
 
-    const [date, setDate] = useState(() => {
+    const [baseDate, setDate] = useState(() => {
         const dateWithOffset = dateUTCPlusFive()
         dateWithOffset.setUTCMonth(dateWithOffset.getUTCMonth() + 1) // to query for previous months, shift date to one month later
         const month = String(dateWithOffset.getUTCMonth() + 1).padStart(2, "0") // to change 0-11 months to 1-12 for database 
         const year = String(dateWithOffset.getUTCFullYear())
         return {ISOString: dateWithOffset.toISOString(), month, year}
     })
-    
+    const [uniqueParams, setUniqueParams] = useState(null)
     const [swipeBack, setSwipeBack] = useState(0)
-    const [state, setState] = useState([])
-    const [meta, setMeta] = useState({loadingMonthly: true, today: dateUTCPlusFive().toISOString()})
-    const [noMoreData, setNoMoreData] = useState(false)
 
     const [dropdown, setDropdown] = useState(false)
     const {data: classData, isLoading: loadingDetails} = useGetClassByIdQuery({classId, classGroupId})
-    const dateStr = getDateStr(undefined, new Date(date.ISOString), true)
     const todayDateStr = getDateStr() // today because no dateUTCPlusFive is provided
 
-    // console.log("CLASS DATA: ", classData)
-  
-    const {data: attendance, isFetching: fetchingAttendance, isLoading: loadingAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr: todayDateStr})
-    const param = date.year+date.month
+    const {data: attendance, isError, isFetching: fetchingAttendance, isLoading: loadingAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr: todayDateStr})
+    
+    const queryArgs = uniqueParams ? {classId, classGroupId, dateStr: uniqueParams} : skipToken
+    const {data: monthly, isFetching: fetchingMonthly} = useGetMonthlyAttendanceQuery(queryArgs)
+    const {noMoreData=false, newUniqueParams=null} = monthly ?? {}
+    const allPreviousAttendance = selectAll(monthly ?? attendanceInitialState)
+    const allPreviousCount = selectTotal(monthly ?? attendanceInitialState)
 
-    let totalItems = Object.keys(state).length + 1
-
-    let isSkip;
-    if ((noMoreData  || !(totalItems+swipeBack == 1) && !meta.loadingMonthly)) {
-        isSkip = skipToken
-    } else {
-        isSkip = {classId, dateStr, classGroupId}
-        if (!meta.loadingMonthly) {
-            setMeta({...meta, loadingMonthly: true})
+    useEffect(() => {
+        if (noMoreData) {
+            return
         }
-    }
-    // console.log("Params: ", param, "state: ", state)  
-    const {data: monthly, isFetching: fetchingMonthly} = useGetMonthlyAttendanceQuery(isSkip)
-
+        else if (swipeBack == 0 && allPreviousCount == 0) {
+            // Call query by updating params
+            const baseParams = baseDate.year+baseDate.month
+            setUniqueParams(baseParams)
+        } else if (swipeBack + allPreviousCount == 0) { // const atEnd = allPreviousCount+swipeBack == 0
+            // Call query by updating params
+            setUniqueParams(newUniqueParams)
+        }
+    }, [allPreviousCount, swipeBack, baseDate, newUniqueParams, noMoreData])
+    
 
     if (loadingDetails || loadingAttendance) {
         return <h1>Abracadabra</h1>
     }
 
-    // console.log("Today is: ", attendance)
-    // console.log("state s: ", state)  
-    
-
-    
     const presentCount = Object.values(attendance.students ?? {}).filter(v => v.status == 1).length
     const totalStuCount = Object.keys(attendance.students ?? {}).length
-
  
     function previous() {
         setSwipeBack(swipeBack - 1)
@@ -93,78 +86,24 @@ function Class({classId, classGroupId, cssClasses=""}) {
         setSwipeBack(swipeBack + 1)
     }
     
-    const arrAsc = Object.keys(state).sort((a, b) => a.localeCompare(b))
-    totalItems = fetchingMonthly || noMoreData ? totalItems+1 : totalItems 
- 
-
-    function setter() {
-        
-        if (monthly && (!fetchingMonthly)) {
-            // console.log("setting meta", param, monthly)
-            setMeta({...meta, loadingMonthly: false})
-            if (monthly.exists) {
-                const monthData = monthly.stats
-                const [newMonth, newYear] = [monthly.id.slice(-2,), monthly.id.slice(-6, -2)]
-                const combination = newYear+newMonth
-                const newValues = {}
-                for (let [key, value] of Object.entries(monthData)) {
-                    newValues[combination+key] = {...value, id: combination+key}
-                }
-                // console.log("New values: ", newValues)
-                // console.log("setting first one")
-                setState({...state, ...newValues})
-                
-                const newDate = new Date(date.ISOString);
-                newDate.setUTCMonth(parseInt(newMonth)-1) // to change 1-12 from database to 0-11 months
-                newDate.setUTCFullYear(parseInt(newYear))
-                setDate({ISOString: newDate.toISOString(), month: newMonth, year: newYear})
-            } else {
-                // console.log("setting second one")
-                setNoMoreData(true)
-            }
-        } else {
-            // console.log("monthly is false")
-        }
-        
-
-    }
-    setter()
-
-    // console.log("NOR MORE DATA: ", noMoreData)
-
-
-    // console.log("total is: ", totalItems, 
-    //     " swipe back is: ", swipeBack, "COndition is: ", 
-    //     fetchingMonthly || noMoreData, monthly, state
-    // )
 
     let readAble;
-    
-    const atEnd = totalItems+swipeBack == 1
     const atStart = swipeBack == 0
+    const userViewingLoadingOrNoMoreData = allPreviousCount+swipeBack == -1
     if (atStart) {
-        const copy = new Date(meta.today)
+        const copy = new Date(baseDate.ISOString)
         readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long", "timeZone": "UTC"})
-    } else if (atEnd) {
+    } else if (userViewingLoadingOrNoMoreData) {
         readAble = "Older"
-    } else if (!atEnd) {
-        if (-swipeBack < totalItems) {
-            // console.log("SWIPE BACK IS: ", swipeBack, "AND OTHER IS: ", arrAsc, "total items is: ", totalItems)
-            const copy = new Date(date.ISOString)
-            copy.setUTCMonth(parseInt(arrAsc.at(swipeBack).slice(-4,-2))-1)
-            copy.setUTCFullYear(parseInt(arrAsc.at(swipeBack).slice(-8, -4)))
-            copy.setUTCDate(parseInt(arrAsc.at(swipeBack).slice(-2,)))
-            readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long", "timeZone": "UTC"})
-        } else {
-            // console.log("There is some unexpected goto, swipeBack: ", swipeBack, 'total items: ', totalItems)
-        }
-      
+    } else {
+        const copy = new Date(baseDate.ISOString)
+        const activeCardId = selectIds(monthly).at(swipeBack)
+        copy.setUTCMonth(parseInt(activeCardId.slice(-4,-2))-1)
+        copy.setUTCFullYear(parseInt(activeCardId.slice(-8, -4)))
+        copy.setUTCDate(parseInt(activeCardId.slice(-2,)))
+        readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long", "timeZone": "UTC"})
     }
-
     
-    
-
-
     return(
         <div data-id={classId} className={`CLASS p-2 flex group overflow-hidden flex-col transition
                 items-start rounded-md hover:bg-[--theme-quad] bg-[--theme-primary] ${cssClasses}`} 
@@ -189,7 +128,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
                 <div className="SPACER flex-1"></div>
 
                 <div className="flex-[2_1_0] flex items-center justify-center self-stretch">
-                    <Track totalItems={totalItems} swipeBack={swipeBack} navigation={{next, previous}}>
+                    <Track totalItems={allPreviousCount+1+(fetchingMonthly||noMoreData ? 1 : 0)} swipeBack={swipeBack} navigation={{next, previous}}>
 
                         {noMoreData && (
                             <div className="bg-[--theme-tertiary] rounded-full overflow-hidden w-full h-full inline-block relative select-none">
@@ -212,11 +151,11 @@ function Class({classId, classGroupId, cssClasses=""}) {
 
                         
                         {/* List from monthly attendance */}
-                        {arrAsc.map(key => 
-                            <div key={state[key].id} className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
-                                <Pie percentage={state[key].count / state[key].total * 100}>
+                        {allPreviousAttendance.map(card => 
+                            <div key={card.id} className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
+                                <Pie percentage={card.count / card.total * 100}>
                                     <div className="w-full h-full flex items-center justify-center">
-                                        <span className="text-3xl sm:text-4xl lg:text-5xl">{state[key].count}/{state[key].total}</span>
+                                        <span className="text-3xl sm:text-4xl lg:text-5xl">{card.count}/{card.total}</span>
                                     </div>
                                 </Pie>
                             </div>

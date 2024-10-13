@@ -3,7 +3,7 @@ import { initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth"
 import { BulkWriter, getFirestore, FieldValue, FieldPath, Timestamp } from "firebase-admin/firestore"
 import { docFromApiRes, fireStoreParser } from "./helper.js";
-import { getDateStr, getDateStr } from "#src/api/Utility.js";
+import { getDateStr } from "#src/api/Utility.js";
 
 // ($env:production="true"; vercel dev) for production // ps
 // ($env:debug="true"; vercel dev) for debug // ps
@@ -103,11 +103,11 @@ app.get("/cronjob/daily", async (req, res) => {
     const utcPlusFive = getDateStr(-1)
     const day = utcPlusFive.slice(-2,)
     
-    const querySnapshot = await firestore.collection("attendance").where("dateStr", "==", utcPlusFive).get()
-    // const attendanceDocs = querySnapshot.docs
-    const attendanceDocs = [{data() {return dailyMock}}]
+    const querySnapshot = await firestore.collection("attendance").where("createdAt", "==", utcPlusFive).get()
+    const attendanceDocs = querySnapshot.docs
+    // const attendanceDocs = [{data() {return dailyMock}}]
+    console.log("Starting Loop with attendanceDocs found: ", attendanceDocs.length)
     for (let i = 0; i < attendanceDocs.length; i++) {
-        console.log("Attendance doc: ", i)
         const attendanceDoc = attendanceDocs[i].data()
         const studentIds = Object.keys(attendanceDoc.students)
         const updates = {stats: {}, students: {}, classId: attendanceDoc.classId, classGroupId: attendanceDoc.classGroupId}

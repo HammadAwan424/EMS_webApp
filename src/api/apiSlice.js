@@ -11,7 +11,6 @@ import {
     limitToLast,
 } from "firebase/firestore";
 import { flatten } from "flat";
-import { getDateStr } from "./Utility.js";
 import { signupFirestoreInteraction } from "./signup.js";
 import {
     acceptInvitation,
@@ -24,8 +23,15 @@ import {
 import classGroups from "./classGroups.js";
 import { deleteClass } from "./classes.js";
 import { attendanceConverter, getAttendance, setAttendance, updateAttendance } from "./attendance.js";
-let k = 32
+import { createEntityAdapter } from "@reduxjs/toolkit";
+import { produce } from "immer";
 
+
+export const attendanceAdapter = createEntityAdapter({
+    sortComparer: (a, b) => a.id.localeCompare(b.id)
+})
+export const { selectAll, selectTotal, selectIds} = attendanceAdapter.getSelectors()
+export const attendanceInitialState = attendanceAdapter.getInitialState()
 
 export const apiSlice = createApi({
     baseQuery: fetchBaseQuery({ baseUrl: "/" }),
@@ -208,12 +214,6 @@ export const apiSlice = createApi({
 
         getMonthlyAttendance: builder.query({
             queryFn: async ({ classId, classGroupId, dateStr }) => {
-                const dateObj = new Date(dateStr);
-                const dateStrUnhyphenated = getDateStr({
-                    dateObj,
-                    hyphenated: false,
-                }).slice(0, -2);
-                console.log("For query: ", `${classId}${dateStrUnhyphenated}`);
                 const q = query(
                     collection(firestore, "monthlyAttendance"),
                     where("classGroupId", "==", classGroupId),
@@ -221,25 +221,47 @@ export const apiSlice = createApi({
                     where(
                         documentId(),
                         "<",
-                        `${classId}${dateStrUnhyphenated}`
+                        `${classId}${dateStr}`
                     ),
                     orderBy(documentId()),
                     startAfter(`${classId}`),
                     limitToLast(1)
                 );
                 const querySnapshot = await getDocs(q);
+
+                let newRecord;
+                let newUniqueParams;
                 if (querySnapshot.empty) {
-                    return { data: { exists: false } };
+                    newRecord = attendanceInitialState;
+                    newUniqueParams = dateStr
                 } else {
-                    return {
-                        data: {
-                            ...querySnapshot.docs[0].data(),
-                            id: querySnapshot.docs[0].id,
-                            exists: !querySnapshot.empty,
-                        },
-                    };
+                    const document = querySnapshot.docs[0]
+                    const [id, data] = [document.id, document.data()]
+                    const [month, year] = [id.slice(-2,), id.slice(-6, -2)]
+                    const entities = Object.keys(data.stats).map(day => ({...data.stats[day], id: year+month+day}))
+                    newRecord = attendanceAdapter.setAll(attendanceInitialState, entities)
+                    newUniqueParams = year+month
                 }
+                const newItemsCount = selectTotal(newRecord)
+                return {data: produce(newRecord, (draft) => {
+                    draft.newUniqueParams = newUniqueParams,
+                    draft.noMoreData = newItemsCount == 0
+                })}
             },
+            serializeQueryArgs({queryArgs}) {
+                const {classId, classGroupId} = queryArgs
+                return {classId, classGroupId}
+            },
+            merge(currentCache, newRecord) {
+                attendanceAdapter.setMany(currentCache, newRecord.entities)
+                currentCache.newUniqueParams = newRecord.newUniqueParams
+                currentCache.noMoreData = newRecord.noMoreData
+            },
+            forceRefetch({currentArg, previousArg}) {
+                const condition = previousArg == undefined || currentArg.dateStr != previousArg.dateStr
+                console.log("Force refect is in action", currentArg, previousArg, condition)
+                return condition
+            }
         }),
         getPublicTeacherByEmail: builder.query({
             queryFn: async (email) => {
