@@ -16,6 +16,7 @@ import Attendance from "./components/Attendance/Attendance.jsx";
 import ClassGroupEdit from "./components/Classgroup/Edit.jsx";
 import ClassGroupCreate from "./components/Classgroup/Create.jsx";
 import Notifications from "./components/Notifications/Notifications.jsx";
+import DetailedClass, { DetailedClassWrapper } from "./components/Index/DetailedClass.jsx";
 
 
 // function loaderWrapper(loader) {
@@ -86,6 +87,11 @@ function CustomRouterProvider() {
                     <Route
                     path="/classgroup/create"
                     element={<AuthRequired><ClassGroupCreate /></AuthRequired>}
+                    />
+
+                    <Route 
+                    path="/class/details/:classGroupId/:classId"
+                    element={<AuthRequired><DetailedClassWrapper /></AuthRequired>}
                     />
 
       

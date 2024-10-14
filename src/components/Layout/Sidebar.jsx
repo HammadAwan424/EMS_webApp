@@ -37,7 +37,7 @@ export default function Sidebar({myRef}) {
     }
 
     return (
-        <div ref={myRef} id="sidebar" className="fixed overflow-auto top-0 transition z-50 bg-[--theme-primary] sm:bg-[--theme-secondary]
+        <div ref={myRef} id="sidebar" className="fixed overflow-auto top-0 transition z-50
           left-0 bottom-0 flex flex-col gap-2 px-8 md:px-4 py-10 max-sm:-translate-x-full max-sm:w-[calc(100vw-80px)] sm:w-48 md:w-60">
             <span className="font-semibold text-lg">Hello {Auth ? Auth.email : "Stranger"}</span>
             

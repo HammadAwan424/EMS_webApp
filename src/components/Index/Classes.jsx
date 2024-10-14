@@ -1,6 +1,6 @@
 import { skipToken } from "@reduxjs/toolkit/query"
 import {  IconCalendarOff, IconMenu2  } from "src/IconsReexported.jsx"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectAll, attendanceInitialState, selectTotal, selectIds } from "src/api/apiSlice"
 import { dateUTCPlusFive, getDateStr } from "src/api/Utility"
@@ -35,13 +35,13 @@ function Classes() {
 
 function Class({classId, classGroupId, cssClasses=""}) {
 
-    const [baseDate, setDate] = useState(() => {
+    const baseDate = useMemo(() => {
         const dateWithOffset = dateUTCPlusFive()
         dateWithOffset.setUTCMonth(dateWithOffset.getUTCMonth() + 1) // to query for previous months, shift date to one month later
         const month = String(dateWithOffset.getUTCMonth() + 1).padStart(2, "0") // to change 0-11 months to 1-12 for database 
         const year = String(dateWithOffset.getUTCFullYear())
         return {ISOString: dateWithOffset.toISOString(), month, year}
-    })
+    }, [])
     const [uniqueParams, setUniqueParams] = useState(null)
     const [swipeBack, setSwipeBack] = useState(0)
 
@@ -54,8 +54,8 @@ function Class({classId, classGroupId, cssClasses=""}) {
     const queryArgs = uniqueParams ? {classId, classGroupId, dateStr: uniqueParams} : skipToken
     const {data: monthly, isFetching: fetchingMonthly} = useGetMonthlyAttendanceQuery(queryArgs)
     const {noMoreData=false, newUniqueParams=null} = monthly ?? {}
-    const allPreviousAttendance = selectAll(monthly ?? attendanceInitialState)
-    const allPreviousCount = selectTotal(monthly ?? attendanceInitialState)
+    const allPreviousAttendance = selectAll(monthly ?? {monthly: attendanceInitialState})
+    const allPreviousCount = selectTotal(monthly ?? {monthly: attendanceInitialState})
 
     useEffect(() => {
         if (noMoreData) {
@@ -105,7 +105,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
     }
     
     return(
-        <div data-id={classId} className={`CLASS p-2 flex group overflow-hidden flex-col transition
+        <div data-id={classId} className={`CLASS p-2 flex group gap-1 overflow-hidden flex-col transition
                 items-start rounded-md hover:bg-[--theme-quad] bg-[--theme-primary] ${cssClasses}`} 
         >
             <div className="wrapper flex justify-between self-stretch items-center relative">
@@ -118,14 +118,15 @@ function Class({classId, classGroupId, cssClasses=""}) {
                         <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" 
                             to={`/attendance/set/${classGroupId}/${classId}/${getDateStr({dateUTCPlusFive: new Date(), hyphenated: true})}`}
                         >Attendance</Link></div>
+                        <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" 
+                            to={`/class/details/${classGroupId}/${classId}`}
+                        >Details</Link></div>
                         <div className="p-2">Close</div>
                     </div>
                 )}
             </div>
 
             <div id="All Space" className="flex-auto self-stretch text-center flex items-center justify-center h-1">
-                {/* md:flex-1 (below) */}
-                <div className="SPACER flex-1"></div>
 
                 <div className="flex-[2_1_0] flex items-center justify-center self-stretch">
                     <Track totalItems={allPreviousCount+1+(fetchingMonthly||noMoreData ? 1 : 0)} swipeBack={swipeBack} navigation={{next, previous}}>
@@ -196,16 +197,8 @@ function Class({classId, classGroupId, cssClasses=""}) {
                         )}
                     </Track>
                 </div>
-                
-                {/* remove below one */}
-                <div className="flex-1"></div>
-
-                {/* <div className="hidden md:block flex-1 self-end justify-end text-end">
-                    <span>{readAble}</span>
-                </div> */}
             </div>
                 
-            {/* md:hidden */}
             <div className="ml-auto text-xs md:text-sm lg:text-base">
                 <span>{readAble}</span>
             </div>

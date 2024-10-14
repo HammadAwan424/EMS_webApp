@@ -11,8 +11,8 @@ function Student({details, id, markStudent}) {
 
     let states = {
         present: 1,
-        absent: 0,
-        unMarked: -1
+        unMarked: 0,
+        absent: -1
     }
 
     const marked = details.status != states.unMarked

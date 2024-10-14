@@ -88,15 +88,11 @@ button:focus-visible {
 
 @layer base {
   body {
-    @apply bg-[--theme-primary]
+    @apply bg-theme-600
   }
-}
-/* #sidebar {
-  background-color: var(--theme-secondary)
-} */
-
-.noscrollbar {
-  scrollbar-width:none;
+  #sidebar {
+    @apply bg-theme-500 max-sm:bg-theme-300
+  }
 }
 
 
@@ -115,5 +111,12 @@ button:focus-visible {
   }
   .studentLayout {
     @apply grid sm:grid-cols-2 lg:grid-cols-3 gap-2
+  }
+  
+}
+
+@layer utilities {
+  .noscrollbar {
+    scrollbar-width:none;
   }
 }

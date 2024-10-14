@@ -5,6 +5,7 @@ const signupFirestoreInteraction = (firestore, uid, email) => {
     batch.set(doc(firestore, "teachers", uid), {
         invitations: {},
         classes: {},
+        classGroups: {}
     });
     batch.set(
         doc(firestore, "teachersPublic", uid),

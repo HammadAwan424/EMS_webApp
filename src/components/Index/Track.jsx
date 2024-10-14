@@ -51,7 +51,7 @@ function Track({swipeBack, totalItems, navigation, children}) {
 
                     if (itemExists(newItem)) {
                         setTrackTransform(calculatTransform(newItem))
-                        console.log("THIS SHOLDNT BE PRINTED")
+                        // console.log("THIS SHOLDNT BE PRINTED")
                         const funcCall = movement > 0 ? navigation.previous() : navigation.next()
                     }
                 }
@@ -61,7 +61,7 @@ function Track({swipeBack, totalItems, navigation, children}) {
         }
 
         const end = () => {
-            console.log("END IS CALLED")
+            // console.log("END IS CALLED")
             if (mobile) {
                 window.ontouchmove = null
                 window.ontouchend = null
@@ -73,7 +73,7 @@ function Track({swipeBack, totalItems, navigation, children}) {
 
         if (mobile) {
             window.ontouchmove = (eve) => {
-                console.log("ONTOUCHMOVE")
+                // console.log("ONTOUCHMOVE")
                 movement(eve.touches[0])
             }
             window.ontouchend = end
@@ -86,7 +86,7 @@ function Track({swipeBack, totalItems, navigation, children}) {
     function itemExists(newItemToShow) { // From 0 to +ve n, 0 means first item, so no previous
         
         const validItem = newItemToShow < totalItems && newItemToShow >= 0
-        console.log(newItemToShow, totalItems, validItem)
+        // console.log(newItemToShow, totalItems, validItem)
         if (validItem) {
             return true
         } else {

@@ -23,15 +23,32 @@ import {
 import classGroups from "./classGroups.js";
 import { deleteClass } from "./classes.js";
 import { attendanceConverter, getAttendance, setAttendance, updateAttendance } from "./attendance.js";
-import { createEntityAdapter } from "@reduxjs/toolkit";
+import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import { produce } from "immer";
 
-
-export const attendanceAdapter = createEntityAdapter({
+// Attendance
+const attendanceAdapter = createEntityAdapter({
     sortComparer: (a, b) => a.id.localeCompare(b.id)
 })
-export const { selectAll, selectTotal, selectIds} = attendanceAdapter.getSelectors()
+export const { selectAll, selectTotal, selectIds} = attendanceAdapter.getSelectors(state => state.monthly)
 export const attendanceInitialState = attendanceAdapter.getInitialState()
+
+// Students
+const studentAdapter = createEntityAdapter({
+    sortComparer: (a, b) => a.id.localeCompare(b.id)
+})
+export const { 
+    selectAll: selectAllStudents, selectIds: selectStudentIds, selectTotal: selectStudentsCount
+} = studentAdapter.getSelectors(state => state.students)
+export const selectStudentsForYearMonth = createSelector(
+    (state, _) => selectAllStudents(state),
+    (_, yearMonth) => yearMonth,
+    (allStudents, yearMonth) => {
+        console.log("Running output selector with args: ", yearMonth, allStudents)
+        return allStudents.filter(studentRecord => studentRecord.id.includes(yearMonth))
+    }
+) 
+export const studentInitialState = studentAdapter.getInitialState()
 
 export const apiSlice = createApi({
     baseQuery: fetchBaseQuery({ baseUrl: "/" }),
@@ -228,38 +245,42 @@ export const apiSlice = createApi({
                     limitToLast(1)
                 );
                 const querySnapshot = await getDocs(q);
-
-                let newRecord;
-                let newUniqueParams;
+                const newRecord = {students: studentInitialState, monthly: attendanceInitialState}
                 if (querySnapshot.empty) {
-                    newRecord = attendanceInitialState;
-                    newUniqueParams = dateStr
+                    return {data: {
+                        noMoreData: true, newUniqueParams: dateStr, 
+                        queryArgsWithValue: [], ...newRecord
+                    }}
                 } else {
                     const document = querySnapshot.docs[0]
                     const [id, data] = [document.id, document.data()]
                     const [month, year] = [id.slice(-2,), id.slice(-6, -2)]
-                    const entities = Object.keys(data.stats).map(day => ({...data.stats[day], id: year+month+day}))
-                    newRecord = attendanceAdapter.setAll(attendanceInitialState, entities)
-                    newUniqueParams = year+month
+                    
+                    const attendanceEntities = Object.keys(data.stats).map(day => ({...data.stats[day], id: year+month+day}))
+                    const studentEntities = Object.keys(data.students).map(stuId => ({...data.students[stuId], id: year+month+stuId}))
+                    return {data: {
+                        noMoreData: false, newUniqueParams: `${year}${month}`, queryArgsWithValue: [`${year}${month}`],
+                        monthly: attendanceAdapter.setAll(newRecord.monthly, attendanceEntities),
+                        students: studentAdapter.setAll(newRecord.students, studentEntities)
+                    }}
                 }
-                const newItemsCount = selectTotal(newRecord)
-                return {data: produce(newRecord, (draft) => {
-                    draft.newUniqueParams = newUniqueParams,
-                    draft.noMoreData = newItemsCount == 0
-                })}
             },
             serializeQueryArgs({queryArgs}) {
                 const {classId, classGroupId} = queryArgs
                 return {classId, classGroupId}
             },
             merge(currentCache, newRecord) {
-                attendanceAdapter.setMany(currentCache, newRecord.entities)
+                console.log("New record is: ", newRecord)
+                currentCache.monthly = attendanceAdapter.setMany(currentCache.monthly, newRecord.monthly.entities)
+                currentCache.students = studentAdapter.setMany(currentCache.students, newRecord.students.entities)
                 currentCache.newUniqueParams = newRecord.newUniqueParams
                 currentCache.noMoreData = newRecord.noMoreData
+                currentCache.queryArgsWithValue.push(...newRecord.queryArgsWithValue)
+                currentCache.queryArgsWithValue.sort((a, b) => a.localeCompare(b))
             },
             forceRefetch({currentArg, previousArg}) {
-                const condition = previousArg == undefined || currentArg.dateStr != previousArg.dateStr
-                console.log("Force refect is in action", currentArg, previousArg, condition)
+                const condition = previousArg == undefined || (currentArg.dateStr != previousArg.dateStr && currentArg.dateStr.localeCompare(previousArg.dateStr) == -1)
+                console.log("Force refect is in action", currentArg?.dateStr, previousArg?.dateStr, condition)
                 return condition
             }
         }),

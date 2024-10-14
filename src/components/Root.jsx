@@ -42,9 +42,9 @@ export function AuthRequired({children}) {
 
     useEffect(() => {
         if (!Auth) {
-            navigate("/login", {state: location.pathname})
+            navigate("/login", {state: location.pathname, replace: true})
         }
-    }, [])
+    }, [Auth, location.pathname, navigate])
 
     return (
         <>

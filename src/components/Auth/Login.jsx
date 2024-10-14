@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Alert from "../CommonUI/Alert.jsx"
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useGetAuthQuery, useSignInMutation } from 'src/api/apiSlice.js'
@@ -15,18 +15,17 @@ function Login() {
     const navigate = useNavigate()    
     const [signIn, {isLoading, isSuccess}] = useSignInMutation()
 
-    function redirectBack() {
-        navigate(location.state?.from || "/", {replace: true});
-    }
+    const redirectBack = useCallback(() => {
+        navigate(location.state || "/", {replace: true});
+    }, [location, navigate])
 
     const {data: userAuth} = useGetAuthQuery()
-
 
     useEffect(() => {
         if (userAuth) {
             redirectBack()
         }
-    }, [userAuth])
+    }, [userAuth, redirectBack])
 
 
     async function handleClick(e) {

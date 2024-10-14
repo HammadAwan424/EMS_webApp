@@ -1,7 +1,14 @@
-{"builds": [
-    { "src": "/package.json", "use": "@vercel/static-build" },
-    { "src": "/server/api/index.js", "use": "@vercel/node" }
-  ],
+{
+    "builds": [
+        {
+            "src": "/package.json",
+            "use": "@vercel/static-build"
+        },
+        {
+            "src": "/server/api/index.js",
+            "use": "@vercel/node"
+        }
+    ],
     "rewrites": [
         {
             "source": "/api/(.*)",
@@ -10,6 +17,12 @@
         {
             "source": "/(.*)",
             "destination": "/index.html"
+        }
+    ],
+    "crons": [
+        {
+            "path": "/api/cronjob/daily",
+            "schedule": "0 5 * * *"
         }
     ]
 }

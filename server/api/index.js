@@ -4,6 +4,7 @@ import { getAuth } from "firebase-admin/auth"
 import { BulkWriter, getFirestore, FieldValue, FieldPath, Timestamp } from "firebase-admin/firestore"
 import { docFromApiRes, fireStoreParser } from "./helper.js";
 import { getDateStr } from "#src/api/Utility.js";
+import { CRON_SECRET } from "./private.js";
 
 // ($env:production="true"; vercel dev) for production // ps
 // ($env:debug="true"; vercel dev) for debug // ps
@@ -18,6 +19,7 @@ async function initialize() {
         const privateJs = await import("./private.js");
         privateJs.FIREBASE_PRIVATE_KEY;
         process.env.FIREBASE_PRIVATE_KEY = privateJs.FIREBASE_PRIVATE_KEY;
+        process.env.CRON_SECRET = CRON_SECRET
     } else {
         console.log("Debug Mode Off");
     }
@@ -98,7 +100,13 @@ const dailyMock = {
     lastModified: Timestamp.fromDate(new Date()),
     createdAt: getDateStr(-1) // "20240523" aka Yesterday
 }
-app.get("/cronjob/daily", async (req, res) => {
+app.get("/api/cronjob/daily", async (req, res) => {
+    const [bearerStr, token] = req.headers.authorization.split(" ")
+    if (token != process.env.CRON_SECRET) {
+        res.status(403)
+        res.send("permission-denied")
+    }
+
     const bulkWriter = firestore.bulkWriter()
     const utcPlusFive = getDateStr(-1)
     const day = utcPlusFive.slice(-2,)
@@ -137,7 +145,7 @@ app.get("/cronjob/daily", async (req, res) => {
 })
 
 
-app.delete("/classGroups/:id", async (req, res) => {
+app.delete("/api/classGroups/:id", async (req, res) => {
     const [bearerStr, token] = req.headers.authorization.split(" ")
     const id = req.params.id
     const docPath = `${firestoreUrl}/classGroups/${id}`
@@ -176,7 +184,7 @@ app.delete("/classGroups/:id", async (req, res) => {
 
 // Only works when debug=="true", production=="true" will make request to production db else local
 // Can be used to fetch some doc and test DB connection (local or prod)
-app.get("/testDB/:collection/:id", debugOnly, async (req, res) => {
+app.get("/api/testDB/:collection/:id", debugOnly, async (req, res) => {
     try {
         const document = await firestore.doc(`${req.params.collection}/${req.params.id}`).get()
         const data = await document.data()
@@ -187,11 +195,11 @@ app.get("/testDB/:collection/:id", debugOnly, async (req, res) => {
 }) 
 
 
-app.get("/", (req, res) => {
+app.get("/api/", (req, res) => {
     res.send('Server is responding')
 })
 
-app.get("/check/:id(\\d+)", (req, res) => {
+app.get("/api/check/:id(\\d+)", (req, res) => {
     res.send("helloo")
 })
 
