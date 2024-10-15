@@ -1,6 +1,6 @@
 import classNames from "classnames"
 import { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { useGetAttendanceQuery, useUpdateAttendanceMutation } from "src/api/apiSlice"
 import { useImmer } from "use-immer"
 import Popup from "../CommonUI/Popup"
@@ -20,6 +20,7 @@ function Edit() {
 
     const {data: todayAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr})
     const [attendanceMutation, { isLoading }] = useUpdateAttendanceMutation()
+    const location = useLocation()
 
     const allStudents = todayAttendance.students
 
@@ -69,7 +70,7 @@ function Edit() {
     }
 
 
-    const unMarkedCount = Object.values(attendanceUpdates.students).filter(v => v.status == -1).length
+    const unMarkedCount = Object.values(attendanceUpdates.students).filter(v => v.status == 0).length
     const presentCount = Object.values(attendanceUpdates.students).filter(v => v.status == 1).length
     const absentCount = attendanceUpdates.ids.length - presentCount - unMarkedCount
     const updatesCount = attendanceUpdates.ids.length
@@ -94,9 +95,9 @@ function Edit() {
         console.log(attendance);
         try {
             const cmb = { classId, classGroupId, dateStr, ...attendanceUpdates }
-            console.log("combined object: ", cmb)
+            console.log("combined object: ", cmb, "hash: ", location.state)
             await attendanceMutation(cmb).unwrap()
-            return navigate("/", {replace: true})
+            return navigate(location.state || "/")
         } catch (e) {
             console.log("couldn't set attendence due to: ", e)
         }
@@ -110,7 +111,7 @@ function Edit() {
 
     return (
         <>         
-            <span className="title">{"Edit Attendance"}</span> 
+            <span className="title-100">{"Edit Attendance"}</span> 
             <span>For {urlReadable.slice(0,-5)}</span>  
             <Popup
                 text={popup.text} visible={popup.visible} confirmHandler={popup.handler}

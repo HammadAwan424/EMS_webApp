@@ -1,13 +1,9 @@
-import { useSelector } from "react-redux"
 import { useAcceptInvitationMutation, useClearNotificationsMutation, useGetAuthQuery, useGetUserQuery, useRejectInvitationMutation } from "src/api/apiSlice.js"
-import { getAllClassIds } from "src/api/userSlice"
 import Button from "../CommonUI/Button.jsx"
 import { classInvitationSelector } from "src/api/invitation.js"
 
 // Deals with inactive classes, newInvitations (both with status == true || false)
 function Notifications() {
-    const allClassIds = useSelector(getAllClassIds)
-    console.log("ALL CLASS IDS INSIDE: ", allClassIds)
     const {data: Auth} = useGetAuthQuery()
     const {data: User} = useGetUserQuery(Auth.uid)
 
@@ -25,7 +21,7 @@ function Notifications() {
     return (
         <div className="p-2 gap-2 flex flex-col">
             <div className="flex justify-between items-center p-2">
-                <span className="title">Notifications</span>
+                <span className="title-100">Notifications</span>
                 {showClearAll && 
                     <span 
                         onClick={() => {clearAll([...acceptedRevoked, ...rejectedRevoked, ...invitationsRevoked])}} 
@@ -34,6 +30,13 @@ function Notifications() {
                     </span>
                 }
             </div>
+
+            {!showClearAll && (
+                <div className="flex items-center justify-center flex-col">
+                    <span className="title-300">{"You don't any any new notifications."}</span>
+                    <span className="offwhite">{"Invitations that you'll receive will appear here."}</span>
+                </div>
+            )}
             
             {invitationsAllowed.map((id) => 
                 <Invitation id={id} key={id} className={User.invitations[id].className} email={User.invitations[id].email} acceptable />

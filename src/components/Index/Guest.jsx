@@ -4,7 +4,7 @@ import {  IconArrowRight  } from "src/IconsReexported.jsx"
 function Guest() {
     return (
         <>
-            <div className="p-4 flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
                 <h1 className="font-mono">Grade-Book</h1>
 
                 <hr />

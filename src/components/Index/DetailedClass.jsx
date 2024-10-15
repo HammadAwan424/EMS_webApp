@@ -9,7 +9,7 @@ import { skipToken } from "@reduxjs/toolkit/query"
 import { dateUTCPlusFive, getDateStr } from "src/api/Utility"
 import { useEffect } from "react"
 import Track from "./Track"
-// import ImprovedTrack from "./ImprovedTrack"
+import ImprovedTrack from "./ImprovedTrack"
 
 
 function DetailedClassWrapper() {
@@ -68,48 +68,44 @@ function DetailedClass({classId, classGroupId}) {
     }
 
     return (
-        <div className="p-2 sm:p-4">
+        <div className="flex flex-col gap-6">
             <div className="flex">
-                <Class classId={classId} classGroupId={classGroupId} cssClasses="flex-1 lg:h-[250px] h-[200px] bg-theme-500 hover:bg-theme-300" />
+                <Class classId={classId} classGroupId={classGroupId} cssClasses="flex-1 lg:h-[250px] h-[220px]" />
             </div>
             
-            <div className="overflow-hidden">
-                {/* <ImprovedTrack totalItems={queryArgsWithValue.length+1} swipeBack={swipeBack} navigation={{next, previous}} square={false}>
+            <div>
+                <span className="title-200 pb-2">Students Summary</span>
+                <ImprovedTrack totalItems={queryArgsWithValue.length+1} swipeBack={swipeBack} navigation={{next, previous}}>
                     {noMoreData ? (
-                        <div className="bg-[--theme-tertiary] rounded-full overflow-hidden w-full h-full inline-block relative select-none">
-                            <div className="flex items-center justify-center w-full h-full flex-col">
-                                <h1>No Previous Data</h1>
-                            </div>
+                    <div className="flex items-center justify-center border border-theme-100 rounded-md">
+                            <span className="title-100 p-6">No Previous Data</span>
                         </div>
                     ) : (
-                        <div className="bg-neutral-700 animate-pulse rounded-full overflow-hidden w-full h-full inline-block relative select-none">
-                            <div className="flex items-center justify-center w-full h-full">
-                                <h1>{"Loading..."}</h1>
-                            </div>
-                        </div>   
+                        <div className="flex items-center justify-center">
+                            <h1>{"Loading..."}</h1>
+                        </div>
                     )}
                     {queryArgsWithValue.map(yearMonth => 
-                        <div className="inline-block overflow-hidden w-full" key={yearMonth}>
+                        <div className="" key={yearMonth}>
                             <Students studentList={selectStudentsForYearMonth(monthly, yearMonth)} />
                         </div>
                     )}
-                </ImprovedTrack>  */}
+                </ImprovedTrack> 
             </div>
 
         </div>
     )
 }
-
+// [&_tr:not(:first-child)>td]:border-t-2
 function Students({studentList}) {
-    const ui = {}
-    if (studentList.length <= 3) {
-        ui.showAll = true
-    } else {
-        ui.showAll = false
-    }
+    const [ui, setUI] = useState({showAll: studentList.length <= 3})
     return (
         <>
-        <table className="w-full text-center align-middle table-fixed  [&_td]:h-16 border-separate border-spacing-y-2">
+        <table 
+            className="w-full text-center align-middle [&_td]:border-t 
+                table-fixed [&_td]:h-16 border rounded-md border-theme-100 
+                [&_td]:border-theme-100 border-separate border-spacing-y-2"
+        >
             <thead>
                 <tr>
                     <th className="text-left w-4/12 sm:w-4/12 lg:w-2/12 pl-2">Name</th>
@@ -119,45 +115,60 @@ function Students({studentList}) {
             </thead>
             <tbody>
                 {ui.showAll ? (
-                        studentList.map(studentData => {
-                            const percentage = Math.round((studentData.present / (studentData.present + studentData.absent)) * 100)
-                            return (
-                                <tr key={studentData.id} className="bg-theme-500">
-                                    <td className="rounded-l-md text-left pl-2">
-                                        <IconUserFilled className="inline-block" />
-                                        <span className="pl-1 relative inline-block top-[2px]">Someone</span>
-                                    </td>
-                                    <td>32</td>
-                                    <td className="rounded-r-md">
-                                        <div className="flex h-full justify-center relative items-center">
-                                            <div style={{width:`${percentage}%`}} className="bg-orange-500 h-2/3 rounded-md absolute left-0"></div>
-                                            <span className="font-bold text-4xl z-10">
-                                                {percentage}%
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )
-                        }
-
-                        )
+                        studentList.map(studentData => <StudentRow key={studentData.id} studentData={studentData} />)
                 ) : (
-                    <tr>
-                        <td><span>show all is false</span></td>
-                    </tr>
+                    <>
+                        <StudentRow studentData={studentList[0]} />
+                        <tr>
+                            <td colSpan={3}>
+                                <div className="flex flex-col items-center gap-1">
+                                    <div className="threeDots"></div>
+                                    <button onClick={() => setUI({showAll: true})} className="p-2">Show All</button>
+                                    <div className="threeDots"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <StudentRow studentData={studentList.at(-1)} />
+                    </>
                 )}
-                {/* <tr>
-                    <td colSpan={3}>
-                        <div className="flex flex-col items-center gap-1">
-                            <div className="threeDots"></div>
-                            <button className="p-2">Show More</button>
-                            <div className="threeDots"></div>
-                        </div>
-                    </td>
-                </tr> */}
+
             </tbody>
         </table>
         </>
+    )
+}
+
+function StudentRow({studentData}) {
+    const zeroToOne = (studentData.present / (studentData.present + studentData.absent))
+    const percentage = Math.round(zeroToOne * 100)
+
+    const red =  [220, 38, 38]
+    const green = [34, 197, 94]
+    const shift = green.map((channelInGreen, index) => {
+        const greenShift = (channelInGreen * zeroToOne)
+        const redShift = red[index] * (1-zeroToOne)
+        return greenShift + redShift
+    })
+    const colorStr = `rgb(${shift.join(", ")}`
+
+    return (
+        <tr key={studentData.id} className="">
+            <td className="text-left pl-2">
+                <IconUserFilled className="inline-block" />
+                <span className="pl-1 relative inline-block top-[2px]">Someone</span>
+            </td>
+            <td>32</td>
+            <td className="">
+                <div className="flex h-full justify-center relative items-center">
+                    <div style={{
+                            width:`${percentage}%`, backgroundColor: colorStr
+                        }} className="h-2/3 rounded-md absolute left-0"></div>
+                    <span className="font-bold text-4xl z-10">
+                        {percentage}%
+                    </span>
+                </div>
+            </td>
+        </tr>
     )
 }
 

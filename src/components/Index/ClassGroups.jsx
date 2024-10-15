@@ -9,6 +9,7 @@ import { Teacher } from "src/api/Teacher"
 import Alert from "../CommonUI/Alert"
 import { Class } from "./Classes"
 
+// Currently not used anywhere
 function ClassGroups({id}) {
     const {data: Auth} = useGetAuthQuery()
     const {data: classGroups } = useGetClassGroupsQuery(Auth.uid)
@@ -68,9 +69,9 @@ function ClassGroup({id: classGroupId}) {
 
     return (
         <>
-        <div className="CLASSGROUP flex flex-col gap-4 bg-[--theme-secondary] rounded-md p-4" ref={classGroupRef} data-id={classGroupId}>
+        <div className="CLASSGROUP flex flex-col gap-2 rounded-md" ref={classGroupRef} data-id={classGroupId}>
             <div className="flex items-center gap-2 relative">
-                <h2 className="font-semibold text-2xl">{classGroup.classGroupName}</h2>
+                <h2 className="title-200">{classGroup.classGroupName}</h2>
                 <div className="flex-auto"></div>
                 <IconMenu2 onClick={() => setDropdown(true)} className="cursor-pointer" />
                     {dropdown && (
@@ -82,14 +83,11 @@ function ClassGroup({id: classGroupId}) {
                     )}
             </div>
 
-            <div className="CLASSGROUP-CLASSES grid overflow-hidden gap-3 grid-cols-2 auto-rows-[minmax(200px,auto)]  lg:auto-rows-[minmax(250px,auto)]">
-                {Teacher.hasClasses(classGroup) ? (
-                    Teacher.getClassIdArray(classGroup).map(classId => 
-                        <Class classGroupId={classGroupId} classId={classId} key={classId} />
-                    )
-                ) : (
-                    <div>This class Group is empty</div>
+            <div className="CLASSGROUP-SECTION_CONTAINER classGrid">
+                {Object.keys(classGroup.classes).map(classId => 
+                    <Class classGroupId={classGroupId} classId={classId} key={classId} />
                 )}
+             
             </div>
             
             {sensitive &&

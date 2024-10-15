@@ -47,15 +47,18 @@ export default function RootLayout() {
       <>
       <div className="h-full" id='layout'>
         
-        <div id="topbar" className="flex gap-1 p-2 sm:hidden bg-[--theme-secondary]">
+        <div id="topbar" className="flex gap-1 p-2 sm:hidden">
           <IconMenu2 onMouseUp={openSidebar} />
           <span className="">Menu</span>
         </div>
 
         <Sidebar myRef={sidebarRef} />
 
+        {/* Contains padding for sidebar */}
         <div id="View" className="sm:pl-48 md:pl-60 h-full">
-          <Outlet />
+          <div className="p-2">
+            <Outlet />
+          </div>
         </div>
 
       </div>

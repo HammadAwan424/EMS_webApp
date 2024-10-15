@@ -1,39 +1,39 @@
 import { skipToken } from "@reduxjs/toolkit/query"
 import {  IconCalendarOff, IconMenu2  } from "src/IconsReexported.jsx"
-import { useEffect, useMemo, useState } from "react"
-import { Link } from "react-router-dom"
-import { useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectAll, attendanceInitialState, selectTotal, selectIds } from "src/api/apiSlice"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Link, useLocation } from "react-router-dom"
+import { 
+    useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, 
+    useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectAll, 
+    attendanceInitialState, selectTotal, selectIds } from "src/api/apiSlice"
 import { dateUTCPlusFive, getDateStr } from "src/api/Utility"
 import Pie from "../CommonUI/Pie"
 import Track from "./Track"
 import MediaQuery from "react-responsive"
 import { useSelector } from "react-redux"
 import { getAllClassIds } from "src/api/userSlice"
+import { classInvitationSelector } from "src/api/invitation"
 
 function Classes() {
     const {data: Auth} = useGetAuthQuery()
     const {data: User} = useGetUserQuery(Auth.uid)
-    const classIds = useSelector(getAllClassIds)
+    const { acceptedAllowed} = classInvitationSelector(User)
 
     return (
-        <div className="CLASSES_CONTAINER flex flex-col gap-4 bg-[--theme-secondary] rounded-md p-4">
-        {classIds.active.length > 0 ? (
-           <div className="ONLY-CLASSES grid overflow-hidden gap-3 grid-cols-2 auto-rows-[minmax(200px,auto)] lg:auto-rows-[minmax(250px,auto)]">
-                {classIds.active.map(classId =>
-                    <Class key={classId} classId={classId} classGroupId={User.invitations[classId].classGroupId} />
-                )}
+        <>
+           <div 
+                className="classGrid CLASSES_SECTION_CONTAINER">
+                    {acceptedAllowed.map(classId =>
+                        <Class key={classId} classId={classId} classGroupId={User.invitations[classId].classGroupId} />
+                    )}
            </div>
-        ) : (
-            <div>{"You don't have any classes"}</div>
-        )}
-        </div>
-
+        </>
     )
 }
 
 
 
-function Class({classId, classGroupId, cssClasses=""}) {
+function Class({classId, classGroupId, cssClasses="", isInGroupList=false}) {
 
     const baseDate = useMemo(() => {
         const dateWithOffset = dateUTCPlusFive()
@@ -46,8 +46,10 @@ function Class({classId, classGroupId, cssClasses=""}) {
     const [swipeBack, setSwipeBack] = useState(0)
 
     const [dropdown, setDropdown] = useState(false)
+    const dropdownRef = useRef(null)
     const {data: classData, isLoading: loadingDetails} = useGetClassByIdQuery({classId, classGroupId})
     const todayDateStr = getDateStr() // today because no dateUTCPlusFive is provided
+    const {hash} = useLocation()
 
     const {data: attendance, isError, isFetching: fetchingAttendance, isLoading: loadingAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr: todayDateStr})
     
@@ -70,6 +72,18 @@ function Class({classId, classGroupId, cssClasses=""}) {
             setUniqueParams(newUniqueParams)
         }
     }, [allPreviousCount, swipeBack, baseDate, newUniqueParams, noMoreData])
+
+    useEffect(() => {
+        if (dropdown) {
+            const close = (eve) => {
+                if (!dropdownRef.current.contains(eve.target)) {
+                    setDropdown(false)
+                }
+            }
+            window.addEventListener("mousedown", close)
+            return () => window.removeEventListener("mousedown", close)
+        }
+    }, [setDropdown, dropdown])
     
 
     if (loadingDetails || loadingAttendance) {
@@ -103,25 +117,37 @@ function Class({classId, classGroupId, cssClasses=""}) {
         copy.setUTCDate(parseInt(activeCardId.slice(-2,)))
         readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long", "timeZone": "UTC"})
     }
-    
+
+
+    const pathBack = hash == "#classgroup" ? `/?id=${classGroupId}${hash}` 
+        : hash == "#class" ? `/?id=${classId}${hash}` 
+        : "/"
+
     return(
         <div data-id={classId} className={`CLASS p-2 flex group gap-1 overflow-hidden flex-col transition
-                items-start rounded-md hover:bg-[--theme-quad] bg-[--theme-primary] ${cssClasses}`} 
+                items-start rounded-md hover:bg-[--theme-quad] border-theme-100 border ${cssClasses}`} 
         >
             <div className="wrapper flex justify-between self-stretch items-center relative">
-                <div className="font-semibold text-2xl"> {classData.className} </div>
+                <div className="title-200"> {classData.className} </div>
                 {/* <div className="text-sm"> {} </div> */}     
                 <IconMenu2 onClick={() => setDropdown(true)} className="cursor-pointer" />
+                {/* TODO: Edit route for a class that is joined class/${classGroupId}/${classId} */}
                 {dropdown && (
-                    <div id="Dropdown" className="absolute bg-slate-600 cursor-pointer z-20 min-w-20 rounded-md select-none top-6 right-6" onClick={() => setDropdown(false)}>
-                        <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" to={`class/${classGroupId}/${classId}`}>Edit</Link></div>
-                        <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" 
-                            to={`/attendance/set/${classGroupId}/${classId}/${getDateStr({dateUTCPlusFive: new Date(), hyphenated: true})}`}
+                    <div 
+                        id="Dropdown" 
+                        ref={dropdownRef} 
+                        onClick={() => setDropdown(false)}
+                        className="absolute bg-theme-500 cursor-pointer z-20 
+                            min-w-20 rounded-sm select-none top-6 right-6" 
+                        >
+                        <div className="border-b border-theme-100 p-1"><Link className="noLink" to={`/`}>Edit</Link></div>
+                        <div className="border-b border-theme-100 p-1"><Link 
+                            className="noLink" state={pathBack}
+                            to={`/attendance/set/${classGroupId}/${classId}/${getDateStr()}`}
                         >Attendance</Link></div>
-                        <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" 
+                        <div className="p-1 "><Link className="noLink" 
                             to={`/class/details/${classGroupId}/${classId}`}
                         >Details</Link></div>
-                        <div className="p-2">Close</div>
                     </div>
                 )}
             </div>
@@ -132,7 +158,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
                     <Track totalItems={allPreviousCount+1+(fetchingMonthly||noMoreData ? 1 : 0)} swipeBack={swipeBack} navigation={{next, previous}}>
 
                         {noMoreData && (
-                            <div className="bg-[--theme-tertiary] rounded-full overflow-hidden w-full h-full inline-block relative select-none">
+                            <div className="bg-theme-500 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
                                 <div className="flex items-center justify-center w-full h-full flex-col">
                                     <MediaQuery minWidth={640}>
                                         {(matches) => <IconCalendarOff size={matches ? 30 : 20} />}
@@ -165,8 +191,8 @@ function Class({classId, classGroupId, cssClasses=""}) {
 
                         {/* Today attendance from getAttendance */}
                         {attendance.exists ? (
-                            <Link className="text-inherit hover:text-inherit font-normal" draggable={false}
-                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr()}`}
+                            <Link className="noLink" draggable={false}
+                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr()}`} state={pathBack}
                             >   
                                 <div className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
                                     <Pie percentage={presentCount / totalStuCount * 100}>
@@ -177,11 +203,11 @@ function Class({classId, classGroupId, cssClasses=""}) {
                                 </div>
                             </Link>
                         ) : (
-                            <Link className="text-inherit hover:text-inherit font-normal" draggable={false} 
-                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr()}`}
+                            <Link className="noLink" draggable={false} 
+                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr()}`} state={pathBack}
                             >
                                 <div 
-                                    className="bg-[--theme-tertiary] rounded-full overflow-hidden w-full h-full inline-block relative select-none"
+                                    className="bg-theme-500 rounded-full overflow-hidden w-full h-full inline-block relative select-none"
         
                                 >
                                     <div className="flex items-center justify-center w-full h-full flex-col">

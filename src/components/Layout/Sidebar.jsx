@@ -30,8 +30,10 @@ export default function Sidebar({myRef}) {
     const hasNotifications = acceptedRevoked.length > 0 || invitationsRevoked.length > 0 || invitationsAllowed.length > 0
 
     function activeLink({isActive=false}={}) {
+        console.log(isActive)
         return classNames(
-            'flex items-center py-1 font-medium transition text-white/75 px-2 gap-2 rounded-md noLink',
+            'flex items-center py-1 font-medium transition px-2 gap-2 rounded-md noLink',
+            {'text-white/60': !isActive},
             {'bg-theme-100 text-white/100': isActive}
         )
     }
@@ -40,62 +42,8 @@ export default function Sidebar({myRef}) {
         <div ref={myRef} id="sidebar" className="fixed overflow-auto top-0 transition z-50
           left-0 bottom-0 flex flex-col gap-2 px-8 md:px-4 py-10 max-sm:-translate-x-full max-sm:w-[calc(100vw-80px)] sm:w-48 md:w-60">
             <span className="font-semibold text-lg">Hello {Auth ? Auth.email : "Stranger"}</span>
-            
-            {/* <Link to={createClassGroupLink()}>Create</Link> */}
-            {Auth ? (
-                <Form action="/signout" method="post">
-                    <button>Sign out</button>
-                </Form>
-            ) : <Link to="/login"><button>Sign in</button></Link>}
 
             <hr />
-            {Auth && (
-                <>
-                <div className="self-stretch flex flex-col border-[--text-disabled]">
-                    <div className="flex justify-start items-center select-none" onClick={() => setClassExpanded(!classExpanded)}>
-                        {classExpanded ? <IconArrowBadgeDownFilled /> : <IconArrowBadgeRightFilled />}
-                        <h2 className="font-medium">Classes</h2>
-                    </div>
-                    {classExpanded && (
-                        <div className="pl-2 flex flex-col text-[--text-secondary-col]">
-                            {Teacher.hasClasses(User) ? (
-                                Teacher.getClassIdArray(User).map(id =>
-                                    <Link key={id} to="/">{User.classes[id].className}</Link>
-                                )
-                            ) : (
-                                <div className="text-sm">{"You don't have any classes :("}</div>
-                            )}
-                        </div>
-                    )}
-                </div>
-                <hr />
-                </>
-            )}
-
-            
-            {Auth && (
-                <>
-                <div className="self-stretch flex flex-col border-[--text-disabled]">
-                    <div className="flex justify-start items-center select-none" onClick={() => setGroupExpanded(!groupExpanded)}>
-                        {classExpanded ? <IconArrowBadgeDownFilled /> : <IconArrowBadgeRightFilled />}
-                        <h2 className="font-medium">ClassGroups</h2>
-                    </div>
-                    {groupExpanded && (
-                        <div className="pl-2 flex flex-col text-[--text-secondary-col]">
-                            {Teacher.hasClassGroups(classGroups) ? (
-                                classGroups.map(documentData => (
-                                    <Link key={documentData.id} to={`/classgroup/${documentData.id}`}>{documentData.classGroupName}</Link>
-                                ))
-            
-                            ) : (
-                                <div className="text-sm">{"You don't have any classGroups :("}</div>
-                            )}
-                        </div>
-                    )}
-                </div>
-                <hr />
-                </>
-            )}
 
 
             <NavLink className={activeLink} to={"/"}>
@@ -133,6 +81,14 @@ export default function Sidebar({myRef}) {
                     </div>
                 )}
             </div>
+
+            <div className="flex-1"></div>
+
+            {Auth ? (
+                <Form action="/signout" method="post">
+                    <button>Sign out</button>
+                </Form>
+            ) : <Link to="/login"><button>Sign in</button></Link>}
 
         </div>
     )

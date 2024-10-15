@@ -31,7 +31,7 @@ function DashBoard() {
     const [lastVisited, setLastVisited] = useImmer({lastGroupId: classGroupList[0], lastClassId: classesList[0]})
 
     const {hash, pathname, search} = useLocation()
-    const groupActive = hash == "#classgroups" ? true : false
+    const groupActive = hash == "#classgroup" ? true : false
 
     const navigateTo = useNavigate()
 
@@ -69,8 +69,7 @@ function DashBoard() {
         // default to 'id' if searchParam is not equal to id
         // searchParams.get("id") == id ? id : searchParams.set("id", id);
         // default 'classes' if # section is not valid
-        const newHash = (hash == "#classes" || hash == "#classgroups") ? hash : "#classes"
-        console.log("INSIDE EFFECT: ", searchParams.toString(), hash, id)
+        const newHash = (hash == "#class" || hash == "#classgroup") ? hash : "#class"
         if (newHash != hash || searchParams.get("id") != id) {
             searchParams.set("id", id);
             console.log("CALLING NAVIGATE: ", searchParams.toString(), newHash, id)
@@ -78,14 +77,13 @@ function DashBoard() {
         }
     }, [navigate, id, hash, pathname, search])
 
-    if ((new URLSearchParams(search).get("id") != id) || !(hash == "#classes" || hash == "#classgroups")) {
-        console.log("HASH WAS: ", hash)
+    if ((new URLSearchParams(search).get("id") != id) || !(hash == "#class" || hash == "#classgroup")) {
         return null
     }
 
 
     return (
-        <div className="sm:p-2">
+        <div>
             {/* <div className="p-20">
                 <div className=" w-80 h-40 bg-red-400 flex flex-col">
                     <div>
@@ -103,20 +101,9 @@ function DashBoard() {
                     </div>
                 </div>
             </div> */}
-            <div id="Topbar" className="flex items-center px-4 py-2">
-                <div className="SPACER flex-1"></div>
-                <div className="flex w-48 mx-auto ">
-                    <Link 
-                        className={"noLink rounded-l-2xl flex-1 px-2 py-1 border-r-[--theme-primary] border-r-2 text-center " + classnames(!groupActive)}
-                        id="classes" to="#classes"
-                    >Classes</Link>
-                    <Link 
-                        className={"noLink rounded-r-2xl flex-1 px-2 py-1 text-center " + classnames(groupActive)}
-                        id="classgroups" to="#classgroups"
-                    >ClassGroups</Link>
-                </div>
-
-                <div className="flex-1 self-stretch text-end">
+            <div id="Topbar" className="flex items-center justify-between">
+                <span className="title-100">Dashboard</span>
+                <div className="self-stretch text-end">
                     {/* <label htmlFor="topBarSelect">Select: </label> */}
                     <select 
                         className="bg-transparent focus:bg-[--theme-secondary] py-1 px-2 rounded-md text-left h-full"
@@ -134,8 +121,23 @@ function DashBoard() {
                     </select>
                 </div>
             </div>
+                    
+            <div className="py-1"></div> 
 
-            {groupActive ? <ClassGroupView firstButtonClassName="bg-" id={id} /> : <ClassView id={id} />}
+            <div className="flex w-48 mx-auto">
+                <Link 
+                    className={"noLink rounded-l-2xl flex-1 px-2 py-1 border-r-[--theme-primary] border-r-2 text-center " + classnames(!groupActive)}
+                    id="classes" to="#class"
+                >Classes</Link>
+                <Link 
+                    className={"noLink rounded-r-2xl flex-1 px-2 py-1 text-center " + classnames(groupActive)}
+                    id="classgroups" to="#classgroup"
+                >ClassGroups</Link>
+            </div>
+
+            {!groupActive && <div className="py-2"></div>}
+
+            {groupActive ? <ClassGroupView id={id} /> : <ClassView id={id} />}
             {/* <Try /> */}
         </div>
     )

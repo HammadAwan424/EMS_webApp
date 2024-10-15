@@ -11,7 +11,6 @@ function ClassView({id}) {
 
     return (
         <>
-        <span className="title pt-0">Classes</span>
         {
             id == "all" ? <Classes />
                 : id == "noclass" ? <Apology text={`You don't have any classes for now. 

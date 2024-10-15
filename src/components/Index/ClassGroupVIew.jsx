@@ -12,7 +12,6 @@ function ClassGroupView({id}) {
 
     return (
         <>
-        <span className="title pt-0">ClassGroups</span>
         {
             id == "all" ? <h1>This page is for all, TODO</h1>
                 : id == "nogroup" ? 

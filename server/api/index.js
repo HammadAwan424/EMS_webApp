@@ -4,7 +4,6 @@ import { getAuth } from "firebase-admin/auth"
 import { BulkWriter, getFirestore, FieldValue, FieldPath, Timestamp } from "firebase-admin/firestore"
 import { docFromApiRes, fireStoreParser } from "./helper.js";
 import { getDateStr } from "#src/api/Utility.js";
-import { CRON_SECRET } from "./private.js";
 
 // ($env:production="true"; vercel dev) for production // ps
 // ($env:debug="true"; vercel dev) for debug // ps
@@ -17,9 +16,8 @@ async function initialize() {
     if (process.env.debug == "true") {
         console.log("Debug Mode On");
         const privateJs = await import("./private.js");
-        privateJs.FIREBASE_PRIVATE_KEY;
         process.env.FIREBASE_PRIVATE_KEY = privateJs.FIREBASE_PRIVATE_KEY;
-        process.env.CRON_SECRET = CRON_SECRET
+        process.env.CRON_SECRET = privateJs.CRON_SECRET
     } else {
         console.log("Debug Mode Off");
     }

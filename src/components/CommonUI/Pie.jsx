@@ -29,7 +29,7 @@ function Pie({percentage=0, stroke=10, children}) {
     const bg = 'bg-[--theme-primary]'
     
     return (
-        <div className="PIE h-full w-full relative rounded-full bg-red-50000">
+        <div className="PIE h-full w-full relative rounded-full bg-red-500">
             <div className="bg-green-500 h-full w-full rounded-full overflow-hidden" style={{ clipPath: property, transform: rotation }}>
             </div>
 

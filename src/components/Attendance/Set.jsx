@@ -1,6 +1,6 @@
 import classNames from "classnames"
 import { useState, useRef } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { useGetClassByIdQuery, useSetAttendanceMutation } from "src/api/apiSlice"
 import { useImmer } from "use-immer"
 import Popup from "../CommonUI/Popup"
@@ -20,7 +20,7 @@ function Set({isValid}) {
 
     return (
         <>
-        <span className="title">{"Set Attendance"}</span>
+        <span className="title-100">{"Set Attendance"}</span>
         <span>For {urlReadable.slice(0,-5)}</span>
         {isValid ? (
             <Main /> 
@@ -42,12 +42,13 @@ function Main() {
 
     const [renderWarning, setRenderWarning] = useState(false)
     const dialogRef = useRef(null);
+    const location = useLocation()
 
     const [attendance, setAttendance] = useImmer(() => {
         const students = {}
         const ids = []
         for (let [id, student] of Object.entries(allStudents)) {
-            students[id] = { studentName: student.studentName, rollNo: student.rollNo, status: -1 }
+            students[id] = { studentName: student.studentName, rollNo: student.rollNo, status: 0 }
             ids.push(id)
         }
         const initialState = { students, ids }
@@ -62,7 +63,7 @@ function Main() {
 
     const hasStudents = attendance.ids.length > 0
 
-    const unMarkedCount = Object.values(attendance.students).filter(v => v.status == -1).length
+    const unMarkedCount = Object.values(attendance.students).filter(v => v.status == 0).length
     const presentCount = Object.values(attendance.students).filter(v => v.status == 1).length
     const absentCount = attendance.ids.length - presentCount - unMarkedCount
     const isUnMarked = unMarkedCount > 0
@@ -93,7 +94,7 @@ function Main() {
         try {
             const cmb = { classId, classGroupId, dateStr, ...attendance }
             await attendanceMutation(cmb).unwrap()
-            return navigate("/", {replace: true})
+            return navigate(location.state || "/")
         } catch (e) {
             console.log("couldn't set attendence due to: ", e)
         }
