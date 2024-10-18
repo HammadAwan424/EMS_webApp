@@ -7,6 +7,7 @@ import Popup from "../CommonUI/Popup"
 import Student from "./Student"
 import dot from "dot-object"
 import { parseDateStr } from "src/api/Utility"
+import { selectStudentsEntities, selectStudentsIds } from "../Class/ClassEdit"
 
 function Edit() {
     const { classId, classGroupId, date: dateStr } = useParams()
@@ -32,34 +33,25 @@ function Edit() {
         visible: false,
     })
 
-    const [attendance, setAttendance] = useImmer(() => {
-        const students = {}
-        const ids = []
-        for (let [id, student] of Object.entries(allStudents)) {
-            students[id] = { studentName: student.studentName, rollNo: student.rollNo, status: student.status}
-            ids.push(id)
-        }
-        const initialState = { students, ids }
-        return initialState
-    })
+
+    const attendance = {
+        students: selectStudentsEntities(todayAttendance),
+        ids: selectStudentsIds(todayAttendance)
+    }
 
     const [attendanceUpdates, setUpdates] = useImmer({students: {}, ids: []})
 
     const getCurrentStatus = id => attendanceUpdates.students[id]?.status ?? attendance.students[id].status
 
-    console.log(attendanceUpdates)
-
     const markStudent = (status, id) => {
         setUpdates(draft => {
             if (getCurrentStatus(id) != status) { // Prevents Clicking on already marked icon (either check or cross)
                 if (attendance.students[id].status == status) {
-                    console.log("first", " draft is: ", draft.students[id]?.status, status)
                     const index = draft.ids.findIndex(entryId => entryId == id)
                     draft.ids.splice(index, 1)
                     delete draft.students[id]
                 }
                 else {
-                    console.log("second", " draft is: ", draft.students[id]?.status, status)
                     draft.ids.push(id)
                     const name = `students.${id}.status`
                     dot.str(name, status, draft)
@@ -69,15 +61,11 @@ function Edit() {
         })
     }
 
-
     const unMarkedCount = Object.values(attendanceUpdates.students).filter(v => v.status == 0).length
     const presentCount = Object.values(attendanceUpdates.students).filter(v => v.status == 1).length
     const absentCount = attendanceUpdates.ids.length - presentCount - unMarkedCount
     const updatesCount = attendanceUpdates.ids.length
     const hasUpdates = updatesCount > 0
-
-
-
 
     function initialSubmitHandler() {
         if (!hasUpdates) {

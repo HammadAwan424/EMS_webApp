@@ -118,9 +118,6 @@ button:focus-visible {
   .studentLayout {
     @apply grid sm:grid-cols-2 lg:grid-cols-3 gap-2
   }
-  .offwhite {
-    @apply text-[#aaa]
-  }
   .classGrid {
     @apply grid overflow-hidden gap-x-2 gap-y-4 grid-cols-2 
       auto-rows-[minmax(220px,auto)] lg:auto-rows-[minmax(250px,auto)]

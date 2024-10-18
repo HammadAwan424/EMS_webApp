@@ -1,5 +1,5 @@
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
-import RootLayout from "./components/Layout/Layout.jsx"
+import RootLayout, { RootLayoutSkeletonUI } from "./components/Layout/Layout.jsx"
 import Root, {RootLoader, AuthRequired} from "./components/Root.jsx";
 import Index from "./components/Index/Index.jsx"
 import RootErrorPage from "./components/Layout/Error-page.jsx"
@@ -13,10 +13,11 @@ import { signOutAction } from "./api/Utility.js";
 // import { classAction, classLoader } from "./components/Index/Dashboard.jsx";
 // import ClassInput, {loader as classEditLoader, action as classEditAction} from "./components/Class/ClassEdit.jsx";
 import Attendance from "./components/Attendance/Attendance.jsx";
-import ClassGroupEdit from "./components/Classgroup/Edit.jsx";
-import ClassGroupCreate from "./components/Classgroup/Create.jsx";
+import ClassGroupEdit from "./components/Classgroup/GroupEdit.jsx";
+import ClassGroupCreate from "./components/Classgroup/GroupCreate.jsx";
 import Notifications from "./components/Notifications/Notifications.jsx";
 import DetailedClass, { DetailedClassWrapper } from "./components/Index/DetailedClass.jsx";
+import { ClassSkeletonUI } from "./components/Index/Classes.jsx";
 
 
 // function loaderWrapper(loader) {
@@ -110,11 +111,12 @@ function CustomRouterProvider() {
 
                     <Route
                     path="/notifications" element={<AuthRequired><Notifications /></AuthRequired>}
-                    />
-
-        
-                        
+                    />  
                 </Route>
+
+                {/* <Route
+                    path="/skeleton" element={<ClassSkeletonUI />}
+                /> */}
             </Route>
         )
     )

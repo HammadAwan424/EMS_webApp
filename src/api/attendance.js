@@ -43,7 +43,7 @@ const updateAttendance = async ({ firestore, ids, classId, classGroupId, dateStr
                 lastModified: serverTimestamp(),
             }
         );
-        return { data: "" };
+        return {data: ''};
     } catch (err) {
         console.error("Error inside updateAttendance: ", err)
         return { error: "" }
@@ -66,10 +66,15 @@ const getAttendance = async ({ firestore, classId, classGroupId, dateStr }) => {
 }
 
 function attendanceConverter(snapshot) {
-    const data = snapshot.data({ serverTimestamps: "estimate" });
+    const data = snapshot.data({ serverTimestamps: "estimate" }) ?? {students: {}};
+    console.log("SOME DATA IS: ", data)
+    const studentIds = Object.keys(data.students)
+    const entities = {}
+    studentIds.forEach(id => entities[id] = data.students[id])
     if (snapshot.exists()) {
         return {
             ...data,
+            students: {entities, ids: studentIds},
             id: snapshot.id,
             exists: snapshot.exists(),
             lastModified: data.lastModified.toJSON(),

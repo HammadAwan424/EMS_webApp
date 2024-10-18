@@ -18,6 +18,7 @@ function Attendance() {
     })
     const {data, isFetching} = useGetClassByIdQuery({classId, classGroupId})
 
+    console.log("Attendance.jsx ", isFetching, loadingAttendance)
 
     if (isFetching || loadingAttendance) {
         return <h1>Loading please wait a second</h1>

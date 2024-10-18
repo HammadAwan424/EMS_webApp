@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom"
-import { inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./Common"
+import { inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./GroupCommon"
 import { useEffect } from "react"
 import { useImmerReducer } from "use-immer"
 import { useEditClassGroupMutation, useGetAuthQuery } from "src/api/apiSlice"
@@ -74,7 +74,7 @@ function ClassGroupCreate() {
                     ].join(" ")}
                     name="classGroupName" value={getValue("classGroupName")} required 
                     onChange={(e) => dispatch({type: "fieldUpdate", event: e})}
-                    placeholder="ClassGroup Name" autoComplete="off" disabled={!ui.activeEdits.classGroupName}
+                    placeholder="ClassGroup Name" autoComplete="off"
                 />
 
                 <span className="text-xl text-[--text-secondary-col]">Classes</span>

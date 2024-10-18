@@ -1,5 +1,5 @@
 import { useGetAuthQuery, useGetUserQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectAllStudents, selectStudentsCount, studentInitialState, selectStudentsForYearMonth } from "src/api/apiSlice"
-import Classes, { Class } from "./Classes"
+import Classes, { Class, ClassSkeletonUI } from "./Classes"
 import {  IconUserFilled  } from "src/IconsReexported.jsx"
 import { useLayoutEffect } from "react"
 import Apology from "../Apology/Apology"
@@ -21,6 +21,21 @@ function DetailedClassWrapper() {
 }
 
 export { DetailedClassWrapper }
+
+
+function DetailedClassSkeletonUI() {
+    return(
+        <>
+            <ClassSkeletonUI />
+
+            <div className="flex gap-2 flex-col py-4">
+                <div className="w-32 h-8 bg-skeleton rounded-sm"></div>
+                <div className="border-theme-100 border h-20 rounded-md"></div>
+            </div>
+        </>
+    )
+}
+export { DetailedClassSkeletonUI }
 
 
 function DetailedClass({classId, classGroupId}) {
@@ -64,7 +79,7 @@ function DetailedClass({classId, classGroupId}) {
     }
     
     if (loadingAttendance || loadingMonthly) {
-        return <h1>Abracadabra</h1>
+        return <DetailedClassSkeletonUI />
     }
 
     return (

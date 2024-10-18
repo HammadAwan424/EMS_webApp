@@ -34,7 +34,7 @@ function Notifications() {
             {!showClearAll && (
                 <div className="flex items-center justify-center flex-col">
                     <span className="title-300">{"You don't any any new notifications."}</span>
-                    <span className="offwhite">{"Invitations that you'll receive will appear here."}</span>
+                    <span className="text-offwhite">{"Invitations that you'll receive will appear here."}</span>
                 </div>
             )}
             

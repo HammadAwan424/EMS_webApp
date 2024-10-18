@@ -1,5 +1,5 @@
 import classNames from "classnames"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { useGetClassByIdQuery, useSetAttendanceMutation } from "src/api/apiSlice"
 import { useImmer } from "use-immer"
@@ -7,6 +7,8 @@ import Popup from "../CommonUI/Popup"
 import Student from "./Student"
 import Apology from "../Apology/Apology"
 import { parseDateStr } from "src/api/Utility"
+import { selectStudentsEntities, selectStudentsIds } from "../Class/ClassEdit"
+import { produce } from "immer"
 
 
 function Set({isValid}) {
@@ -38,22 +40,19 @@ function Main() {
 
     const { data: classData, isFetching } = useGetClassByIdQuery({ classId, classGroupId })
     const [attendanceMutation, { isLoading }] = useSetAttendanceMutation()
-    const allStudents = classData.students
 
     const [renderWarning, setRenderWarning] = useState(false)
     const dialogRef = useRef(null);
     const location = useLocation()
 
     const [attendance, setAttendance] = useImmer(() => {
-        const students = {}
-        const ids = []
-        for (let [id, student] of Object.entries(allStudents)) {
-            students[id] = { studentName: student.studentName, rollNo: student.rollNo, status: 0 }
-            ids.push(id)
-        }
-        const initialState = { students, ids }
-        return initialState
+        const ids = selectStudentsIds(classData)
+        const students = produce(selectStudentsEntities(classData), draft => {
+            ids.forEach(id => draft[id].status = 0)
+        })
+        return {students, ids}
     })
+    console.log("INSIDE SET MAIN: ", isLoading)
 
     const markStudent = (status, id) => {
         setAttendance(draft => {
@@ -62,7 +61,6 @@ function Main() {
     }
 
     const hasStudents = attendance.ids.length > 0
-
     const unMarkedCount = Object.values(attendance.students).filter(v => v.status == 0).length
     const presentCount = Object.values(attendance.students).filter(v => v.status == 1).length
     const absentCount = attendance.ids.length - presentCount - unMarkedCount
@@ -73,9 +71,6 @@ function Main() {
         handler: () => {},
         visible: false,
     })
-
-
-
 
     function initialSubmitHandler() {
         if (isUnMarked) {
@@ -88,6 +83,10 @@ function Main() {
             })
         }
     }
+
+    useEffect(() => {
+        return () => console.error("STATE IS CLEARED")
+    }, [])
 
     async function confirmSubmitHandler() {
         console.log(attendance);

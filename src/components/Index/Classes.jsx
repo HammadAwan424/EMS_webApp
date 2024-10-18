@@ -13,6 +13,7 @@ import MediaQuery from "react-responsive"
 import { useSelector } from "react-redux"
 import { getAllClassIds } from "src/api/userSlice"
 import { classInvitationSelector } from "src/api/invitation"
+import { selectStudentsEntities, selectStudentsIds } from "../Class/ClassEdit"
 
 function Classes() {
     const {data: Auth} = useGetAuthQuery()
@@ -32,8 +33,26 @@ function Classes() {
 }
 
 
+function ClassSkeletonUI() {
+    return (
+        <div className={`CLASS p-2 flex group gap-1 flex-col h-[220px] lg:h-[250px]
+                items-start rounded-md border-theme-100 border flex-1`}
+        >
+            <div className="h-6 w-12 md:w-16 bg-skeleton rounded-sm"></div>
+            <div id="All Space" className="flex-auto self-stretch text-center items-center justify-center h-1">
+                <div className="w-full max-h-full aspect-square flex items-center justify-center">
+                    <div className="h-full max-w-full aspect-square">
+                        <div className="bg-skeleton rounded-full w-full h-full"></div>
+                    </div>
+                </div>
+            </div>
+            <div className="h-4 w-16 md:w-24 md:h-5 bg-skeleton self-end rounded-sm"></div>
+        </div>
+    )
+}
+export {ClassSkeletonUI}
 
-function Class({classId, classGroupId, cssClasses="", isInGroupList=false}) {
+function Class({classId, classGroupId, cssClasses=""}) {
 
     const baseDate = useMemo(() => {
         const dateWithOffset = dateUTCPlusFive()
@@ -87,11 +106,13 @@ function Class({classId, classGroupId, cssClasses="", isInGroupList=false}) {
     
 
     if (loadingDetails || loadingAttendance) {
-        return <h1>Abracadabra</h1>
+        return <ClassSkeletonUI />
     }
 
-    const presentCount = Object.values(attendance.students ?? {}).filter(v => v.status == 1).length
-    const totalStuCount = Object.keys(attendance.students ?? {}).length
+    const todayStudentIds = selectStudentsIds(attendance)
+    const todayStudentEntities = selectStudentsEntities(attendance)
+    const presentCount = todayStudentIds.filter(id => todayStudentEntities[id].status == 1).length
+    const totalStuCount = todayStudentIds.length
  
     function previous() {
         setSwipeBack(swipeBack - 1)

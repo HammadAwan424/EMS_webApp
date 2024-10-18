@@ -1,7 +1,7 @@
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice"
 import { skipToken } from "@reduxjs/toolkit/query"
 import {  IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconNotification  } from "src/IconsReexported.jsx"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link, Form, useNavigate, NavLink, useLocation } from "react-router-dom"
 import { Teacher } from "src/api/Teacher"
 import { Expand } from "../CommonUI/Icons"
@@ -21,8 +21,7 @@ export default function Sidebar({myRef}) {
     const navigate = useNavigate()
     const {pathname} = useLocation()
     const [expanded, setExpanded] = useState({actions: paths[pathname] == "actions"})
-
-
+    
     // Either some invitations was sent (maybe removed now) or access from some class is revoked
     const {
         acceptedRevoked, invitationsAllowed, invitationsRevoked

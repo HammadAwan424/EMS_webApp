@@ -6,7 +6,7 @@ import { useGetAuthQuery, useGetClassGroupsQuery, useEditClassGroupMutation } fr
 import Button from "../CommonUI/Button"
 import Popup from "../CommonUI/Popup"
 import ClassEdit from "../Class/ClassEdit"
-import { initialUiState, inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./Common"
+import { initialUiState, inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./GroupCommon"
 import { useImmerReducer } from "use-immer"
 
 function createInitialState(sampleClasses) {
@@ -58,22 +58,21 @@ function ClassGroupEdit() {
 
     return (
         <>
-        <div className="p-4 flex flex-col gap-3" onSubmit={(e) => handleSubmit({event: e})}>
+        <div className="flex flex-col gap-3" onSubmit={(e) => handleSubmit({event: e})}>
             <form className="grid grid-cols-[auto,1fr] gap-2 items-center">
                 
                 <div className="flex">
                     <span className="text-xl text-[--text-secondary-col]">Name</span>
-                    <IconEdit onClick={() => uiDispatch({type: "editToggle", specific: "classGroupName"})} />
-          
                 </div>
                 
                 <input className={[
                         "font-medium text-2xl",
                         inputClasses({editing: ui.activeEdits.classGroupName})
                     ].join(" ")}
+                    onFocus={() => uiDispatch({type: "editToggle", specific: "classGroupName"})}
                     name="classGroupName" value={getValue("classGroupName")} required 
                     onChange={(e) => dispatch({type: "fieldUpdate", event: e})}
-                    placeholder="ClassGroup Name" autoComplete="off" disabled={!ui.activeEdits.classGroupName}
+                    placeholder="ClassGroup Name" autoComplete="off"
                 />
 
                 <span className="text-xl text-[--text-secondary-col]">Classes</span>

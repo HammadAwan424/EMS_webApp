@@ -6,6 +6,7 @@ import { produce } from "immer"
 import isEqual from "lodash.isequal"
 import { useState } from "react"
 import { firestore } from "src/firebase/config"
+import MediaQuery from "react-responsive"
 
 const reducerInitState = {classes: {}, meta: {classIds: []}}
 function reducer(state, action) {
@@ -76,16 +77,17 @@ function inputClasses({editing=false, type=""}) {
 function NewClass({dispatch, getValue, id}) {
 
     return (
-        <div className="flex items-center gap-2 px-1 py-2">
+        <div className="flex items-center gap-2 py-2">
             <IconCircleMinus className="text-red-500" onClick={() => dispatch({type: "removeClass", classId: id})} />
             <input className={`text-[--text-primary-col] py-1 border rounded-md px-2 outline-none font-bold 
-            w-40 min-w-0 bg-[--theme-tertiary] border-transparent`}
+                flex-grow sm:w-40 sm:flex-grow-0 min-w-0 bg-[--theme-tertiary] border-transparent`}
                 name={`classes.${id}.className`}
                 required type="text" placeholder="New Class Name"
                 value={getValue(`classes.${id}.className`)} onChange={(e) => dispatch({type: "fieldUpdate", event: e})}
                 autoComplete="off" />
-            <IconEdit data-edit-type="classNameEdit"/>
-            <hr className="flex-auto border-[--text-disabled]" />
+            <MediaQuery minWidth={640}>
+                    {matches => matches && <hr className="flex-auto border-[--text-disabled]" />}
+            </MediaQuery>
             <IconCircleArrowUpFilled />
         </div>
     )

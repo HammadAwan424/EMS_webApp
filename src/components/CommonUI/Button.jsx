@@ -2,14 +2,18 @@ import classNames from "classnames"
 import { Spinner } from "./Icons"
 
 function Button({
-    states: { isLoading = false, isError = false } = {},
+    states: { isLoading = false, isError = false, isModified = false } = {},
     text: { errorText = "Retry :(", successText = "Success", loadingText = "Loading...", idleText = "Submit" } = {},
     className = "",
     ...args
 }) {
 
+    const disabled = isLoading || args.disabled
+
     const classes = classNames(
-        "bg-blue-500 flex justify-center gap-2",
+        // "bg-blue-500 flex justify-center gap-2 items-center",
+        'flex justify-center gap-2 items-center border bg-black',
+        'text-white border-white disabled:text-offwhite disabled:border-transparent disabled:hover:border-offwhite disabled:cursor-not-allowed hover:border-offwhite',
         className,
         {"bg-red-500": isError},
         {"cursor-wait": isLoading}
@@ -25,7 +29,7 @@ function Button({
     const strokeWidth = 25
 
     return (
-        <button className={classes} {...args} disabled={isLoading} >
+        <button className={classes} {...args} disabled={disabled} >
             {btnText}
             {isLoading && <Spinner svgClassNames={svgClassNames} />}
         </button>

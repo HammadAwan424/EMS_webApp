@@ -13,7 +13,9 @@ export default {
           500: '#303030',
           600: '#242424',
           700: '#1f1e1e',
-        }
+        },
+        offwhite: "#aaa",
+        skeleton: "#363636"
       },
       keyframes: {
         mine: {
@@ -27,7 +29,14 @@ export default {
       },
       animation: {
         mine: "mine 5s ease-in-out infinite"
-      }
+      },
+      screens: {
+        sm: "640px",
+        md: "768px",
+        lg: "1024px",
+        xl: "1280px",
+        "2xl": "1536px",
+      },
     },
   },
   plugins: [],

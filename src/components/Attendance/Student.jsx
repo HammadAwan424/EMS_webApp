@@ -4,7 +4,7 @@ import {
  } from "src/IconsReexported.jsx";
 import classNames from "classnames";
 
-function Student({details, id, markStudent}) {            
+function Student({details, id, markStudent}) {   
     let iconSize = 30
     const {studentName: name, rollNo} = details
     const studentName = name.toUpperCase()[0] + name.slice(1)
@@ -34,8 +34,6 @@ function Student({details, id, markStudent}) {
         size: iconSize,
         onClick: handleCrossClick
     }
-
-    console.log(marked)
 
     const className = classNames(
         {"hover:border-[--border-hover-col] bg-theme-300 hover:bg-theme-100 border-transparent": !marked},

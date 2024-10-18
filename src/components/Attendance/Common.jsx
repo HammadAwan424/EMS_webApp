@@ -5,3 +5,4 @@ function AttendanceLayout({children}) {
         </div>
     )
 }
+

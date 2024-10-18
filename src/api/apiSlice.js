@@ -7,9 +7,10 @@ import {
 import { auth, firestore } from "#src/firebase/config.js";
 import {
     getDoc, doc, collection, getDocs, query, where, 
-    onSnapshot, writeBatch, deleteField, documentId, orderBy, startAfter, 
+    writeBatch, deleteField, documentId, orderBy, startAfter, 
     limitToLast,
 } from "firebase/firestore";
+import { cachedDocumentListener, cachedDocumentListenerWithWait, cachedQueryListener } from "./cachedHandler.js";
 import { flatten } from "flat";
 import { signupFirestoreInteraction } from "./signup.js";
 import {
@@ -21,10 +22,10 @@ import {
     removeTeacher,
 } from "./invitation.js";
 import classGroups from "./classGroups.js";
-import { deleteClass } from "./classes.js";
+import { classByIdConverter, deleteClass, getClassById } from "./classes.js";
 import { attendanceConverter, getAttendance, setAttendance, updateAttendance } from "./attendance.js";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import { produce } from "immer";
+import { bringBackDoc } from "./customSlice.js";
 
 // Attendance
 const attendanceAdapter = createEntityAdapter({
@@ -123,7 +124,7 @@ export const apiSlice = createApi({
             },
         }),
         editClass: builder.mutation({
-            queryFn: async ({ classId, classGroupId, meta, ...patch }) => {
+            queryFn: async ({ classId, classGroupId, ...patch }) => {
                 const document = doc( firestore, "classGroups", classGroupId, "classes", classId );
                 console.log("DOCUEMTN PATH IS : ", document.path);
                 const batch = writeBatch(firestore);
@@ -133,21 +134,18 @@ export const apiSlice = createApi({
                 const updates = { ...other, students: {} };
 
                 // Student field on patch could be Added | Modified | Removed
-                for (let studentId of meta.studentIds) {
-                    const type = meta.students[studentId];
-                    const student = patch.students[studentId];
+                for (let studentId of students.ids) {
+                    const type = students.meta[studentId];
+                    const student = students.entities[studentId];
                     switch (type) {
-                        case "added": {
+                        case "added":
+                        case "modified": {
                             updates.students[studentId] = student;
                             break;
                         }
                         case "removed": {
-                            console.log("REMOVIND STUDENT", studentId);
                             updates.students[studentId] = deleteField();
                             break;
-                        }
-                        case "modified": {
-                            updates.students[studentId] = student;
                         }
                     }
                 }
@@ -182,46 +180,44 @@ export const apiSlice = createApi({
             },
         }),
         getClassById: builder.query({
-            queryFn: async (path) => {
-                const docPath = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
-                try {
-                    const docSnapshot = await getDoc(docPath);
-                    return { data: { id: docSnapshot.id, ...docSnapshot.data() } };
-                } catch (err) {
-                    console.error("error in getClassById: ", err.message)
-                    return {error: err.message}
-                }
-                
-            },
+            queryFn: async (path) => getClassById(firestore, path),
             onCacheEntryAdded: async (path, cacheLifecycleApi) => {
                 const docRef = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
-                await cachedDocumentListener(docRef, cacheLifecycleApi);
+                await cachedDocumentListener(docRef, cacheLifecycleApi, classByIdConverter);
             },
         }),
 
 
         setAttendance: builder.mutation({
             queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
-                console.log("SET attendance mutation is here")
                 return await setAttendance({firestore, ids, classId, classGroupId, dateStr, ...patch})
             },
+            onQueryStarted: async ({classId, classGroupId, dateStr}, {queryFulfilled, dispatch}) => {
+                try {
+                    await queryFulfilled
+                    const docToSetBack = dispatch(bringBackDoc(`${classId}${dateStr}`))
+                    dispatch(apiSlice.util.updateQueryData("getAttendance", {classId, classGroupId, dateStr}, _ => docToSetBack))
+                } catch (e) {
+                    console.log("Error while updating cache manually, ", e)
+                }
+            }
         }),
 
         updateAttendance: builder.mutation({
-            queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
+            queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }, mutation) => {
                 return await updateAttendance({firestore, ids, classId, classGroupId, dateStr, ...patch})
             },
         }),
 
         getAttendance: builder.query({
-            queryFn: async ({ classId, classGroupId, dateStr }) => {
+            queryFn: async ({ classId, classGroupId, dateStr }, baseQuery) => {
                 // expects dateStr to be utc +05:00 (without hyphen) because 
                 // server maintians +05:00, will use day, month and year as is
                 return await getAttendance({firestore, classId, classGroupId, dateStr})
             },
-            async onCacheEntryAdded( { classId, classGroupId, dateStr }, cacheLifecycleApi ) {
+            async onCacheEntryAdded({ classId, classGroupId, dateStr }, cacheLifecycleApi ) {
                 const docRef = doc( firestore, "attendance", `${classId}${dateStr}` );
-                await cachedDocumentListener(
+                await cachedDocumentListenerWithWait(
                     docRef,
                     cacheLifecycleApi,
                     attendanceConverter
@@ -412,75 +408,3 @@ export const {
     useClearNotificationsMutation
 } = apiSlice;
 
-async function cachedDocumentListener(
-    docRef,
-    { cacheDataLoaded, cacheEntryRemoved, updateCachedData },
-    converter
-) {
-    let unsubscribe = null;
-
-    try {
-        unsubscribe = onSnapshot(docRef, { source: "cache" }, (snapshot) => {
-            updateCachedData((draft) => {
-                console.log("RUNNING SINGLE UPDATER, path: ", docRef.path);
-                if (converter) {
-                    console.log("CONVERTER WAS PRESENT");
-                    return converter(snapshot);
-                } else {
-                    console.log("ABSENT CONVERTER");
-                    return {
-                        ...snapshot.data({ serverTimestamps: "estimate" }),
-                        id: snapshot.id,
-                    };
-                }
-            });
-        });
-        await cacheDataLoaded;
-    } catch {
-        unsubscribe ?? unsubscribe();
-    }
-    await cacheEntryRemoved;
-    unsubscribe ?? unsubscribe();
-}
-
-async function cachedQueryListener(
-    query,
-    { cacheDataLoaded, cacheEntryRemoved, updateCachedData }
-) {
-    let unsubscribe = null;
-    try {
-        unsubscribe = onSnapshot(query, { source: "cache" }, (snapshot) => {
-            // console.log("Initial: ", snapshot.docs[0].data(),
-            //  snapshot.metadata.fromCache, snapshot.metadata.hasPendingWrites)
-            // console.log("Changed: ", snapshot.docChanges().length, snapshot.docChanges())
-            // console.log("ONSNAPSHOT RAN: ", snapshot.docChanges().length)
-            updateCachedData((draft) => {
-                console.log("RUNNING MULTIPLE UPDATES");
-
-                snapshot.docChanges().forEach((docChange) => {
-                    if (docChange.type == "added") {
-                        draft.push({
-                            ...docChange.doc.data(),
-                            id: docChange.doc.id,
-                        });
-                    } else if (docChange.type == "modified") {
-                        const updatedIndex = draft.findIndex(
-                            (doc) => doc.id == docChange.doc.id
-                        );
-                        draft[updatedIndex] = {
-                            id: docChange.doc.id,
-                            ...docChange.doc.data(),
-                        };
-                    } else {
-                        draft.filter((doc) => doc.id != docChange.doc.id);
-                    }
-                });
-            });
-        });
-        await cacheDataLoaded;
-    } catch {
-        unsubscribe ?? unsubscribe();
-    }
-    await cacheEntryRemoved;
-    unsubscribe ?? unsubscribe();
-}
