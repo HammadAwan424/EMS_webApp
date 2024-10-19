@@ -29,7 +29,6 @@ export default function Sidebar({myRef}) {
     const hasNotifications = acceptedRevoked.length > 0 || invitationsRevoked.length > 0 || invitationsAllowed.length > 0
 
     function activeLink({isActive=false}={}) {
-        console.log(isActive)
         return classNames(
             'flex items-center py-1 font-medium transition px-2 gap-2 rounded-md noLink',
             {'text-white/60': !isActive},

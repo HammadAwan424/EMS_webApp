@@ -127,6 +127,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
     const userViewingLoadingOrNoMoreData = allPreviousCount+swipeBack == -1
     if (atStart) {
         const copy = new Date(baseDate.ISOString)
+        copy.setMonth(copy.getMonth() - 1)
         readAble = copy.toLocaleString("en-GB", {"day": "numeric", "month": "long", "timeZone": "UTC"})
     } else if (userViewingLoadingOrNoMoreData) {
         readAble = "Older"

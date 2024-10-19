@@ -1,3 +1,4 @@
+import classNames from "classnames"
 import {  IconAlertTriangleFilled  } from "src/IconsReexported.jsx"
 
 /**
@@ -9,10 +10,17 @@ import {  IconAlertTriangleFilled  } from "src/IconsReexported.jsx"
  * @returns {JSX.Element} The Alert component.
  */
 function Alert({show, text, type}) {
+    
+    const className = classNames(
+        'w-full flex gap-2 rounded-lg p-1 items-center',
+        {'bg-red-900 text-red-400': type=='warning'},
+        {'bg-green-900 text-green-400': type=="success"}
+    )
+
     return (
         <>
             {show && (
-                <div className={"w-full flex gap-1 items-start rounded-lg p-1 " + (type == "warning" ? "bg-red-900 text-red-400" : "bg-green-900 text-green-400")}>
+                <div className={className}>
                     {type == "warning" && <div className="pt-1"><IconAlertTriangleFilled /></div>}
                     <p> 
                         {text}

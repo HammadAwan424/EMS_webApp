@@ -37,9 +37,8 @@ export default function RootLayout() {
   const shouldSkip = Auth ? Auth.uid : skipToken
   const {data: User, isLoading: loadingUser} = useGetUserQuery(shouldSkip)
   const {isLoading: loadingGroups} = useGetClassGroupsQuery(shouldSkip)
-  const classIds = useSelector(getAllClassIds)
 
-  if (loadingGroups || loadingGroups) {
+  if (loadingGroups || loadingUser) {
     return <RootLayoutSkeletonUI />
   }
 
@@ -56,7 +55,7 @@ export default function RootLayout() {
 
       {/* Contains padding for sidebar */}
       <div id="View" className="sm:pl-48 md:pl-60 h-full">
-        <div className="p-3 sm:p-2">
+        <div className="p-3 sm:px-4 sm:py-5">
           <Outlet />
         </div>
       </div>

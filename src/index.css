@@ -41,17 +41,6 @@ h1 {
   line-height: 1.1;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
 button:hover {
   border-color: #646cff;
 }
@@ -87,11 +76,17 @@ button:focus-visible {
 
 
 @layer base {
+  * {
+    border-color: #404040;
+  }
   body {
     @apply bg-theme-600
   }
   #sidebar {
     @apply bg-theme-500 max-sm:bg-theme-300
+  }
+  button {
+    @apply border bg-black border-transparent px-4 py-[0.6rem] rounded-lg font-medium transition
   }
 }
 
@@ -104,13 +99,14 @@ button:focus-visible {
     background-repeat: repeat;
   }
   .noLink {
-    @apply text-inherit hover:text-inherit font-normal
+    font-weight: inherit;
+    @apply text-inherit hover:text-inherit
   }
   .title-100 {
-    @apply font-bold text-3xl  md:text-4xl inline-block
+    @apply font-bold text-3xl  md:text-4xl
   }
   .title-200 {
-    @apply font-semibold text-xl md:text-2xl inline-block
+    @apply font-semibold text-xl md:text-2xl
   }
   .title-300 {
     @apply font-bold

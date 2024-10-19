@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Alert from "../CommonUI/Alert.jsx"
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useGetAuthQuery, useRegisterMutation } from 'src/api/apiSlice.js'
+import Button from '../CommonUI/Button.jsx'
 
 
 function Register() {
@@ -20,7 +21,7 @@ function Register() {
 
 
     function redirectBack() {
-        navigate(location.state?.from || "/", {replace: true});
+        navigate(location.state || "/", {replace: true});
     }
 
     console.log(status)
@@ -68,8 +69,8 @@ function Register() {
                         />
                         <div></div>
                         <Alert show={status.visible} text={status.text} type={status.type} />
-                        <button type="submit">Register</button>
-                        <div className='text-sm self-center'>Already have an account? <Link to="/login">Sign in</Link></div>
+                        <Button states={{isLoading}} text={{idleText: "Register", loadingText: "Registering..."}} />
+                        <div className='text-sm self-center'>Already have an account? <Link to="/login" state={location.state ?? "/"}>Sign in</Link></div>
                     </form>
                 </div>
                 ) : null

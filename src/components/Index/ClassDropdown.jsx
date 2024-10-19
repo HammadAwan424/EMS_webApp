@@ -1,29 +1,37 @@
-import { useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { getDateStr } from "src/api/Utility"
 
-function ClassDropdown({expanded, setExpanded, classId, classGroupId}) {
+function ClassDropdown({children}) {
+    const [expanded, setExpanded] = useState(false)
+    const dropDownRef = useRef(null)
     useEffect(() => {
         if (expanded) {
-            const close = () => setExpanded(false)
+            const close = (eve) => {
+                if (!dropdownRef.current.contains(eve.target)) {
+                    setExpanded(false)
+                }
+            }
             window.addEventListener("mousedown", close)
             return () => window.removeEventListener("mousedown", close)
         }
-    }, [setExpanded, expanded])
+    }, [setExpanded, expanded, dropDownRef])
 
     if (!expanded) return null
     return(
-        <div id="Dropdown" className="absolute bg-theme-300 text-offwhite cursor-pointer z-20 min-w-20 rounded-md select-none top-6 right-6" onClick={() => setExpanded(false)}>
-            <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" to={`class/${classGroupId}/${classId}`}>Edit</Link></div>
-            <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" 
-                to={`/attendance/set/${classGroupId}/${classId}/${getDateStr()}`}
-            >Attendance</Link></div>
-            <div className="border-b p-2"><Link className="text-inherit hover:text-inherit"
-                to={`/class/details/${classGroupId}/${classId}`}
-            >Details</Link></div>
-            <div className="p-2">Close</div>
+        <div id="Dropdown" ref={dropDownRef} className="absolute bg-theme-300 text-offwhite cursor-pointer z-20 min-w-20 rounded-md select-none top-6 right-6" onClick={() => setExpanded(false)}>
+            {children}
+        </div>
+    )
+}
+
+function DropdownItem({children}) {
+    return (
+        <div className="px-2 py-1 [&:not(:last-child)]:border-b">
+            {children}
         </div>
     )
 }
 
 export default ClassDropdown
+export {DropdownItem}

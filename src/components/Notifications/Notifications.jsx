@@ -19,8 +19,8 @@ function Notifications() {
     const showClearAll = acceptedRevoked.length > 0 || invitationsRevoked.length > 0
 
     return (
-        <div className="p-2 gap-2 flex flex-col">
-            <div className="flex justify-between items-center p-2">
+        <div className="gap-2 flex flex-col">
+            <div className="flex justify-between items-center">
                 <span className="title-100">Notifications</span>
                 {showClearAll && 
                     <span 

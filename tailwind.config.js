@@ -1,3 +1,5 @@
+import tailwindCssAnimate from "tailwindcss-animate"
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -14,6 +16,12 @@ export default {
           600: '#242424',
           700: '#1f1e1e',
         },
+
+        accent: "#404040", // theme-100
+        "accent-foreground": "#ffffff", // white
+        popover: "#1f1e1e", // theme-700
+        "popover-foreground": "#aaa", // offwhite
+        
         offwhite: "#aaa",
         skeleton: "#363636"
       },
@@ -39,5 +47,7 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    tailwindCssAnimate
+  ],
 }

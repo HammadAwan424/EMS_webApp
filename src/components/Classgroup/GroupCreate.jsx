@@ -61,7 +61,7 @@ function ClassGroupCreate() {
 
     return(
         <>
-        <div className="p-4 flex flex-col gap-3" onSubmit={(e) => handleSubmit({event: e})}>
+        <div className="flex flex-col gap-3" onSubmit={(e) => handleSubmit({event: e})}>
             <form className="grid grid-cols-[auto,1fr] gap-2 items-center">
                 
                 <div className="flex">

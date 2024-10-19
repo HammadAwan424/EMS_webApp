@@ -84,10 +84,6 @@ function Main() {
         }
     }
 
-    useEffect(() => {
-        return () => console.error("STATE IS CLEARED")
-    }, [])
-
     async function confirmSubmitHandler() {
         console.log(attendance);
         try {

@@ -5,7 +5,8 @@
       "checkJs": false,
       "paths": {
         "src/*": ["src/*"],
-        "#src/*": ["src/*"]
+        "#src/*": ["src/*"],
+        "@": ["src/*"]
       }
     },
     "include": ["./src/**/*", "./firestore/*", "tests/**/*", "./server/**/*"],

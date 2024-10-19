@@ -22,7 +22,7 @@ function Guest() {
                     </p>
                 </div>
 
-                <Link to="/login" state={{ from: location.pathname }}>
+                <Link to="/login" className="self-start">
                     <button className="group">Get started
                         <IconArrowRight className="pl-1 transition inline-block group-hover:translate-x-1" />
                     </button>

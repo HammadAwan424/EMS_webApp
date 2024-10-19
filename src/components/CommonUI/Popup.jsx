@@ -21,7 +21,7 @@ function Popup({
     return (
         <div className="inset-0 flex items-center justify-center fixed z-50">
             <div className="bg-black inset-0 opacity-50 absolute"></div>
-            <div id="Popup" className="bg-[--theme-primary] max-w-[90%] text-center py-4 rounded-md md:w-96 z-50">
+            <div id="Popup" className="bg-[--theme-primary] max-w-[90%] text-center py-4 rounded-md w-full md:w-96 z-50">
                 <div id="Top" className="flex flex-col p-4">
                     <div className="flex">
                         <div className="flex-auto"></div>

@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import Alert from "../CommonUI/Alert.jsx"
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useGetAuthQuery, useSignInMutation } from 'src/api/apiSlice.js'
+import Button from '../CommonUI/Button.jsx'
 
 function Login() {
 
@@ -57,7 +58,6 @@ function Login() {
             {!userAuth ? (
                 <div className="flex flex-col gap-10 bg-[rgb(59,59,59)] p-6 w-80 mx-auto rounded">  
                     <h1 className='text-white self-center'>Login</h1>
-
                     <form action="" className='flex flex-col gap-4' onSubmit={(e) => handleClick(e)}>
                         <p className='text-sm'>Enter you email address</p>
                         <input className='text-black bg-neutral-600 rounded-sm p-1' ref={emailRef} type="email" placeholder="Enter Email" required/>
@@ -65,8 +65,8 @@ function Login() {
                         <input className='text-black bg-neutral-600 rounded-sm p-1' ref={passwordRef} type="password" placeholder="Enter Password" required />
                         <Alert show={status.visible} text={status.text} type={status.type} />
                         <div></div>
-                        <button type="submit">Sign in</button>
-                        <div className='text-sm self-center'>Don't have an account? <Link to="/register" state={{from: location.pathname}}>Register Now</Link></div>
+                        <Button states={{isLoading}} text={{idleText: "Sign in", loadingText: "Signing in..."}} />
+                        <div className='text-sm self-center'>Don't have an account? <Link to="/register" state={location.state ?? "/"}>Register Now</Link></div>
                     </form>
                 </div>
                 ) : null

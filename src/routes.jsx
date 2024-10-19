@@ -5,7 +5,6 @@ import Index from "./components/Index/Index.jsx"
 import RootErrorPage from "./components/Layout/Error-page.jsx"
 import Login from "./components/Auth/Login.jsx";
 import Register from "./components/Auth/Register.jsx";
-import { action as createCGAction } from "./components/Index/Create-card.jsx";
 import { auth } from "./firebase/config.js";
 // import { editAction, editLoader } from "./components/Edit/Edit.jsx"
 // import EditErrorPage from "./components/Edit/ErrorPage.jsx";
@@ -16,8 +15,9 @@ import Attendance from "./components/Attendance/Attendance.jsx";
 import ClassGroupEdit from "./components/Classgroup/GroupEdit.jsx";
 import ClassGroupCreate from "./components/Classgroup/GroupCreate.jsx";
 import Notifications from "./components/Notifications/Notifications.jsx";
-import DetailedClass, { DetailedClassWrapper } from "./components/Index/DetailedClass.jsx";
+import { DetailedClassWrapper } from "./components/Index/DetailedClass.jsx";
 import { ClassSkeletonUI } from "./components/Index/Classes.jsx";
+import View from "./components/Attendance/View.jsx";
 
 
 // function loaderWrapper(loader) {
@@ -77,7 +77,7 @@ function CustomRouterProvider() {
                 errorElement={<RootErrorPage />}
                 >   
     
-                    <Route index element={<Index />} action={createCGAction} />
+                    <Route index element={<Index />} />
     
                     <Route path="/classgroup/:Id" 
                     element={<AuthRequired><ClassGroupEdit /></AuthRequired>} 
@@ -112,6 +112,8 @@ function CustomRouterProvider() {
                     <Route
                     path="/notifications" element={<AuthRequired><Notifications /></AuthRequired>}
                     />  
+
+                    <Route path="/view" element={<View />}></Route>
                 </Route>
 
                 {/* <Route

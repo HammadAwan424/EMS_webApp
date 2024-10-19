@@ -12,8 +12,8 @@ function Button({
 
     const classes = classNames(
         // "bg-blue-500 flex justify-center gap-2 items-center",
-        'flex justify-center gap-2 items-center border bg-black',
-        'text-white border-white disabled:text-offwhite disabled:border-transparent disabled:hover:border-offwhite disabled:cursor-not-allowed hover:border-offwhite',
+        'flex justify-center gap-2 items-center',
+        'border-transparent disabled:text-offwhite disabled:cursor-not-allowed',
         className,
         {"bg-red-500": isError},
         {"cursor-wait": isLoading}

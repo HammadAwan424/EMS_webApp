@@ -122,7 +122,7 @@ function DashBoard() {
                 </div>
             </div>
                     
-            <div className="py-1"></div> 
+            <div className="py-3 md:py-1"></div> 
 
             <div className="flex w-48 mx-auto">
                 <Link 
@@ -135,7 +135,7 @@ function DashBoard() {
                 >ClassGroups</Link>
             </div>
 
-            {!groupActive && <div className="py-2"></div>}
+            {!groupActive && <div className="py-3"></div>}
 
             {groupActive ? <ClassGroupView id={id} /> : <ClassView id={id} />}
             {/* <Try /> */}
