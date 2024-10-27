@@ -13,10 +13,10 @@ const getTeacherUid = async (firestore, email) => {
     //     id: querySnapshot.docs[0]?.id
     // };
     if (querySnapshot.empty) {
-        const error = new Error(
+        console.log("getTeacherUid is throwing")
+        throw Error(
             "No teacher exists with this email",
         );
-        throw error;
     } else {
         return querySnapshot.docs[0].id
     }
@@ -77,7 +77,7 @@ const inviteTeacher = async ({
             throw new Error("You can't use you own email");
         }
         
-        const recepientId = await getTeacherUid(recepientEmail)
+        const recepientId = await getTeacherUid()
         await invite(
             firestore,
             recepientId,
@@ -88,11 +88,13 @@ const inviteTeacher = async ({
             className
         )
     } catch (error) {
-        // console.log("Error: ", error);
+        console.log("Error at right place: ", error.message);
         if (error.code == "permission-denied") {
             return {
-                error: "You don't have any permission to do this",
-                code: "permission-denied"
+                error: {
+                    message: "You don't have any permission to do this",
+                    code: "permission-denied"
+                } 
             };
         } else return { error: error.message };
     }

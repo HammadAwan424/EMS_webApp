@@ -3,6 +3,7 @@ import {
     createUserWithEmailAndPassword,
     onAuthStateChanged,
     signInWithEmailAndPassword,
+    updateProfile,
 } from "firebase/auth";
 import { auth, firestore } from "#src/firebase/config.js";
 import {
@@ -24,8 +25,11 @@ import {
 import classGroups from "./classGroups.js";
 import { classByIdConverter, deleteClass, getClassById } from "./classes.js";
 import { attendanceConverter, getAttendance, setAttendance, updateAttendance } from "./attendance.js";
-import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
+import { createEntityAdapter, createSelector, current } from "@reduxjs/toolkit";
 import { bringBackDoc } from "./customSlice.js";
+import isEqual from "lodash.isequal";
+import { produce } from "immer";
+import { getDateStr } from "./Utility.js";
 
 // Attendance
 const attendanceAdapter = createEntityAdapter({
@@ -54,6 +58,8 @@ export const studentInitialState = studentAdapter.getInitialState()
 export const apiSlice = createApi({
     baseQuery: fetchBaseQuery({ baseUrl: "/" }),
     reducerPath: "myApi",
+    keepUnusedDataFor: 9999999999,
+    tagTypes: ["AttendanceWithRecentData"],
     endpoints: (builder) => ({
         getAuth: builder.query({
             queryFn: async () => {
@@ -190,8 +196,14 @@ export const apiSlice = createApi({
 
         setAttendance: builder.mutation({
             queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
-                return await setAttendance({firestore, ids, classId, classGroupId, dateStr, ...patch})
+                const editedBy = {
+                    uid: auth.currentUser.uid, 
+                    name: auth.currentUser.displayName, 
+                    email: auth.currentUser.email
+                }
+                return await setAttendance({firestore, ids, classId, classGroupId, dateStr, editedBy, ...patch})
             },
+            invalidatesTags: ["AttendanceWithRecentData"],
             onQueryStarted: async ({classId, classGroupId, dateStr}, {queryFulfilled, dispatch}) => {
                 try {
                     await queryFulfilled
@@ -204,17 +216,33 @@ export const apiSlice = createApi({
         }),
 
         updateAttendance: builder.mutation({
-            queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }, mutation) => {
-                return await updateAttendance({firestore, ids, classId, classGroupId, dateStr, ...patch})
+            queryFn: async ({ ids, classId, classGroupId, dateStr, ...patch }) => {
+                const editedBy = {
+                    uid: auth.currentUser.uid, 
+                    name: auth.currentUser.displayName, 
+                    email: auth.currentUser.email
+                }
+                return await updateAttendance({firestore, ids, classId, classGroupId, dateStr, editedBy, ...patch})
             },
+            invalidatesTags: ["AttendanceWithRecentData"],
+            onQueryStarted: async ({classId, classGroupId, dateStr}, {queryFulfilled, dispatch}) => {
+                try {
+                    await queryFulfilled
+                    const docToSetBack = dispatch(bringBackDoc(`${classId}${dateStr}`))
+                    dispatch(apiSlice.util.updateQueryData("getAttendance", {classId, classGroupId, dateStr}, _ => docToSetBack))
+                } catch (e) {
+                    console.log("Error while updating cache manually, ", e)
+                }
+            }
         }),
 
         getAttendance: builder.query({
-            queryFn: async ({ classId, classGroupId, dateStr }, baseQuery) => {
+            queryFn: async ({ classId, classGroupId, dateStr}) => {
                 // expects dateStr to be utc +05:00 (without hyphen) because 
                 // server maintians +05:00, will use day, month and year as is
                 return await getAttendance({firestore, classId, classGroupId, dateStr})
             },
+            
             async onCacheEntryAdded({ classId, classGroupId, dateStr }, cacheLifecycleApi ) {
                 const docRef = doc( firestore, "attendance", `${classId}${dateStr}` );
                 await cachedDocumentListenerWithWait(
@@ -223,6 +251,51 @@ export const apiSlice = createApi({
                     attendanceConverter
                 );
             },
+        }),
+        getAttendanceWithRecentData: builder.query({
+            queryFn: async ({ classId, classGroupId, dateStr, fallback="" }, {dispatch}) => {
+                try {
+                    const promise = dispatch(apiSlice.endpoints.getAttendance.initiate({
+                        classId, classGroupId, dateStr
+                    }))
+                    promise.unsubscribe()
+                    return await promise
+                } catch (err) {
+                    return {error: err.message}
+                }
+            },
+            providesTags: ["AttendanceWithRecentData"],
+            serializeQueryArgs({queryArgs}) { // queries are differentiated based on classId and classGroupId
+                const {classId, classGroupId} = queryArgs
+                return {classId, classGroupId}
+            },
+            // the first time merge runs (on second query), adds the whole previous result to __previousRecord__ field
+            // the next time it runs(currentCache has __previousRecord__) then ->  
+            // it adds the real previous result (without __previousRecord__) to __previousRecord__ field
+            // but in case if real previous result (without __previousRecord__) is empty, then it uses its __previousRecord__ key
+            // the whole work is so that data is always available on __previousRecord__ field
+            // after one single successful fetch, no matter how many queries fail afterwards 
+            merge(currentCache, newRecord) { 
+                const newRecordUpdated = produce(newRecord, draft => {
+                    const mergeIsRunningAgain = currentCache.__previousRecord__ != undefined
+                    if (mergeIsRunningAgain) {
+                        const previousResultExists = currentCache.exists == true
+                        if (previousResultExists) {
+                            const withPreviousRecord = Object.assign({}, currentCache)
+                            delete withPreviousRecord.__previousRecord__
+                            draft.__previousRecord__ = withPreviousRecord
+                        } else {
+                            draft.__previousRecord__ = currentCache.__previousRecord__
+                        }
+                    } else {
+                        draft.__previousRecord__ = currentCache
+                    }
+                })
+                return newRecordUpdated
+            },
+            forceRefetch({currentArg, previousArg}) {
+                return !isEqual(currentArg, previousArg)
+            }
         }),
 
         getMonthlyAttendance: builder.query({
@@ -286,19 +359,22 @@ export const apiSlice = createApi({
                     const id = await getTeacherUid(firestore, email)
                     return {data: id}
                 } catch (err) {
-                    return {error: err.message}
+                    console.log("ERROR in getPublicTeacherByEmail: ", err.message)
+                    return {error: {message: err.message}} // err my be unserializable, so can't do return {error: err}
                 }
             }
         }),
         register: builder.mutation({
-            queryFn: async ({ email, password }) => {
+            queryFn: async ({ email, password, displayName }) => {
                 try {
                     const creds = await createUserWithEmailAndPassword(
                         auth,
                         email,
                         password
                     );
-                    await signupFirestoreInteraction(firestore, creds.user.uid, creds.user.email)
+                    const p1 = updateProfile(auth.currentUser, {displayName})
+                    const p2 = signupFirestoreInteraction(firestore, creds.user.uid, creds.user.email)
+                    await Promise.allSettled([p1, p2])
                     return { data: "" };
                 } catch (err) {
                     return { error: err.code };
@@ -348,14 +424,17 @@ export const apiSlice = createApi({
             },
         }),
         unAssignTeacher: builder.mutation({
-            queryFn: async ({ recepientEmail, classGroupId, classId }, {dispatch}) => {
-                removeTeacher({
+            queryFn: async ({ 
+                recepientEmail, 
+                classGroupId, 
+                classId 
+            }, {dispatch}) => {
+                return await removeTeacher({
                     firestore, classGroupId, classId,
                     getTeacherUid: async () => {
                         const promise = dispatch(apiSlice.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
                         promise.unsubscribe()
                         const {isSuccess, ...other} = await promise
-                        console.log("OTHER IS: ", other)
                         if (isSuccess) {
                             return other.data
                         } else {
@@ -405,6 +484,6 @@ export const {
     useDeleteClassMutation,
     useAcceptInvitationMutation,
     useRejectInvitationMutation,
-    useClearNotificationsMutation
+    useClearNotificationsMutation,
+    useGetAttendanceWithRecentDataQuery,
 } = apiSlice;
-

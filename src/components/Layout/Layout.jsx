@@ -6,9 +6,7 @@ import {  IconMenu2  } from "src/IconsReexported.jsx";
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice.js";
 import { skipToken } from "@reduxjs/toolkit/query";
 import Sidebar from "./Sidebar.jsx";
-import { useDispatch, useSelector } from "react-redux";
-import { getAllClassIds } from "src/api/userSlice.js";
-import { ClassSkeletonUI } from "../Index/Classes.jsx";
+import { useDispatch } from "react-redux";
 import { DetailedClassSkeletonUI } from "../Index/DetailedClass.jsx";
 
 export default function RootLayout() {
@@ -46,10 +44,12 @@ export default function RootLayout() {
     <>
     <div className="h-full" id='layout'>
       
-      <div id="topbar" className="flex gap-1 p-2 sm:hidden">
-        <IconMenu2 onMouseUp={openSidebar} />
+      <div id="topbar" className="flex gap-1 p-2 sm:hidden items-center">
+        <IconMenu2 className="p-1 box-content" onMouseUp={openSidebar} />
         <span className="">Menu</span>
       </div>
+
+      <hr />
 
       <Sidebar myRef={sidebarRef} />
 

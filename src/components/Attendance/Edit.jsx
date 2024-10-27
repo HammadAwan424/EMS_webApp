@@ -1,45 +1,41 @@
 import classNames from "classnames"
 import { useState } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import { useGetAttendanceQuery, useUpdateAttendanceMutation } from "src/api/apiSlice"
+import { useGetAttendanceQuery, useGetClassByIdQuery, useUpdateAttendanceMutation } from "src/api/apiSlice"
 import { useImmer } from "use-immer"
-import Popup from "../CommonUI/Popup"
+import { usePopup } from "../CommonUI/Popup"
 import Student from "./Student"
 import dot from "dot-object"
-import { parseDateStr } from "src/api/Utility"
-import { selectStudentsEntities, selectStudentsIds } from "../Class/ClassEdit"
+import { getPath } from "src/api/Utility"
+import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/attendance"
+import { HeaderForEditViewAttendance, PercentageBar } from "./Common"
 
-function Edit() {
-    const { classId, classGroupId, date: dateStr } = useParams()
+// todayAttendance and classData will be loaded by TodayAttendanceWrapper
+function Edit({dateStr}) {
+    const { classId, classGroupId} = useParams()
     const navigate = useNavigate()
-    
-    const dateObj = parseDateStr(dateStr)
-    const urlReadable = dateObj.toLocaleString("en-GB", {
-        "day": "numeric", "month": 
-        "long", "year": "numeric", "timeZone": "UTC"
-    })
 
     const {data: todayAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr})
-    const [attendanceMutation, { isLoading }] = useUpdateAttendanceMutation()
+    const {data: classData} = useGetClassByIdQuery({classId, classGroupId}) 
+    const [attendanceMutation, { isLoading: isMutating }] = useUpdateAttendanceMutation()
+    const { popup, close } = usePopup({ isLoading: isMutating })
     const location = useLocation()
-
-    const allStudents = todayAttendance.students
 
     const [renderWarning, setRenderWarning] = useState(false)
 
-    const [popup, setPopup] = useState({
-        text: "",
-        handler: () => {},
-        visible: false,
-    })
-
+    const [attendanceUpdates, setUpdates] = useImmer({students: {}, ids: []})
 
     const attendance = {
-        students: selectStudentsEntities(todayAttendance),
-        ids: selectStudentsIds(todayAttendance)
+        students: selectStudentEntitiesDaily(todayAttendance),
+        ids: selectStudentIdsDaily(todayAttendance)
     }
 
-    const [attendanceUpdates, setUpdates] = useImmer({students: {}, ids: []})
+    const headerProp = {
+        className: classData.className,
+        editedBy: todayAttendance.editedBy,
+        lastEdited: todayAttendance.lastEdited 
+    }
+
 
     const getCurrentStatus = id => attendanceUpdates.students[id]?.status ?? attendance.students[id].status
 
@@ -56,36 +52,37 @@ function Edit() {
                     const name = `students.${id}.status`
                     dot.str(name, status, draft)
                 }
-                
             }
         })
     }
 
-    const unMarkedCount = Object.values(attendanceUpdates.students).filter(v => v.status == 0).length
-    const presentCount = Object.values(attendanceUpdates.students).filter(v => v.status == 1).length
-    const absentCount = attendanceUpdates.ids.length - presentCount - unMarkedCount
+    const presentCount = Object.values(attendance.students).filter(v => v.status == 1).length
+    const totalCount = attendance.ids.length
+    console.log("THE VALUES: ", presentCount, totalCount)
+    const presentCountInUpdates = Object.values(attendanceUpdates.students).filter(v => v.status == 1).length
+    const absentCountInUpdates = attendanceUpdates.ids.length - presentCountInUpdates
     const updatesCount = attendanceUpdates.ids.length
     const hasUpdates = updatesCount > 0
+
+
 
     function initialSubmitHandler() {
         if (!hasUpdates) {
             setRenderWarning(true);
         } else {
-            setPopup({
-                visible: true,
+            popup({
                 handler: confirmSubmitHandler,
-                text: status(absentCount, presentCount)
+                text: status(absentCountInUpdates, presentCountInUpdates)
             })
         }
     }
 
     async function confirmSubmitHandler() {
         console.log(attendance);
-        try {
+        try {   
             const cmb = { classId, classGroupId, dateStr, ...attendanceUpdates }
-            console.log("combined object: ", cmb, "hash: ", location.state)
             await attendanceMutation(cmb).unwrap()
-            return navigate(location.state || "/")
+            return navigate(location.state || getPath.attendance({classId, classGroupId}).view({dateStr}))
         } catch (e) {
             console.log("couldn't set attendence due to: ", e)
         }
@@ -100,12 +97,12 @@ function Edit() {
     return (
         <>         
             <span className="title-100">{"Edit Attendance"}</span> 
-            <span>For {urlReadable.slice(0,-5)}</span>  
-            <Popup
-                text={popup.text} visible={popup.visible} confirmHandler={popup.handler}
-                setVisible={(boolean) => setPopup({ ...popup, visible: boolean })} isLoading={isLoading}
-            />
-            <div className="flex gap-2 flex-col p-2">
+            <HeaderForEditViewAttendance attendanceDoc={headerProp} dateStr={dateStr} />
+            <PercentageBar 
+                presentCount={presentCount+presentCountInUpdates-absentCountInUpdates} 
+                totalCount={totalCount} />
+                
+            <div className="flex gap-2 flex-col">
                 <div className="studentLayout">
                     {attendance.ids.map((id) =>
                         <Student 
@@ -132,13 +129,13 @@ function Edit() {
     );
 }
 
-function status(absentCount, presentCount) {
-    // if (presentCount == 0) {
+function status(absentCountInUpdates, presentCountInUpdates) {
+    // if (presentCountInUpdates == 0) {
     //     return <div>You updated all students as absent</div>
-    // } else if (absentCount == 0) {
+    // } else if (absentCountInUpdates == 0) {
     //     return <div>You updated all students as present</div>
     // } else {
-        return `Updates include ${absentCount} absent students and ${presentCount} present students`
+        return `Updates include ${absentCountInUpdates} absent students and ${presentCountInUpdates} present students`
     }
 // }
 

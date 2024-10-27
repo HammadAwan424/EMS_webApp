@@ -3,17 +3,12 @@ import {
     IconSquareRoundedXFilled, IconSquareRoundedCheckFilled
  } from "src/IconsReexported.jsx";
 import classNames from "classnames";
+import { states } from "./Common";
 
 function Student({details, id, markStudent}) {   
     let iconSize = 30
     const {studentName: name, rollNo} = details
     const studentName = name.toUpperCase()[0] + name.slice(1)
-
-    let states = {
-        present: 1,
-        unMarked: 0,
-        absent: -1
-    }
 
     const marked = details.status != states.unMarked
  

@@ -1,7 +1,6 @@
 import classNames from "classnames";
 import { useImmer } from "use-immer";
-import dot from "dot-object"
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 
 // Name works as Path which should be unique for each input else there would be problems
 // uiGetter is only required when style=="custom"

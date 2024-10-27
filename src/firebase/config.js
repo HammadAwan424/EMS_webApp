@@ -22,6 +22,7 @@ console.log("// config.js -> process.env.production is: ", production)
 if (production != "true") {
     console.log("Firebase WebSdk working in Development")
     connectAuthEmulator(auth, 'http://192.168.88.240:9099')
+    // connectAuthEmulator(auth, 'http://127.0.0.1:9099')
     connectFirestoreEmulator(firestore, "192.168.88.240", 8080)
 } else {
     console.log("Firebase WebSdk working in Production")

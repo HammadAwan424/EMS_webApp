@@ -60,13 +60,13 @@ function Login() {
                     <h1 className='text-white self-center'>Login</h1>
                     <form action="" className='flex flex-col gap-4' onSubmit={(e) => handleClick(e)}>
                         <p className='text-sm'>Enter you email address</p>
-                        <input className='text-black bg-neutral-600 rounded-sm p-1' ref={emailRef} type="email" placeholder="Enter Email" required/>
+                        <input className='text-white bg-neutral-600 rounded-sm p-1' ref={emailRef} type="email" placeholder="Enter Email" required/>
                         <p className='text-sm pt-2'>Password</p>
-                        <input className='text-black bg-neutral-600 rounded-sm p-1' ref={passwordRef} type="password" placeholder="Enter Password" required />
+                        <input className='text-white bg-neutral-600 rounded-sm p-1' ref={passwordRef} type="password" placeholder="Enter Password" required />
                         <Alert show={status.visible} text={status.text} type={status.type} />
                         <div></div>
                         <Button states={{isLoading}} text={{idleText: "Sign in", loadingText: "Signing in..."}} />
-                        <div className='text-sm self-center'>Don't have an account? <Link to="/register" state={location.state ?? "/"}>Register Now</Link></div>
+                        <div className='text-sm self-center'>{"Don't have an account?"}<Link to="/register" state={location.state ?? "/"}>Register Now</Link></div>
                     </form>
                 </div>
                 ) : null

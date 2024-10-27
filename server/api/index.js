@@ -111,7 +111,7 @@ app.get("/api/cronjob/daily", async (req, res) => {
     
     const querySnapshot = await firestore.collection("attendance").where("createdAt", "==", utcPlusFive).get()
     const attendanceDocs = querySnapshot.docs
-    // const attendanceDocs = [{data() {return dailyMock}}]
+    
     console.log("Starting Loop with attendanceDocs found: ", attendanceDocs.length)
     for (let i = 0; i < attendanceDocs.length; i++) {
         const attendanceDoc = attendanceDocs[i].data()
@@ -120,7 +120,7 @@ app.get("/api/cronjob/daily", async (req, res) => {
         let present = 0;
         // Sets overall Students Stats for one single month
         for (let j = 0; j < studentIds.length; j++) {
-            const status = attendanceDoc.students[studentIds[j]].status
+            const status = attendanceDoc.students[studentIds[j]]?.status ?? null
             const keyForStudent = status == 1 ? "present"
                 : status == -1 ? "absent" 
                 : null

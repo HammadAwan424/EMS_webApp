@@ -33,7 +33,6 @@ html, body, #root {
 
 body {
   margin: 0;
-  place-items: center;
 }
 
 h1 {
@@ -41,10 +40,8 @@ h1 {
   line-height: 1.1;
 }
 
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
+
+
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
@@ -77,7 +74,7 @@ button:focus-visible {
 
 @layer base {
   * {
-    border-color: #404040;
+    @apply border-theme-100;
   }
   body {
     @apply bg-theme-600
@@ -118,6 +115,7 @@ button:focus-visible {
     @apply grid overflow-hidden gap-x-2 gap-y-4 grid-cols-2 
       auto-rows-[minmax(220px,auto)] lg:auto-rows-[minmax(250px,auto)]
   }
+
 }
 
 @layer utilities {

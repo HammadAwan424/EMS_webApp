@@ -1,14 +1,11 @@
-import { useGetAuthQuery, useGetUserQuery, useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectAllStudents, selectStudentsCount, studentInitialState, selectStudentsForYearMonth } from "src/api/apiSlice"
-import Classes, { Class, ClassSkeletonUI } from "./Classes"
+import { useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectStudentsCount, studentInitialState, selectStudentsForYearMonth } from "src/api/apiSlice"
+import { Class, ClassSkeletonUI } from "./Classes"
 import {  IconUserFilled  } from "src/IconsReexported.jsx"
-import { useLayoutEffect } from "react"
-import Apology from "../Apology/Apology"
 import { useParams } from "react-router-dom"
-import { useState, useMemo } from "react"
+import { useState, useMemo , useEffect } from "react"
 import { skipToken } from "@reduxjs/toolkit/query"
 import { dateUTCPlusFive, getDateStr } from "src/api/Utility"
-import { useEffect } from "react"
-import Track from "./Track"
+
 import ImprovedTrack from "./ImprovedTrack"
 
 
@@ -154,7 +151,8 @@ function Students({studentList}) {
 }
 
 function StudentRow({studentData}) {
-    const zeroToOne = (studentData.present / (studentData.present + studentData.absent))
+    const [present, absent] = [studentData?.present ?? 0, studentData?.absent ?? 0]
+    const zeroToOne = ( present / (present + absent))
     const percentage = Math.round(zeroToOne * 100)
 
     const red =  [220, 38, 38]

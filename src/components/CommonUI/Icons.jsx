@@ -8,16 +8,16 @@ function Cross({className, onClick, size}) {
     )
 }
 
-function Spinner({svgClassNames="", width=25, height=25, strokeWidth=25}) {
+function Spinner({svgClassNames="", width=25, height=25, strokeWidth=30}) {
     return (
-        <svg className={svgClassNames} width={25} height={25} viewBox="0 0 200 200">
+        <svg className={svgClassNames} width={width} height={height} viewBox="0 0 200 200">
             <path className="opacity-25" fill="transparent" strokeWidth={strokeWidth} stroke="white" d="
-            M 100 35
-            A 65 65 0 1 1 35 100
+            M 100 20
+            A 80 80 0 1 1 20 100
             "></path>
             <path className="opacity-75" fill="transparent" strokeWidth={strokeWidth} stroke="white" d="
-            M 35 100
-            A 65 65 0 0 1 100 35
+            M 20 100
+            A 80 80 0 0 1 100 20
             "></path>
         </svg>
     )

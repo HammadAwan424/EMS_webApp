@@ -1,10 +1,9 @@
-import {  IconAlertCircle, IconCirclePlus, IconEdit  } from "src/IconsReexported.jsx"
+import {  IconAlertCircle, IconCirclePlus  } from "src/IconsReexported.jsx"
 import dot from "dot-object"
 import isEqual from "lodash.isequal"
 import { useParams } from "react-router-dom"
 import { useGetAuthQuery, useGetClassGroupsQuery, useEditClassGroupMutation } from "src/api/apiSlice"
 import Button from "../CommonUI/Button"
-import Popup from "../CommonUI/Popup"
 import ClassEdit from "../Class/ClassEdit"
 import { initialUiState, inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./GroupCommon"
 import { useImmerReducer } from "use-immer"
@@ -25,23 +24,19 @@ function ClassGroupEdit() {
     const {data: Auth, isLoading: loadingAuth} = useGetAuthQuery()
     const {data: classGroups, isLoading} = useGetClassGroupsQuery(Auth.uid)
 
-    if (isLoading || loadingAuth) {
-        return <h1>We are loading classGroup data</h1>
-    }
-
-    const {Id: CLASS_GROUP_ID} = useParams()
-    const classGroup = classGroups.find((entry) => entry.id == CLASS_GROUP_ID)
+    const {Id: classGroupId} = useParams()
+    const classGroup = classGroups.find((entry) => entry.id == classGroupId)
 
     const sampleClasses = createInitialState(classGroup.classes || {})
     const [updates, dispatch] = useImmerReducer(reducer, reducerInitState)
     const [ui, uiDispatch] = useImmerReducer(uiReducer, initialUiState) 
-    const [editClassGroup, { isLoading: mutating, data, isUninitialized }] = useEditClassGroupMutation()
+    const [editClassGroup, { isLoading: isMutating, data, isUninitialized }] = useEditClassGroupMutation()
     
     const CLASS_COUNT = sampleClasses.meta.classIds.length + updates.meta.classIds.length
 
-    const {popup, setPopup, handleSubmit} = useSubmitChanges({
+    const {handleSubmit} = useSubmitChanges({
         CLASS_COUNT, reset, updates,
-        mutationFunc: () => editClassGroup({classGroupId: CLASS_GROUP_ID, create: false, ...updates})
+        mutationFunc: () => editClassGroup({classGroupId: classGroupId, create: false, ...updates}).unwrap()
     })
 
     function reset() {
@@ -98,7 +93,7 @@ function ClassGroupEdit() {
                         <div className="flex-1"></div>
 
                         <button className="flex p-2 gap-1 bg-[--theme-secondary]" type="button"
-                            onClick={() => dispatch({ type: "addClass", classGroupId: CLASS_GROUP_ID })}
+                            onClick={() => dispatch({ type: "addClass", classGroupId: classGroupId })}
                         >
                             <IconCirclePlus className="text-green-400" />
                             <span>Add Class</span>
@@ -111,7 +106,7 @@ function ClassGroupEdit() {
                             <button type="button" className="flex-1 bg-[--theme-secondary]" 
                                 onClick={reset}>Cancel</button>
                             <Button className="flex-1 bg-[--theme-secondary]" 
-                                states={{isLoading: mutating}} text={{idleText: "Save Changes"}} 
+                                states={{isLoading: isMutating}} text={{idleText: "Save Changes"}} 
                             />
                         </div>
                     )}
@@ -120,15 +115,10 @@ function ClassGroupEdit() {
 
 
             {sampleClasses.meta.classIds.map(
-                id => <ClassEdit sampleData={sampleClasses.classes[id]} id={id} key={id} />)
+                id => <ClassEdit sampleData={sampleClasses.classes[id]} classGroupId={classGroupId} classId={id} key={id} />)
             }
         
         </div>
-       
-        <Popup
-            text={popup.text} visible={popup.visible} confirmHandler={popup.handler} 
-            setVisible={(boolean) => setPopup({...popup, visible: boolean})} isLoading={mutating}
-        />
         </>
     )
 }

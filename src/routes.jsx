@@ -1,5 +1,5 @@
 import { createBrowserRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
-import RootLayout, { RootLayoutSkeletonUI } from "./components/Layout/Layout.jsx"
+import RootLayout from "./components/Layout/Layout.jsx"
 import Root, {RootLoader, AuthRequired} from "./components/Root.jsx";
 import Index from "./components/Index/Index.jsx"
 import RootErrorPage from "./components/Layout/Error-page.jsx"
@@ -11,13 +11,14 @@ import { auth } from "./firebase/config.js";
 import { signOutAction } from "./api/Utility.js";
 // import { classAction, classLoader } from "./components/Index/Dashboard.jsx";
 // import ClassInput, {loader as classEditLoader, action as classEditAction} from "./components/Class/ClassEdit.jsx";
-import Attendance from "./components/Attendance/Attendance.jsx";
 import ClassGroupEdit from "./components/Classgroup/GroupEdit.jsx";
 import ClassGroupCreate from "./components/Classgroup/GroupCreate.jsx";
 import Notifications from "./components/Notifications/Notifications.jsx";
 import { DetailedClassWrapper } from "./components/Index/DetailedClass.jsx";
-import { ClassSkeletonUI } from "./components/Index/Classes.jsx";
 import View from "./components/Attendance/View.jsx";
+import ClassEditRoute from "./components/Class/ClassEditRoute.jsx";
+import ClassLayout from "./components/Class/ClassLayout.jsx";
+import TodayAttendanceWrapper from "./components/Attendance/TodayAttendanceWrapper.jsx";
 
 
 // function loaderWrapper(loader) {
@@ -72,48 +73,55 @@ function CustomRouterProvider() {
                 />
     
                 <Route
-                path="/"
-                element={<RootLayout />}
-                errorElement={<RootErrorPage />}
+                    path="/"
+                    element={<RootLayout />}
+                    errorElement={<RootErrorPage />}
                 >   
     
                     <Route index element={<Index />} />
     
-                    <Route path="/classgroup/:Id" 
-                    element={<AuthRequired><ClassGroupEdit /></AuthRequired>} 
-                    // action={editAction} loader={editLoader} 
-                    // errorElement={<EditErrorPage />}
+                    <Route path="classgroup/:Id" 
+                        element={<AuthRequired><ClassGroupEdit /></AuthRequired>} 
+                        // action={editAction} loader={editLoader} 
+                        // errorElement={<EditErrorPage />}
                     />
 
                     <Route
-                    path="/classgroup/create"
-                    element={<AuthRequired><ClassGroupCreate /></AuthRequired>}
+                        path="classgroup/create"
+                        element={<AuthRequired><ClassGroupCreate /></AuthRequired>}
                     />
 
                     <Route 
-                    path="/class/details/:classGroupId/:classId"
-                    element={<AuthRequired><DetailedClassWrapper /></AuthRequired>}
-                    />
+                        path="classgroup/:classGroupId/class/:classId" 
+                        element={<AuthRequired><ClassLayout /></AuthRequired>}
+                    >
+                        <Route 
+                            path="details"
+                            element={<DetailedClassWrapper />}
+                        />
 
-      
+                        <Route 
+                            path="edit" 
+                            element={<ClassEditRoute />}
+                        />
 
-                    {/* <Route 
-                    path="class/:classGroupId/:classId" 
-                    // loader={classEditLoader}
-                    // action={classEditAction}
-                    element={<AuthRequired><ClassInput /></AuthRequired>}
-                    /> */}
+                        <Route 
+                            path="attendance/view/:dateStr" 
+                            element={<View />}
+                        />
 
-                    <Route 
-                    path="attendance/:type/:classGroupId/:classId/:date" 
-                    element={<AuthRequired><Attendance /></AuthRequired>}
-                    />
+                        <Route 
+                            path="attendance/today" 
+                            element={<TodayAttendanceWrapper />}
+                        />
+                    </Route>
+
 
                     <Route
-                    path="/notifications" element={<AuthRequired><Notifications /></AuthRequired>}
+                        path="notifications" element={<AuthRequired><Notifications /></AuthRequired>}
                     />  
 
-                    <Route path="/view" element={<View />}></Route>
+                    <Route path="view" element={<View />}></Route>
                 </Route>
 
                 {/* <Route

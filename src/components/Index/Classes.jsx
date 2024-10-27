@@ -1,19 +1,17 @@
 import { skipToken } from "@reduxjs/toolkit/query"
-import {  IconCalendarOff, IconMenu2  } from "src/IconsReexported.jsx"
+import {  IconCalendarOff  } from "src/IconsReexported.jsx"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { 
     useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery, 
     useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectAll, 
     attendanceInitialState, selectTotal, selectIds } from "src/api/apiSlice"
-import { dateUTCPlusFive, getDateStr } from "src/api/Utility"
+import { dateUTCPlusFive, getDateStr, getPath } from "src/api/Utility"
 import Pie from "../CommonUI/Pie"
 import Track from "./Track"
 import MediaQuery from "react-responsive"
-import { useSelector } from "react-redux"
-import { getAllClassIds } from "src/api/userSlice"
 import { classInvitationSelector } from "src/api/invitation"
-import { selectStudentsEntities, selectStudentsIds } from "../Class/ClassEdit"
+import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/attendance"
 
 function Classes() {
     const {data: Auth} = useGetAuthQuery()
@@ -109,8 +107,8 @@ function Class({classId, classGroupId, cssClasses=""}) {
         return <ClassSkeletonUI />
     }
 
-    const todayStudentIds = selectStudentsIds(attendance)
-    const todayStudentEntities = selectStudentsEntities(attendance)
+    const todayStudentIds = selectStudentIdsDaily(attendance)
+    const todayStudentEntities = selectStudentEntitiesDaily(attendance)
     const presentCount = todayStudentIds.filter(id => todayStudentEntities[id].status == 1).length
     const totalStuCount = todayStudentIds.length
  
@@ -150,11 +148,13 @@ function Class({classId, classGroupId, cssClasses=""}) {
                 items-start rounded-md hover:bg-[--theme-quad] border-theme-100 border ${cssClasses}`} 
         >
             <div className="wrapper flex justify-between self-stretch items-center relative">
-                <div className="title-200"> {classData.className} </div>
+                <Link className="title-200 noLink" 
+                    to={getPath.attendance({classId, classGroupId}).view({dateStr: todayDateStr})}
+                >{classData.className}</Link>
                 {/* <div className="text-sm"> {} </div> */}     
-                <IconMenu2 onClick={() => setDropdown(true)} className="cursor-pointer" />
+                {/* <IconMenu2 onClick={() => setDropdown(true)} className="cursor-pointer" /> */}
                 {/* TODO: Edit route for a class that is joined class/${classGroupId}/${classId} */}
-                {dropdown && (
+                {/* {dropdown && (
                     <div 
                         id="Dropdown" 
                         ref={dropdownRef} 
@@ -171,7 +171,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
                             to={`/class/details/${classGroupId}/${classId}`}
                         >Details</Link></div>
                     </div>
-                )}
+                )} */}
             </div>
 
             <div id="All Space" className="flex-auto self-stretch text-center flex items-center justify-center h-1">
@@ -201,20 +201,25 @@ function Class({classId, classGroupId, cssClasses=""}) {
                         
                         {/* List from monthly attendance */}
                         {allPreviousAttendance.map(card => 
-                            <div key={card.id} className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
-                                <Pie percentage={card.count / card.total * 100}>
-                                    <div className="w-full h-full flex items-center justify-center">
-                                        <span className="text-3xl sm:text-4xl lg:text-5xl">{card.count}/{card.total}</span>
-                                    </div>
-                                </Pie>
-                            </div>
+                            <Link className="noLink" draggable={false} key={card.id}
+                                to={getPath.attendance({ classId, classGroupId }).view({dateStr: card.id})} 
+                                state={pathBack}
+                            >
+                                <div className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
+                                    <Pie percentage={card.count / card.total * 100}>
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <span className="text-3xl sm:text-4xl lg:text-5xl">{card.count}/{card.total}</span>
+                                        </div>
+                                    </Pie>
+                                </div>
+                            </Link>
                         )}
 
 
                         {/* Today attendance from getAttendance */}
                         {attendance.exists ? (
                             <Link className="noLink" draggable={false}
-                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr()}`} state={pathBack}
+                                to={getPath.attendance({classId, classGroupId}).today} state={pathBack}
                             >   
                                 <div className="bg-red-600 rounded-full overflow-hidden w-full h-full inline-block relative select-none">
                                     <Pie percentage={presentCount / totalStuCount * 100}>
@@ -226,7 +231,7 @@ function Class({classId, classGroupId, cssClasses=""}) {
                             </Link>
                         ) : (
                             <Link className="noLink" draggable={false} 
-                                to={`/attendance/view/${classGroupId}/${classId}/${getDateStr()}`} state={pathBack}
+                                to={getPath.attendance({classId, classGroupId}).today} state={pathBack}
                             >
                                 <div 
                                     className="bg-theme-500 rounded-full overflow-hidden w-full h-full inline-block relative select-none"

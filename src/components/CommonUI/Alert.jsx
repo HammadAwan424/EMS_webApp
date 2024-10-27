@@ -1,5 +1,6 @@
+
 import classNames from "classnames"
-import {  IconAlertTriangleFilled  } from "src/IconsReexported.jsx"
+import {  IconAlertTriangle  } from "src/IconsReexported.jsx"
 
 /**
  * Alert component
@@ -12,8 +13,8 @@ import {  IconAlertTriangleFilled  } from "src/IconsReexported.jsx"
 function Alert({show, text, type}) {
     
     const className = classNames(
-        'w-full flex gap-2 rounded-lg p-1 items-center',
-        {'bg-red-900 text-red-400': type=='warning'},
+        'flex gap-2 rounded-lg p-1 items-center',
+        {'text-red-700 border-red-700 border': type=='warning'},
         {'bg-green-900 text-green-400': type=="success"}
     )
 
@@ -21,7 +22,7 @@ function Alert({show, text, type}) {
         <>
             {show && (
                 <div className={className}>
-                    {type == "warning" && <div className="pt-1"><IconAlertTriangleFilled /></div>}
+                    {type == "warning" && <div className="pt-1"><IconAlertTriangle /></div>}
                     <p> 
                         {text}
                     </p>

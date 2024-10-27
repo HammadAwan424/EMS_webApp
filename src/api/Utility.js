@@ -1,6 +1,6 @@
 import { doc, collection, arrayUnion, writeBatch, arrayRemove } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { redirect } from "react-router-dom";
+import { generatePath, redirect } from "react-router-dom";
 
 function createClassGroupLink(firestore) {
     const classGroupid = doc(collection(firestore, "classGroups")).id
@@ -20,7 +20,7 @@ async function signOutAction(auth) {
 // but not the timezone (as it doesn't use date.getLocalDay etc)
 function getDateStr(dateDiff=0, dateObj=new Date(), skipAddition=false, hyphenated=false) {
     const plusFiveTimestamp = skipAddition ? dateObj : new Date(dateObj.getTime() + (5  * 60 * 60 * 1000))
-    plusFiveTimestamp.setDate(plusFiveTimestamp.getDate() + dateDiff)
+    plusFiveTimestamp.setUTCDate(plusFiveTimestamp.getUTCDate() + dateDiff)
     let month, day, year;
 
     month = String(plusFiveTimestamp.getUTCMonth()+1).padStart(2, "0")
@@ -37,15 +37,24 @@ function getDateStr(dateDiff=0, dateObj=new Date(), skipAddition=false, hyphenat
 
 // it returns dateObj whose all methods return utc +5:00 time
 // all methods must use .getUTC*()
+// accepts seconds in utc for conversion
 function dateUTCPlusFive(date=new Date()) {
-    const utcTime = date.getTime()
-    return new Date(utcTime + (5 * 60 * 60 * 1000))
+    const offset = 5 * 60 * 60 * 1000
+    if (typeof date == "number") {
+        return new Date(date + offset)
+    } else {
+        const utcTime = date.getTime()
+        return new Date(utcTime + offset)
+    }
 }
 
-
+// takes a dateStr and returns dateObj which represent the same date in utc timezone
 // returns Date obj by parsing dateStr (utc +5:00)
 // all get operations should use getUTC*
 function parseDateStr(dateStr) {
+    if (dateStr == undefined || dateStr == null) {
+        return dateStr
+    } 
     const time = "00:00:00"
     const tz = "Z"
     const [year, month, day] = [dateStr.slice(0, 4), dateStr.slice(4, 6), dateStr.slice(6, 8)]
@@ -53,7 +62,30 @@ function parseDateStr(dateStr) {
     return new Date(`${date}T${time}${tz}`)
 }
 
+const getPath = {
+    class({classId, classGroupId}) {
+        const classPath = generatePath("/classgroup/:classGroupId/class/:classId", {
+            classGroupId, classId
+        })
+        return {
+            edit: classPath+"/edit",
+            details: classPath+"/details"
+        }
+    },
+    attendance({classId, classGroupId}) {
+        const attendancePath = generatePath("/classgroup/:classGroupId/class/:classId/attendance", {
+            classGroupId, classId
+        })
+        return {
+            today: attendancePath+"/today",
+            view({dateStr}) {
+                return attendancePath+`/view/${dateStr}`
+            }
+        }
+    }
+}
 
-export {createClassGroupLink, signOutAction, getDateStr, parseDateStr, dateUTCPlusFive}
+
+export {createClassGroupLink, signOutAction, getDateStr, parseDateStr, dateUTCPlusFive, getPath}
 
 

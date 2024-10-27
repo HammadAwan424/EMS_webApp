@@ -7,7 +7,7 @@ import { arrayRemove, deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from 
 import { deleteClass } from "#src/api/classes";
 import { setLogLevel } from "firebase/app";
 import { getAttendance, setAttendance, updateAttendance } from "#src/api/attendance";
-import { getDateStr, getDateStr } from "#src/api/Utility";
+import { dateUTCPlusFive, getDateStr } from "#src/api/Utility";
 
 setLogLevel("error")
 
@@ -19,12 +19,12 @@ let mike;
 let byMike;
 let env;
 
-const [classId] = ["aliceClassId12121212"]
+const [classId, className, aliceName] = ["aliceClassId12121212", "aliceClass", "aliceName"]
 
 
 beforeAll(async () => {
     env = await getEnv()
-    alice = env.authenticatedContext("alice", {email: "alice@gmail.com"})
+    alice = env.authenticatedContext("alice", {email: "alice@gmail.com", name: "aliceName"})
     byAlice = alice.firestore()
     jake = env.authenticatedContext("jake", {email: "jake@gmail.com"})
     byJake = jake.firestore()
@@ -49,7 +49,7 @@ const setMockData = async () => {
         meta: {},
         classes: {
             [classId]: {
-                className: "aliceClass",
+                className,
                 students: {},
                 assignedTeacher: ""
             }
@@ -84,9 +84,17 @@ const mockUpdates = {
     ids: [1]
 }
 
+const setAliceAttendance = {
+    editedBy: {
+        name: aliceName,
+        uid: "alice",
+        email: "alice@gmail.com"
+    }
+}
+
 test('Alice can set attendance', async () => {
     expect(await setAttendance({
-        firestore: byAlice, ...mockAttendance, 
+        firestore: byAlice, ...mockAttendance, ...setAliceAttendance,
         classId: classId, classGroupId: "aliceGroup",
         dateStr: undefined
     })).toEqual({data: ""})
@@ -95,7 +103,7 @@ test('Alice can set attendance', async () => {
 describe("Alice had set attendance for today", () => {
     beforeEach(async () => {
         const result = await setAttendance({
-            firestore: byAlice, ...mockAttendance, 
+            firestore: byAlice, ...mockAttendance, ...setAliceAttendance,
             classId: classId, classGroupId: "aliceGroup",
             dateStr: undefined
         })
@@ -109,14 +117,14 @@ describe("Alice had set attendance for today", () => {
             classGroupId: "aliceGroup", 
             dateStr: getDateStr() // getting for today in utc plus 5 offset
         })
-        expect(result.data.students).toEqual(mockAttendance.students)
+        expect(result.data.students.entities).toEqual(mockAttendance.students)
         // createdAt is equal to whatever date is in utc +05:00
         expect(result.data.createdAt).toBe(getDateStr())
     })
 
     test("Alice can update today Attendance", async () => {
         expect(await updateDoc(doc(byAlice, "attendance", `${classId}${getDateStr()}`), {
-            "students.1.status": 1, lastModified: serverTimestamp(), createdAt: getDateStr()
+            "students.1.status": 1, lastEdited: serverTimestamp(), createdAt: getDateStr()
         })).toBeUndefined()
     })
 
@@ -132,9 +140,93 @@ describe("Alice had set attendance for today", () => {
             classGroupId: "aliceGroup", 
             dateStr: getDateStr()
         })
-        expect(result.data.students[1]).toEqual(mockUpdates.students[1]) //updated
+        expect(result.data.students.entities[1]).toEqual(mockUpdates.students[1]) //updated
     })
-    
+
+    test("We can get dateStr yyyymm for previous day in utc +5:00 offset using utility funcs", () => {
+        const dateObj = dateUTCPlusFive()
+        const dateStr = getDateStr(-1, dateObj, true)
+        // all of the below code is not required if i use getDateStr with -1 for previous day
+        const requiredOffset = +5 // hours
+        const todayDate = new Date()
+        todayDate.setDate(todayDate.getDate()-1) // previuos day
+        const utcPlusFiveHours = todayDate.getHours() + (todayDate.getTimezoneOffset()/60) + requiredOffset
+        todayDate.setHours(utcPlusFiveHours)
+        expect(todayDate.getDate()).toBe(parseInt(dateStr.slice(-2,)))
+        expect(todayDate.getMonth()+1).toBe(parseInt(dateStr.slice(-4, -2))) // added 1 for month from 1 to 12
+    })
+
+    test("getAttendance when fallback is previous || next returns the nearest doc earlier or later in time", async () => {
+        const dateObj = dateUTCPlusFive()
+        const dateStrTomorrow = getDateStr(+1, dateObj, true)
+        const resultWithTomorrowArg = await getAttendance({
+            firestore: byAlice, classId,
+            classGroupId: "aliceGroup", 
+            dateStr: dateStrTomorrow, fallback: "previous"
+        })
+
+        const dateObj2 = dateUTCPlusFive()
+        const dateStrYesterday = getDateStr(-1, dateObj2, true)
+        const resultWithYesterdayArg = await getAttendance({
+            firestore: byAlice, classId,
+            classGroupId: "aliceGroup", 
+            dateStr: dateStrYesterday, fallback: "next"
+        })
+        
+        // both results are same, their respective fallback cause them to fetch today doc (it exists)
+        expect(resultWithYesterdayArg).toEqual(resultWithTomorrowArg)
+        expect(resultWithYesterdayArg.data.students.entities).toEqual(mockAttendance.students)
+        expect(resultWithYesterdayArg.data.createdAt).toBe(getDateStr()) // confirms that it fetched today doc
+    })
+
+    test("getAttendance when fallback is provided but doc exists, fallback has no effect", async () => {
+        const dateObj = dateUTCPlusFive()
+        const nextDay = getDateStr(+1, dateObj, true)
+        // setting attendance for the next day
+        await env.withSecurityRulesDisabled(context => {
+            const f = context.firestore()
+            return setAttendance({
+                firestore: f, ...mockAttendance, ...setAliceAttendance,
+                classId: classId, classGroupId: "aliceGroup",
+                dateStr: nextDay
+            })
+        })
+        // fetching attendance for next day
+        const result = await getAttendance({
+            firestore: byAlice, classId,
+            classGroupId: "aliceGroup", 
+            dateStr: nextDay
+        })
+        // make sure attendance for next day has been set correctly
+        expect(result.data.exists).toBe(true)
+        expect(result.data.students.entities).toEqual(mockAttendance.students)
+        expect(result.data.createdAt).toBe(nextDay)
+        expect(result.data.createdAt).not.toBe(getDateStr()) // not today
+
+        // Now the real test
+        const resultWithFallback = await getAttendance({
+            firestore: byAlice, classId,
+            classGroupId: "aliceGroup", 
+            dateStr: nextDay, fallback: "previous" // fallback is previous but dateStr is of next day
+        })
+        // fallback doesn't have an effect if doc is found for given dateStr, result is same as above
+        expect(resultWithFallback.data.createdAt).toBe(nextDay)
+    })
+
+    test("not providing correct display name for update/set fails", async () => {
+        const wrongEditedBy = {name: "wrongName"}
+        const correctEditedBy = {name: aliceName}
+        expect(await updateAttendance({
+            firestore: byAlice, ...mockUpdates, editedBy: wrongEditedBy,
+            classId: classId, classGroupId: "aliceGroup",
+            dateStr: undefined
+        })).toHaveProperty("error")
+        expect(await updateAttendance({
+            firestore: byAlice, ...mockUpdates, editedBy: correctEditedBy,
+            classId: classId, classGroupId: "aliceGroup",
+            dateStr: undefined
+        })).toHaveProperty("data")
+    })
 })
 
 // describe("Attendance for yesterday day exists", () => {

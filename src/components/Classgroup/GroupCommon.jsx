@@ -1,12 +1,12 @@
-import {  IconCircleMinus, IconEdit, IconCircleArrowUpFilled  } from "src/IconsReexported.jsx"
+import {  IconCircleMinus, IconCircleArrowUpFilled  } from "src/IconsReexported.jsx"
 import classNames from "classnames"
 import dot from "dot-object"
 import { doc, collection } from "firebase/firestore"
 import { produce } from "immer"
 import isEqual from "lodash.isequal"
-import { useState } from "react"
 import { firestore } from "src/firebase/config"
 import MediaQuery from "react-responsive"
+import { usePopup } from "../CommonUI/Popup"
 
 const reducerInitState = {classes: {}, meta: {classIds: []}}
 function reducer(state, action) {
@@ -99,38 +99,31 @@ const useSubmitChanges = ({
     mutationFunc,
     updates
 }) => {
-    const [popup, setPopup] = useState({
-        text: "",
-        handler: () => {},
-        visible: false,
-    })
-
+    // TODO: add loading, for now, no loading because listeners are fired immediately 
+    const { popup, close } = usePopup() 
     async function handleSubmit({event=null}) {
         event.preventDefault()
         const func = async () => {
             try {
-                await mutationFunc().unwrap()
+                await mutationFunc()
                 reset()
             } catch (err) {
                 console.error("Couldn't save changes", err)
             }
-            console.log("Setting popup from ", popup.visible, " to: ", !popup.visible)
-            setPopup({...popup, visible: false})
+            close() // needed only for edit, it doesn't navigate
+            // in case of navigate, parent unmounts and popup automatically closes 
         }
         
         if (isEqual(reducerInitState, updates)) {
             reset()
         } else if (CLASS_COUNT == 0) {
-            setPopup({
-                visible: true, handler: func,
-                text: "You have not added any class yet, want to proceed?"
-            })
+            popup({handler: func, text: "You have not added any class yet, want to proceed?"})
         } else {
             await func()
         }
     }
 
-    return {popup, setPopup, handleSubmit}
+    return {handleSubmit}
 }
 
 export {reducer, uiReducer, initialUiState, reducerInitState, NewClass, inputClasses, useSubmitChanges}

@@ -3,6 +3,7 @@ import { useContext, createContext, useEffect } from "react";
 
 import store from "src/app/store";
 import { apiSlice, useGetAuthQuery } from "src/api/apiSlice";
+import { Popup } from "./CommonUI/Popup";
 const AuthContext = createContext(null)
 
 export const RootLoader = async () => {
@@ -25,7 +26,12 @@ function Root() {
 
     return (
         <>
-        {isSuccess ? <Outlet /> : null}
+        {isSuccess ? (
+            <>
+                <Outlet />
+                <Popup />
+            </>
+        ) : null}
         </>
     )
 }
@@ -47,9 +53,12 @@ export function AuthRequired({children}) {
     }, [Auth, location.pathname, navigate])
 
     return (
-        <>
-        { Auth && children }
-        </>
+        Auth && (
+            <>
+                {children}
+            </>
+        )
+   
     )
 }
 

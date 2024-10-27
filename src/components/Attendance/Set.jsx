@@ -1,58 +1,61 @@
 import classNames from "classnames"
-import { useState, useRef, useEffect } from "react"
+import { useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
 import { useGetClassByIdQuery, useSetAttendanceMutation } from "src/api/apiSlice"
 import { useImmer } from "use-immer"
-import Popup from "../CommonUI/Popup"
+import { usePopup } from "../CommonUI/Popup"
 import Student from "./Student"
 import Apology from "../Apology/Apology"
-import { parseDateStr } from "src/api/Utility"
-import { selectStudentsEntities, selectStudentsIds } from "../Class/ClassEdit"
+import { getPath } from "src/api/Utility"
+import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/attendance"
 import { produce } from "immer"
 
 
-function Set({isValid}) {
+function Set({dateStr}) {
     // date represents utc +5:00 date
-    const {date: dateStr} = useParams()
-    const dateObj = parseDateStr(dateStr)
-    const urlReadable = dateObj.toLocaleString("en-GB", {
-        "day": "numeric", "month": 
-        "long", "year": "numeric", "timeZone": "UTC"
-    })
+    // const { classId, classGroupId } = useParams()
+
+    // const dateObj = parseDateStr(dateStr)
+    // const urlReadable = dateObj.toLocaleString("en-GB", {
+    //     "day": "numeric", "month": 
+    //     "long", "year": "numeric", "timeZone": "UTC"
+    // })
 
     return (
-        <>
-        <span className="title-100">{"Set Attendance"}</span>
-        <span>For {urlReadable.slice(0,-5)}</span>
-        {isValid ? (
-            <Main /> 
-        ) : (
-            // User requesting attendance for some previous day that doesn't exist
-            <Apology text={`No record found for ${urlReadable}`} />
-        )}
-        </>
+        <div className="flex flex-col gap-4">
+            <span className="title-100">{"Set Attendance"}</span>
+            <Main dateStr={dateStr} />
+            {/* {isValid ? (
+                <Main /> 
+            ) : (
+                // User requesting attendance for some previous day that doesn't exist
+                <Apology text={`No record found for ${urlReadable}`} />
+            )} */}
+        </div>
     )
 }
 
-function Main() {
-    const { classId, classGroupId, date: dateStr } = useParams()
+
+// classData will be loaded by TodayAttendanceWrapper
+function Main({dateStr}) {
+    const { classId, classGroupId } = useParams()
     const navigate = useNavigate()
 
-    const { data: classData, isFetching } = useGetClassByIdQuery({ classId, classGroupId })
-    const [attendanceMutation, { isLoading }] = useSetAttendanceMutation()
+    const { data: classData } = useGetClassByIdQuery({ classId, classGroupId })
+    const [attendanceMutation, { isLoading: isMutating }] = useSetAttendanceMutation()
+    const { popup } = usePopup({isLoading: isMutating})
+
 
     const [renderWarning, setRenderWarning] = useState(false)
-    const dialogRef = useRef(null);
     const location = useLocation()
 
     const [attendance, setAttendance] = useImmer(() => {
-        const ids = selectStudentsIds(classData)
-        const students = produce(selectStudentsEntities(classData), draft => {
+        const ids = selectStudentIdsDaily(classData)
+        const students = produce(selectStudentEntitiesDaily(classData), draft => {
             ids.forEach(id => draft[id].status = 0)
         })
         return {students, ids}
     })
-    console.log("INSIDE SET MAIN: ", isLoading)
 
     const markStudent = (status, id) => {
         setAttendance(draft => {
@@ -66,18 +69,13 @@ function Main() {
     const absentCount = attendance.ids.length - presentCount - unMarkedCount
     const isUnMarked = unMarkedCount > 0
 
-    const [popup, setPopup] = useState({
-        text: "",
-        handler: () => {},
-        visible: false,
-    })
+
 
     function initialSubmitHandler() {
         if (isUnMarked) {
             setRenderWarning(true);
         } else {
-            setPopup({
-                visible: true,
+            popup({
                 handler: confirmSubmitHandler,
                 text: status(absentCount)
             })
@@ -89,7 +87,7 @@ function Main() {
         try {
             const cmb = { classId, classGroupId, dateStr, ...attendance }
             await attendanceMutation(cmb).unwrap()
-            return navigate(location.state || "/")
+            return navigate(location.state || getPath.attendance({classId, classGroupId}).view({dateStr}))
         } catch (e) {
             console.log("couldn't set attendence due to: ", e)
         }
@@ -103,14 +101,8 @@ function Main() {
 
     return (
         <>
-            <Popup
-                text={popup.text} visible={popup.visible} confirmHandler={popup.handler}
-                setVisible={(boolean) => setPopup({ ...popup, visible: boolean })} isLoading={isLoading}
-            />
-
-            
             {hasStudents ? (
-                <div className="flex gap-2 flex-col p-2">
+                <div className="flex gap-2 flex-col">
                     <div className="studentLayout">
                         {attendance.ids.map((id) =>
                             <Student details={attendance.students[id]} id={id} key={id} markStudent={markStudent} />
@@ -130,7 +122,7 @@ function Main() {
             ) : (
                 <Apology>
                     <span>{"It look's like you forgot to add students for this class. "}</span>
-                    <Link to={`/classgroup/${classGroupId}`}>{"Add them here"}</Link>
+                    <Link to={getPath.class({classId, classGroupId}).edit}>{"Add them here"}</Link>
                 </Apology>
             )}
 

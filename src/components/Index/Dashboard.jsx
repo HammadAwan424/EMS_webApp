@@ -26,7 +26,8 @@ function DashBoard() {
     let classesList = []
     activeClasses.length > 0 ? classesList = [...activeClasses, "all"] : classesList.push("noclass")
     let classGroupList = Object.keys(User.classGroups)
-    classGroupList.length > 0 ? classGroupList = [...classGroupList, "all"] : classGroupList.push("nogroup")
+    // classGroupList.length > 0 ? classGroupList = [...classGroupList, "all"] : classGroupList.push("nogroup")
+    classGroupList.length > 0 ? classGroupList = [...classGroupList] : classGroupList.push("nogroup")
 
     const [lastVisited, setLastVisited] = useImmer({lastGroupId: classGroupList[0], lastClassId: classesList[0]})
 
@@ -101,6 +102,7 @@ function DashBoard() {
                     </div>
                 </div>
             </div> */}
+
             <div id="Topbar" className="flex items-center justify-between">
                 <span className="title-100">Dashboard</span>
                 <div className="self-stretch text-end">

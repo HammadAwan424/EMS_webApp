@@ -8,23 +8,24 @@ import { getDateStr } from "src/api/Utility"
 
 function Attendance() {
 
-    const {classId, classGroupId, type, date: dateStrUrl} = useParams()
+    const {classId, classGroupId, dateStr: dateStrUrl} = useParams()
 
 
     const dateStrToday = getDateStr()
 
-    const {data: attendance, isFetching: loadingAttendance} = useGetAttendanceQuery({
-        classId, classGroupId, dateStr: dateStrUrl
+ 
+    const {data: attendance, isLoading: loadingAttendance} = useGetAttendanceQuery({
+        classId, classGroupId, dateStr: dateStrUrl 
     })
-    const {data, isFetching} = useGetClassByIdQuery({classId, classGroupId})
 
-    console.log("Attendance.jsx ", isFetching, loadingAttendance)
+    const {isLoading} = useGetClassByIdQuery({classId, classGroupId})
 
-    if (isFetching || loadingAttendance) {
-        return <h1>Loading please wait a second</h1>
+
+
+    if (isLoading || loadingAttendance) {
+        return null
     }
 
-    console.log("attendance is : ", attendance)
     const dateStrDoc = attendance.exists ? attendance.createdAt : "00000000"
     const isTodayDoc = dateStrDoc == dateStrToday
     const isTodayUrl = dateStrUrl == dateStrToday 

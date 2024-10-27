@@ -7,6 +7,7 @@ import IconArrowRight from "@tabler/icons-react/dist/esm/icons/IconArrowRight.mj
 import IconArrowLeft from "@tabler/icons-react/dist/esm/icons/IconArrowLeft.mjs"
 import IconFidgetSpinner from "@tabler/icons-react/dist/esm/icons/IconFidgetSpinner.mjs"
 import IconUserFilled from "@tabler/icons-react/dist/esm/icons/IconUserFilled.mjs"
+import IconUser from "@tabler/icons-react/dist/esm/icons/IconUser.mjs"
 import IconCalendarOff from "@tabler/icons-react/dist/esm/icons/IconCalendarOff.mjs"
 import IconX from "@tabler/icons-react/dist/esm/icons/IconX.mjs"
 import IconAlertTriangleFilled from "@tabler/icons-react/dist/esm/icons/IconAlertTriangleFilled.mjs"
@@ -23,4 +24,6 @@ import IconSquareRoundedCheck from "@tabler/icons-react/dist/esm/icons/IconSquar
 import IconSquareRoundedX from "@tabler/icons-react/dist/esm/icons/IconSquareRoundedX.mjs"
 import IconSquareRoundedXFilled from "@tabler/icons-react/dist/esm/icons/IconSquareRoundedXFilled.mjs"
 import IconSquareRoundedCheckFilled from "@tabler/icons-react/dist/esm/icons/IconSquareRoundedCheckFilled.mjs"
-export { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconNotification, IconMenu2, IconArrowRight, IconArrowLeft, IconFidgetSpinner, IconUserFilled, IconCalendarOff, IconX, IconAlertTriangleFilled, IconAlertCircle, IconCirclePlus, IconEdit, IconCircleMinus, IconCircleArrowUpFilled, IconCircleArrowDownFilled, IconTrashOff, IconTrash, IconCheckbox, IconSquareRoundedCheck, IconSquareRoundedX, IconSquareRoundedXFilled, IconSquareRoundedCheckFilled }
+import IconFilter from "@tabler/icons-react/dist/esm/icons/IconFilter.mjs"
+import IconAlertTriangle from "@tabler/icons-react/dist/esm/icons/IconAlertTriangle.mjs"
+export { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconNotification, IconAlertTriangle, IconMenu2, IconArrowRight, IconArrowLeft, IconFidgetSpinner, IconUser, IconUserFilled, IconCalendarOff, IconX, IconAlertTriangleFilled, IconAlertCircle, IconCirclePlus, IconEdit, IconCircleMinus, IconCircleArrowUpFilled, IconCircleArrowDownFilled, IconTrashOff, IconTrash, IconCheckbox, IconSquareRoundedCheck, IconSquareRoundedX, IconSquareRoundedXFilled, IconSquareRoundedCheckFilled, IconFilter }

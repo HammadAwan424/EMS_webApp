@@ -1,4 +1,5 @@
 import dot from "dot-object"
+import { produce } from "immer"
 
 const classEditReducerInitialState = {
     students: {
@@ -7,7 +8,9 @@ const classEditReducerInitialState = {
         meta: {}
     },
     ui: {
-        lockedInput: []
+        lockedInput: [],
+        expanded: false,
+        hasExpandedOnce: false,
     }
 }
 
@@ -75,12 +78,22 @@ function classEditReducer(draft, action) {
             if (allInputGroups.includes(valueToLock)) {
                 !draft.ui.lockedInput.includes(valueToLock) && draft.ui.lockedInput.push(valueToLock)
             } else {
-                throw Error(`Can lock ${valueToLock}, valid values are ${allInputGroups}`)
+                throw Error(`Can't lock ${valueToLock}, valid values are ${allInputGroups}`)
             }
             break
         }
+        case "ui/expand": {
+            const value = action.value
+            draft.ui.expanded = value
+            draft.ui.hasExpandedOnce = draft.ui.hasExpandedOnce || value
+            break
+        }
         case "reset": {
-            return classEditReducerInitialState
+            // nitpicking two fields manually
+            return produce(classEditReducerInitialState, initialDraft => {
+                const {expanded, hasExpandedOnce} = draft.ui
+                initialDraft.ui = {...initialDraft.ui, expanded, hasExpandedOnce}
+            })
         }
         default: {
             throw Error(`No corresponding case for action type: ${action.type}.`)

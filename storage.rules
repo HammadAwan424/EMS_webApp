@@ -213,21 +213,28 @@ service cloud.firestore {
       }
 
       allow update: if TeacherOrAdmin(resource.data.classGroupId, resource.data) &&
-
         utcplus5time() &&
         request.resource.data.createdAt == resource.data.createdAt &&
         request.resource.data.classId == resource.data.classId &&
         request.resource.data.classGroupId == resource.data.classGroupId &&
         request.resource.data.students.size() == resource.data.students.size() &&
 
-        request.resource.data.lastModified == request.time 
-      
-        
+        request.resource.data.lastEdited == request.time &&
+        request.resource.data.editedBy.name == request.auth.token.get("name", null) &&
+        request.resource.data.editedBy.uid == request.auth.uid &&
+        request.resource.data.editedBy.email == request.auth.token.email
+
+      // TODO: no className verification
       allow create: if TeacherOrAdmin(request.resource.data.classGroupId, request.resource.data) &&
         // get(/databases/$(database)/documents/classGroups/$(request.resource.data.classGroupId)/classes/$(request.resource.data.classId)).data.students.size() == request.resource.data.students.size() &&
         utcplus5time() &&
         request.resource.data.createdAt == sheetID[20:28] &&
-        request.resource.data.lastModified == request.time 
+
+        request.resource.data.lastEdited == request.time &&
+        request.resource.data.editedBy.name == request.auth.token.get("name", null) &&
+        request.resource.data.editedBy.uid == request.auth.uid &&
+        request.resource.data.editedBy.email == request.auth.token.email
+
 
       allow read: if TeacherOrAdmin(resource.data.classGroupId, resource.data) || resource == null
     }

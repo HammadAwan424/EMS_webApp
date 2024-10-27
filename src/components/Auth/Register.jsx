@@ -11,8 +11,8 @@ function Register() {
     const emailRef = useRef()
     const passwordRef = useRef()
     const [confirmPassword, setConfirmPassword] = useState("")
+    const [displayName, setDisplayName] = useState("")
     const [status, setStatus] = useState({visible: false, text: "", type: ""})
-    const [formVisible, setFormVisible] = useState(false)
     const navigate = useNavigate()
     const location = useLocation()
     const [register, {isLoading, isSuccess}] = useRegisterMutation()
@@ -42,7 +42,7 @@ function Register() {
             return
         }
         try {
-            await register({ email, password }).unwrap()
+            await register({ email, password, displayName }).unwrap()
             setStatus({type: "success", text: "Registered successfully, redirecting in a second...", visible: true})
         } catch (err) {
             const errorMsg = err.code == "auth/invalid-credentials" ? "Email and/or password incorrect" :
@@ -58,12 +58,20 @@ function Register() {
                     <h1 className='text-white self-center'>Register</h1>
 
                     <form action="" className='flex flex-col gap-4' onSubmit={(e) => handleClick(e)}>
+                        <p>Your Display Name</p>
+                        <input 
+                            className='text-white bg-neutral-600 rounded-sm p-1'  
+                            type="text" placeholder="Enter Display Name" required value={displayName}
+                            onInput={(e) => setDisplayName(e.target.value)}/>
+                        
                         <p className='text-sm'>Enter you email address</p>
-                        <input className='text-black bg-neutral-600 rounded-sm p-1' ref={emailRef} type="email" placeholder="Enter Email" required/>
+                        <input className='text-white bg-neutral-600 rounded-sm p-1' ref={emailRef} type="email" placeholder="Enter Email" required/>
+                        
                         <p className='text-sm pt-2'>Password</p>
-                        <input className='text-black bg-neutral-600 rounded-sm p-1' minLength={6} ref={passwordRef} type="password" placeholder="Enter Password" required />
+                        <input className='text-white bg-neutral-600 rounded-sm p-1' minLength={6} ref={passwordRef} type="password" placeholder="Enter Password" required />
+                        
                         <p className='text-sm pt-2'>Confirm Password</p>
-                        <input className='text-black bg-neutral-600 rounded-sm p-1' minLength={6}
+                        <input className='text-white bg-neutral-600 rounded-sm p-1' minLength={6}
                             type="password" placeholder="Re-enter Password" required
                             onChange={(e) => setConfirmPassword(e.currentTarget.value)} value={confirmPassword}
                         />

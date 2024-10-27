@@ -8,6 +8,9 @@ import { useGetAuthQuery, useGetClassGroupsQuery } from "src/api/apiSlice"
 import { Teacher } from "src/api/Teacher"
 import Alert from "../CommonUI/Alert"
 import { Class } from "./Classes"
+import { skipToken } from "@reduxjs/toolkit/query"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../shadcn/Dropdown"
+import Apology from "../Apology/Apology"
 
 // Currently not used anywhere
 function ClassGroups({id}) {
@@ -34,6 +37,20 @@ const selectClassGroup = createSelector(
     (classGroups, id) => classGroups.find(group => group.id == id)
 )
 
+const useGetClassGroup = (queryArg) => {
+    const isSkipToken = queryArg == skipToken
+    const queryResult = useGetClassGroupsQuery(isSkipToken ? queryArg : queryArg.userId, {
+        selectFromResult(result) {
+            const data = result.data // always available
+            return {
+                ...result, 
+                classGroup: isSkipToken ? {} : selectClassGroup(data, queryArg.classGroupId)
+            }
+        }
+    })
+    return queryResult
+}
+
 
 function ClassGroup({id: classGroupId}) {
     const [dropdown, setDropdown] = useState(false)
@@ -42,17 +59,10 @@ function ClassGroup({id: classGroupId}) {
     const [sensitive, showSensitive] = useState(false)
     const {data: Auth} = useGetAuthQuery()
 
-    const {classGroup} = useGetClassGroupsQuery(Auth.uid, {
-        selectFromResult(result) {
-            const data = result.data ?? {}
-            return {
-                ...result, 
-                classGroup: selectClassGroup(data, classGroupId)
-            }
-        }
-    })
+    const result = useGetClassGroup({userId: Auth.uid, classGroupId})
+    const {classGroup} = result
 
-
+    const hasClasses = Object.keys(classGroup.classes).length > 0
 
     async function handleDelete() {
         const display = classGroupRef.current.style.display
@@ -73,22 +83,33 @@ function ClassGroup({id: classGroupId}) {
             <div className="flex items-center gap-2 relative">
                 <h2 className="title-200">{classGroup.classGroupName}</h2>
                 <div className="flex-auto"></div>
-                <IconMenu2 onClick={() => setDropdown(true)} className="cursor-pointer" />
-                    {dropdown && (
-                        <div id="Dropdown" className="absolute bg-slate-600 cursor-pointer min-w-20 rounded-md select-none top-6 right-6" onClick={() => setDropdown(false)}>
-                            <div className="border-b p-2"><Link className="text-inherit hover:text-inherit" to={`classgroup/${classGroupId}`}>Edit</Link></div>
-                            <div className="border-b p-2" onClick={() => showSensitive(true)}>Delete</div>
-                            <div className="p-2">Close</div>
-                        </div>
-                    )}
+                
+                <DropdownMenu open={dropdown} onOpenChange={setDropdown}>
+                    <DropdownMenuTrigger asChild>
+                        <IconMenu2/>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem>
+                            <Link className="noLink w-full" to={`classgroup/${classGroupId}`}>Edit</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>Close</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
 
-            <div className="CLASSGROUP-SECTION_CONTAINER classGrid">
-                {Object.keys(classGroup.classes).map(classId => 
-                    <Class classGroupId={classGroupId} classId={classId} key={classId} />
-                )}
-             
-            </div>
+            {hasClasses ? (
+                <div className="CLASSGROUP-SECTION_CONTAINER classGrid">
+                    {Object.keys(classGroup.classes).map(classId =>
+                        <Class classGroupId={classGroupId} classId={classId} key={classId} />
+                    )}
+                </div>
+            ) : (
+                <Apology>
+                    <span>{"It look's like you forgot to classes for this group. "}</span>
+                    <Link to={`/classgroup/${classGroupId}`}>{"Add them here"}</Link>
+                </Apology>
+            )}
+
             
             {sensitive &&
                 <div id="DeleteConfirmation" className='z-10 fixed inset-0 bg-opacity-60 bg-black flex items-center justify-center'>
@@ -102,11 +123,11 @@ function ClassGroup({id: classGroupId}) {
                     </div>
                 </div>}
         </div>
-        <hr className="w-1/2 mx-auto my-4" />
+        {hasClasses && <hr className="w-1/2 mx-auto my-4" />}
         </>
     )
 
 }
 
 export default ClassGroups
-export { ClassGroup }
+export { ClassGroup, useGetClassGroup }

@@ -14,7 +14,7 @@ function Notifications() {
 
     // Clear all -> clear rejectedRevoked (both), acceptedRevoked (both), inactiveInvitations (single)
     // just send array of ids
-    const [clearAll, {isLoading}] = useClearNotificationsMutation()
+    const [clearAll, { isLoading }] = useClearNotificationsMutation()
 
     const showClearAll = acceptedRevoked.length > 0 || invitationsRevoked.length > 0
 

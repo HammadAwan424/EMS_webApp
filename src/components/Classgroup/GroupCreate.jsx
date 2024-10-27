@@ -1,9 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import { inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./GroupCommon"
-import { useEffect } from "react"
 import { useImmerReducer } from "use-immer"
 import { useEditClassGroupMutation, useGetAuthQuery } from "src/api/apiSlice"
-import Popup from "../CommonUI/Popup"
 import {  IconAlertCircle, IconCirclePlus  } from "src/IconsReexported.jsx"
 import dot from "dot-object"
 import isEqual from "lodash.isequal"
@@ -33,9 +31,12 @@ function ClassGroupCreate() {
     const CLASS_COUNT = updates.meta.classIds.length
 
     
-    const {popup, setPopup, handleSubmit} = useSubmitChanges({
-        CLASS_COUNT, reset, updates,
-        mutationFunc: () => editClassGroup({classGroupId: CLASS_GROUP_ID, create: true, ...updates})
+    const {handleSubmit} = useSubmitChanges({
+        CLASS_COUNT, reset: () => {}, updates,
+        mutationFunc: async () => {
+            await editClassGroup({classGroupId: CLASS_GROUP_ID, create: true, ...updates}).unwrap()
+            navigate("/")
+        }
     })
     
 
@@ -48,12 +49,6 @@ function ClassGroupCreate() {
         uiDispatch({type: "reset"})
     }
     const hasNewClasses = updates.meta.classIds.length > 0
-
-    useEffect(() => {
-        if (isSuccess) {
-            navigate("/")
-        } 
-    }, [isSuccess])
 
     if (isSuccess) {
         return null
@@ -122,10 +117,6 @@ function ClassGroupCreate() {
         
         </div>
        
-        <Popup
-            text={popup.text} visible={popup.visible} confirmHandler={popup.handler} 
-            setVisible={(boolean) => setPopup({...popup, visible: boolean})} isLoading={mutating}
-        />
         </>
     )
 }
