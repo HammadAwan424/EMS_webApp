@@ -1,4 +1,5 @@
 
+import { getAllClassesStatus } from "src/api/rtk-helpers/invitation.js"
 import DashBoard from "./Dashboard.jsx"
 import NewUser from "./NewUser.jsx"
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice.js"
@@ -13,7 +14,8 @@ function User() {
 
 
     const hasClassGroups = Teacher.hasClassGroups(classGroups)
-    const hasClasses = Object.keys(User.classes).length > 0
+    const {acceptedAllowed} = getAllClassesStatus(User)
+    const hasClasses = acceptedAllowed.length > 0
 
 
     

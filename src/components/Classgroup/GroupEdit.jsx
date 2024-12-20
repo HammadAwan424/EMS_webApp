@@ -1,7 +1,7 @@
-import {  IconAlertCircle, IconCirclePlus  } from "src/IconsReexported.jsx"
+import {  IconAlertCircle, IconArrowLeft, IconCirclePlus  } from "src/IconsReexported.jsx"
 import dot from "dot-object"
 import isEqual from "lodash.isequal"
-import { useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { useGetAuthQuery, useGetClassGroupsQuery, useEditClassGroupMutation } from "src/api/apiSlice"
 import Button from "../CommonUI/Button"
 import ClassEdit from "../Class/ClassEdit"
@@ -25,6 +25,7 @@ function ClassGroupEdit() {
     const {data: classGroups, isLoading} = useGetClassGroupsQuery(Auth.uid)
 
     const {Id: classGroupId} = useParams()
+    const navigate = useNavigate()
     const classGroup = classGroups.find((entry) => entry.id == classGroupId)
 
     const sampleClasses = createInitialState(classGroup.classes || {})
@@ -54,6 +55,7 @@ function ClassGroupEdit() {
     return (
         <>
         <div className="flex flex-col gap-3" onSubmit={(e) => handleSubmit({event: e})}>
+            <IconArrowLeft onClick={() => navigate(-1)} />
             <form className="grid grid-cols-[auto,1fr] gap-2 items-center">
                 
                 <div className="flex">

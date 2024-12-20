@@ -10,7 +10,7 @@ const staticRefArr = []
 const staticRefObj = {}
 
 const selectStudentEntitiesEdit = state => state?.students?.entities ?? staticRefObj
-const selectStudentIdsArray = (state) => state?.students?.ids ?? staticRefArr
+const selectStudentIdsArray = state => state?.students?.ids ?? staticRefArr
 const selectStudentIdsEdit = createSelector(
     selectStudentEntitiesEdit,
     selectStudentIdsArray,
@@ -23,7 +23,7 @@ const selectStudentIdsFromUpdates = createSelector(
     selectStudentIdsArray,
     (state) => state?.students?.meta ?? staticRefObj,
     (entities, studentIds, metaObj) => 
-        studentIds.filter(id => metaObj[id] != "removed").toSorted((a, b) => entities[a].rollNo - entities[b].rollNo)
+        studentIds.filter(id => metaObj[id] != "removed")
     
 )
 

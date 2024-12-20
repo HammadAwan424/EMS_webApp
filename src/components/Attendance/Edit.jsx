@@ -1,14 +1,16 @@
 import classNames from "classnames"
 import { useState } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import { useGetAttendanceQuery, useGetClassByIdQuery, useUpdateAttendanceMutation } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetAttendanceQuery, useUpdateAttendanceMutation } from "src/api/rtk-query/attendance"
 import { useImmer } from "use-immer"
 import { usePopup } from "../CommonUI/Popup"
 import Student from "./Student"
 import dot from "dot-object"
 import { getPath } from "src/api/Utility"
-import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/attendance"
+import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/rtk-helpers/attendance"
 import { HeaderForEditViewAttendance, PercentageBar } from "./Common"
+import Alert from "../CommonUI/Alert"
 
 // todayAttendance and classData will be loaded by TodayAttendanceWrapper
 function Edit({dateStr}) {
@@ -58,7 +60,6 @@ function Edit({dateStr}) {
 
     const presentCount = Object.values(attendance.students).filter(v => v.status == 1).length
     const totalCount = attendance.ids.length
-    console.log("THE VALUES: ", presentCount, totalCount)
     const presentCountInUpdates = Object.values(attendanceUpdates.students).filter(v => v.status == 1).length
     const absentCountInUpdates = attendanceUpdates.ids.length - presentCountInUpdates
     const updatesCount = attendanceUpdates.ids.length
@@ -114,12 +115,12 @@ function Edit({dateStr}) {
                     )}
                 </div>
 
-                {renderWarning &&
-                    <div className="self-start bg-red-900 text-red-400 rounded-lg p-1">
-                        <p>
-                            Please do atleast one single update
-                        </p>
-                    </div>}
+                <Alert 
+                    show={renderWarning} 
+                    setter={setRenderWarning} 
+                    text="Please do atleast one single update"
+                    type="warning" 
+                />
 
                 <button className={buttonClasses} onClick={initialSubmitHandler}>
                     Submit

@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useGetAuthQuery, useGetUserQuery } from "src/api/apiSlice.js"
 import classNames from "classnames"
 import ClassView from "./ClassView.jsx"
 import ClassGroupView from "./ClassGroupVIew.jsx"
-import { useImmer } from "use-immer"
-import { classInvitationSelector } from "src/api/invitation.js"
+import { getAllClassesStatus } from "src/api/rtk-helpers/invitation.js"
+import { useDispatch, useSelector } from "react-redux"
+import { getLastVisited, setLastVisited } from "src/api/redux/userActivity.js"
+import { AttendanceCardContext } from "../Attendance/AttendanceCard.jsx"
 
 function DashBoard() {
 
@@ -15,47 +17,62 @@ function DashBoard() {
     //     console.log("TOKEN IS: ", token)
     // }
 
-    // (function k() {
-    //     mine()
-    // })()
-
     const {data: Auth} = useGetAuthQuery()
     const {data: User} = useGetUserQuery(Auth.uid)
-    const { acceptedAllowed: activeClasses } = classInvitationSelector(User)
-
-    let classesList = []
-    activeClasses.length > 0 ? classesList = [...activeClasses, "all"] : classesList.push("noclass")
-    let classGroupList = Object.keys(User.classGroups)
-    // classGroupList.length > 0 ? classGroupList = [...classGroupList, "all"] : classGroupList.push("nogroup")
-    classGroupList.length > 0 ? classGroupList = [...classGroupList] : classGroupList.push("nogroup")
-
-    const [lastVisited, setLastVisited] = useImmer({lastGroupId: classGroupList[0], lastClassId: classesList[0]})
+    const dispatch = useDispatch()
+    
+    const lastVisited = useSelector(getLastVisited)
 
     const {hash, pathname, search} = useLocation()
-    const groupActive = hash == "#classgroup" ? true : false
+
+    const parsedUrl = useMemo(() => {
+        const { acceptedAllowed: activeClasses } = getAllClassesStatus(User)
+        let classesList = []
+        activeClasses.length > 0 ? classesList = [...activeClasses, "all"] : classesList.push("noclass")
+        let classGroupList = Object.keys(User.classGroups)
+        // classGroupList.length > 0 ? classGroupList = [...classGroupList, "all"] : classGroupList.push("nogroup")
+        classGroupList.length > 0 ? classGroupList = [...classGroupList] : classGroupList.push("nogroup")
+
+        const hashValid = hash == "#class" || hash == "#classgroup"
+        const defaultHash = "#class"
+
+        const defaultId = hash == "#class" ? classesList[0] : hash == "#classgroup" ? classGroupList[0] : ""
+        const searchParams = new URLSearchParams(search)
+        const currentId = searchParams.get("id")
+        const idValid = hashValid && 
+            (hash == "#class" ? classesList.includes(currentId) : classGroupList.includes(currentId))
+        const isValid = hashValid && idValid
+
+        searchParams.set("id", idValid ? currentId : defaultId);
+
+        const url = pathname + '?' + searchParams + (hashValid ? hash : defaultHash)
+        
+        return {
+            isValid,
+            url,
+            newHash: hashValid ? hash : defaultHash,
+            newId: idValid ? currentId : defaultId,
+            classesList, classGroupList,
+        }
+    }, [hash, pathname, search, User])
+
+    const {classGroupList, classesList, isValid, newHash, newId} = parsedUrl
 
     const navigateTo = useNavigate()
 
-    // Set ids on lastVisitedSelect with which it is called
-    const navigate = useCallback((pathname, options) => {
-        const [before, searchWithHash] = pathname.split("?")
-        const [search, later] = searchWithHash.split("#")
-        const searchParams = new URLSearchParams(search)
-        const id = searchParams.get("id")
-        console.log("NAVIGATE WILL SET ID: ", id)
-        setLastVisited(prev => {
-            groupActive ? prev.lastGroupId = id : prev.lastClassId = id
-        })
-        navigateTo(pathname, options)
-    }, [navigateTo, groupActive, setLastVisited])
+    const groupActive = newHash == "#classgroup" ? true : false
+
+    const navigate = useCallback((id, hash, options) => {
+        const groupActive = hash == "#classgroup" ? true : false
+        dispatch(setLastVisited(groupActive ? {groupId: id} : {classId: id}))
+        navigateTo(`/?id=${id}${hash}`, options)
+    }, [navigateTo, dispatch])
 
 
     const setSelectInUrl = (e) => {
         const id = e.target.value
-        navigate(`/?id=${id}${hash}`)
+        navigate(id, newHash)
     }
-    const id = groupActive ? lastVisited.lastGroupId : lastVisited.lastClassId
-
 
     const classnames = (active) => {
         return classNames(
@@ -66,22 +83,18 @@ function DashBoard() {
     }
 
     useEffect(() => {
-        const searchParams = new URLSearchParams(search)
-        // default to 'id' if searchParam is not equal to id
-        // searchParams.get("id") == id ? id : searchParams.set("id", id);
-        // default 'classes' if # section is not valid
-        const newHash = (hash == "#class" || hash == "#classgroup") ? hash : "#class"
-        if (newHash != hash || searchParams.get("id") != id) {
-            searchParams.set("id", id);
-            console.log("CALLING NAVIGATE: ", searchParams.toString(), newHash, id)
-            navigate(pathname+'?'+searchParams+newHash, {replace: true})
+        // console.log("Running useEffect")
+        if (!isValid) {
+            // console.log("Calling navigate inside useEffect")
+            navigate(newId, newHash, {replace: true})
         }
-    }, [navigate, id, hash, pathname, search])
+    }, [navigate, newId, newHash, isValid])
 
-    if ((new URLSearchParams(search).get("id") != id) || !(hash == "#class" || hash == "#classgroup")) {
+    if (!isValid) {
+        // console.log("returning null")
+        // console.log(parsedUrl)
         return null
     }
-
 
     return (
         <div>
@@ -109,7 +122,7 @@ function DashBoard() {
                     {/* <label htmlFor="topBarSelect">Select: </label> */}
                     <select 
                         className="bg-transparent focus:bg-[--theme-secondary] py-1 px-2 rounded-md text-left h-full"
-                        name="classSelect" value={id} id="topBarSelect" onInput={(e) => setSelectInUrl(e)}
+                        name="classSelect" value={newId} id="topBarSelect" onInput={(e) => setSelectInUrl(e)}
                         >
                         {(groupActive ? classGroupList : classesList).map(value => (
                             <option key={value} value={value}>
@@ -129,17 +142,20 @@ function DashBoard() {
             <div className="flex w-48 mx-auto">
                 <Link 
                     className={"noLink rounded-l-2xl flex-1 px-2 py-1 border-r-[--theme-primary] border-r-2 text-center " + classnames(!groupActive)}
-                    id="classes" to="#class"
+                    id="classes" to={`/?id=${lastVisited.classId}#class`}
                 >Classes</Link>
                 <Link 
                     className={"noLink rounded-r-2xl flex-1 px-2 py-1 text-center " + classnames(groupActive)}
-                    id="classgroups" to="#classgroup"
+                    id="classgroups" to={`/?id=${lastVisited.groupId}#classgroup`}
                 >ClassGroups</Link>
             </div>
 
             {!groupActive && <div className="py-3"></div>}
-
-            {groupActive ? <ClassGroupView id={id} /> : <ClassView id={id} />}
+            
+            <AttendanceCardContext.Provider value={{isJoined: groupActive ? false : true}}>
+                {groupActive ? <ClassGroupView id={newId} /> : <ClassView id={newId} />}
+            </AttendanceCardContext.Provider>
+            
             {/* <Try /> */}
         </div>
     )
@@ -180,7 +196,7 @@ function Try() {
         <>
             <div className="ml-40">
                 <div className="inline-block" style={{ transform: `translate(${anotherTransform}%, 0px)` }}>
-                    <div ref={ref} className="h-40 bg-white w-40 whitespace-nowrap duration-[5000ms]" style={{ transform: `translate(${trackTransform}%, 0px)` }}>
+                    <div ref={ref} className="h-40 bg-white w-40 whitespace-nowrap" style={{ transform: `translate(${trackTransform}%, 0px)` }}>
                         {added && (
                             <>
                                 <div className="w-40 h-full inline-flex  whitespace-nowrap bg-blue-500"></div>

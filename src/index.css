@@ -85,6 +85,15 @@ button:focus-visible {
   button {
     @apply border bg-black border-transparent px-4 py-[0.6rem] rounded-lg font-medium transition
   }
+  
+  input[type="number"] {
+    appearance: initial;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+  }
 }
 
 
@@ -111,7 +120,7 @@ button:focus-visible {
   .studentLayout {
     @apply grid sm:grid-cols-2 lg:grid-cols-3 gap-2
   }
-  .classGrid {
+  .attendanceCardGrid {
     @apply grid overflow-hidden gap-x-2 gap-y-4 grid-cols-2 
       auto-rows-[minmax(220px,auto)] lg:auto-rows-[minmax(250px,auto)]
   }

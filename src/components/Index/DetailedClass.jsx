@@ -1,19 +1,25 @@
-import { useGetAttendanceQuery, useGetMonthlyAttendanceQuery, selectStudentsCount, studentInitialState, selectStudentsForYearMonth } from "src/api/apiSlice"
-import { Class, ClassSkeletonUI } from "./Classes"
+import { selectMonthlyStudents, selectStudentCountMonthly } from "src/api/rtk-helpers/attendance"
+import { useGetAttendanceQuery, useGetMonthlyAttendanceQuery } from "src/api/rtk-query/attendance"
+import AttendanceCard, { AttendanceCardSkeletonUI, AttendanceCardContext } from "src/components/Attendance/AttendanceCard"
 import {  IconUserFilled  } from "src/IconsReexported.jsx"
-import { useParams } from "react-router-dom"
+import { useLocation, useParams } from "react-router-dom"
 import { useState, useMemo , useEffect } from "react"
 import { skipToken } from "@reduxjs/toolkit/query"
-import { dateUTCPlusFive, getDateStr } from "src/api/Utility"
+import { dateUTCPlusFive, getDateStr, joinedClass } from "src/api/Utility"
 
 import ImprovedTrack from "./ImprovedTrack"
+import { useGetClassByIdQuery } from "src/api/apiSlice"
 
 
 function DetailedClassWrapper() {
     const {classId, classGroupId} = useParams()
+    const {search} = useLocation()
+    const isJoined = joinedClass(search)
 
     return(
-        <DetailedClass classId={classId} classGroupId={classGroupId} />
+        <AttendanceCardContext.Provider value={{isJoined}}>
+            <DetailedClass classId={classId} classGroupId={classGroupId} />
+        </AttendanceCardContext.Provider>
     )
 }
 
@@ -23,7 +29,7 @@ export { DetailedClassWrapper }
 function DetailedClassSkeletonUI() {
     return(
         <>
-            <ClassSkeletonUI />
+            <AttendanceCardSkeletonUI />
 
             <div className="flex gap-2 flex-col py-4">
                 <div className="w-32 h-8 bg-skeleton rounded-sm"></div>
@@ -47,12 +53,12 @@ function DetailedClass({classId, classGroupId}) {
     }, [])
     const [uniqueParams, setUniqueParams] = useState(null)
     const todayDateStr = getDateStr()
-    const {data: attendance, isError, isFetching: fetchingAttendance, isLoading: loadingAttendance} = useGetAttendanceQuery({classId, classGroupId, dateStr: todayDateStr})
-    
+
     const queryArgs = uniqueParams ? {classId, classGroupId, dateStr: uniqueParams} : skipToken
-    const {data: monthly, isFetching: fetchingMonthly, isLoading: loadingMonthly} = useGetMonthlyAttendanceQuery(queryArgs)
+    const {data: monthly, isLoading: loadingMonthly, isFetching: fetchingMonthly} = useGetMonthlyAttendanceQuery(queryArgs)
+    const {data: classData, isLoading: loadingClass} = useGetClassByIdQuery({classId, classGroupId})
     const {noMoreData=false, newUniqueParams=null, queryArgsWithValue=[]} = monthly ?? {}
-    const studentsCount = selectStudentsCount(monthly ?? {students: studentInitialState})
+    const studentsCount = selectStudentCountMonthly(monthly)
     
     useEffect(() => {
         if (noMoreData) {
@@ -75,18 +81,31 @@ function DetailedClass({classId, classGroupId}) {
         setSwipeBack(swipeBack + 1)
     }
     
-    if (loadingAttendance || loadingMonthly) {
+    if (loadingMonthly || loadingClass) {
         return <DetailedClassSkeletonUI />
     }
-
+    
+    const userViewingLoadingOrNoMoreData = queryArgsWithValue.length+swipeBack == 0
+    let readable;
+    if (userViewingLoadingOrNoMoreData) {
+        readable = "Older"
+    } else {
+        const date = dateUTCPlusFive()
+        date.setUTCMonth(parseInt(queryArgsWithValue.at(swipeBack-1).slice(-2,)) + 1)
+        readable = date.toLocaleString("en-GB", {month: "long"})
+    }
+    
     return (
         <div className="flex flex-col gap-6">
             <div className="flex">
-                <Class classId={classId} classGroupId={classGroupId} cssClasses="flex-1 lg:h-[250px] h-[220px]" />
+                <AttendanceCard classId={classId} classGroupId={classGroupId} cssClasses="flex-1 lg:h-[250px] h-[220px]" />
             </div>
             
             <div>
-                <span className="title-200 pb-2">Students Summary</span>
+                <div className="flex justify-between items-center">
+                    <span className="title-200 pb-2 inline-flex">Students Summary</span>
+                    <span>{readable}</span>
+                </div>
                 <ImprovedTrack totalItems={queryArgsWithValue.length+1} swipeBack={swipeBack} navigation={{next, previous}}>
                     {noMoreData ? (
                     <div className="flex items-center justify-center border border-theme-100 rounded-md">
@@ -99,7 +118,7 @@ function DetailedClass({classId, classGroupId}) {
                     )}
                     {queryArgsWithValue.map(yearMonth => 
                         <div className="" key={yearMonth}>
-                            <Students studentList={selectStudentsForYearMonth(monthly, yearMonth)} />
+                            <Students studentList={selectMonthlyStudents(monthly, yearMonth, classData)} />
                         </div>
                     )}
                 </ImprovedTrack> 
@@ -168,9 +187,9 @@ function StudentRow({studentData}) {
         <tr key={studentData.id} className="">
             <td className="text-left pl-2">
                 <IconUserFilled className="inline-block" />
-                <span className="pl-1 relative inline-block top-[2px]">Someone</span>
+                <span className="pl-1 relative inline-block top-[2px]">{studentData.studentName || "No name"}</span>
             </td>
-            <td>32</td>
+            <td>{studentData.rollNo || "-"}</td>
             <td className="">
                 <div className="flex h-full justify-center relative items-center">
                     <div style={{

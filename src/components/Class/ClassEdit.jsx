@@ -293,7 +293,10 @@ function SingleStudentEdit({type, studentId}) {
                     () => {dispatch({ type: "remove_student", id: studentId }); dispatch({type:"lockInput", value: "teacher"})}
                 } />
             )}
-            <Input {...newInputProps} className={getClassname(rollNoUi.isFocused)} name={fields[0]} placeholder="Roll No" />
+            <Input {...newInputProps} className={[
+                    getClassname(rollNoUi.isFocused),
+                    ""
+                ].join(" ")} name={fields[0]} type="number" placeholder="Roll No" />
             <Input {...newInputProps} className={getClassname(nameUi.isFocused)} name={fields[1]} placeholder="Name" />
         </div>
     )

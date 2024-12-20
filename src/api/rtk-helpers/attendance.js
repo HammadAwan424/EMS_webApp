@@ -1,7 +1,8 @@
 import { createSelector } from "@reduxjs/toolkit";
-import { getDateStr } from "./Utility";
+import { getDateStr } from "../Utility";
 import { setDoc, updateDoc, getDoc, doc, serverTimestamp, query, collection, where, orderBy, getDocs, limitToLast, limit } from "firebase/firestore";
 import { flatten } from "flat";
+import { AdapterInitialState, selectAllById, selectTotalById } from "../redux/redux-utility";
 
 const setAttendance = async ({firestore, ids, classId, classGroupId, dateStr, ...patch }) => {
     const utcPlusFive = dateStr ? dateStr : getDateStr()
@@ -24,10 +25,10 @@ const setAttendance = async ({firestore, ids, classId, classGroupId, dateStr, ..
      
 }
 
+
 const updateAttendance = async ({ firestore, ids, classId, classGroupId, dateStr, ...patch }) => {
     const utcPlusFive = getDateStr()
     const flattened = flatten(patch);
-    
     try {
         await updateDoc(
             doc( firestore, "attendance", `${classId}${utcPlusFive}`),
@@ -41,10 +42,8 @@ const updateAttendance = async ({ firestore, ids, classId, classGroupId, dateStr
         console.error("Error inside updateAttendance: ", err)
         return {error: err.message}
     }
-     
-
-
 }
+
 
 const getAttendance = async ({ firestore, classId, classGroupId, dateStr, fallback="" }) => {
     try {
@@ -74,13 +73,14 @@ const getAttendance = async ({ firestore, classId, classGroupId, dateStr, fallba
             const document = await getDoc(
                 doc( firestore, "attendance", `${classId}${dateStr}` )
             );
-            return { data: attendanceConverter(document) };
+            return { data: attendanceConverter(document)};
         }
     } catch (err) {
         return {error: err.message}
     }
 
 }
+
 
 function attendanceConverter(snapshot) {
     const data = snapshot.data({ serverTimestamps: "estimate" }) ?? {students: {}};
@@ -100,6 +100,8 @@ function attendanceConverter(snapshot) {
     }
 }
 
+
+// Daily == daily_attendance, selectors for it:
 const staticRefArr = []
 const staticRefObj = {}
 
@@ -113,7 +115,44 @@ const selectStudentIdsDaily = createSelector(
     }
 )
 
+// source = {entities: {studentKey: {key: value}, ...}}
+// target = {entities: {studentKey: {key: value}, ...}}
+const studentDataMerger = (target, source) => {
+    const newEntities =  Object.keys(target.entities).map(studentId => ({
+        ...source.entities[studentId],
+        ...target.entities[studentId]
+    }))
+    return {
+        entities: newEntities,
+        ids: target.ids
+    }
+}
+
+
+
+// Monthly == monthly_attendance, selectors for it:
+const selectStatsFromMonthly = (state) => state?.stats ?? AdapterInitialState
+const selectStudentCountMonthly = (state) => selectTotalById(state?.students ?? AdapterInitialState)
+// Below one doesn't belong to here
+// const selectStudentsFromClass = (state) => state?.students ?? AdapterInitialState
+
+
+const selectMonthlyStudents = createSelector(
+    (state, _, __) => selectAllById(state?.students ?? AdapterInitialState),
+    (_, yearMonth, __) => yearMonth, // yearMonth == 202411
+    (_, __, classData) => classData,
+    (allStudents, yearMonth, classData) =>  {
+        const toMerge = classData.students.entities // object, key=rollNo
+        return allStudents.filter(studentRecord => studentRecord.id.includes(yearMonth)).map(
+            entity => ({...toMerge[entity.studentId], ...entity})
+        )
+    }
+
+) 
+
+
 export {
     setAttendance, getAttendance, updateAttendance, attendanceConverter,
-    selectStudentEntitiesDaily, selectStudentIdsDaily
+    selectStudentEntitiesDaily, studentDataMerger, selectStudentIdsDaily, selectMonthlyStudents, 
+    selectStatsFromMonthly, selectStudentCountMonthly
 }

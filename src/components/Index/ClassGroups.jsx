@@ -7,7 +7,7 @@ import { Link } from "react-router-dom"
 import { useGetAuthQuery, useGetClassGroupsQuery } from "src/api/apiSlice"
 import { Teacher } from "src/api/Teacher"
 import Alert from "../CommonUI/Alert"
-import { Class } from "./Classes"
+import AttendanceCard from "../Attendance/AttendanceCard"
 import { skipToken } from "@reduxjs/toolkit/query"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../shadcn/Dropdown"
 import Apology from "../Apology/Apology"
@@ -98,14 +98,14 @@ function ClassGroup({id: classGroupId}) {
             </div>
 
             {hasClasses ? (
-                <div className="CLASSGROUP-SECTION_CONTAINER classGrid">
+                <div className="CLASSGROUP-SECTION_CONTAINER attendanceCardGrid">
                     {Object.keys(classGroup.classes).map(classId =>
-                        <Class classGroupId={classGroupId} classId={classId} key={classId} />
+                        <AttendanceCard classGroupId={classGroupId} classId={classId} key={classId} />
                     )}
                 </div>
             ) : (
-                <Apology>
-                    <span>{"It look's like you forgot to classes for this group. "}</span>
+                <Apology header="Empty Group! :(">
+                    <span>{"Start by adding classes to your group. "}</span>
                     <Link to={`/classgroup/${classGroupId}`}>{"Add them here"}</Link>
                 </Apology>
             )}

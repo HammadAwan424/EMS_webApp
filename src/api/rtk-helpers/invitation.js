@@ -7,13 +7,7 @@ const getTeacherUid = async (firestore, email) => {
         limit(1)
     );
     const querySnapshot = await getDocs(teacherQuery);
-    // const data = {
-    //     exists: !querySnapshot.empty,
-    //     ...querySnapshot.docs[0]?.data(),
-    //     id: querySnapshot.docs[0]?.id
-    // };
     if (querySnapshot.empty) {
-        console.log("getTeacherUid is throwing")
         throw Error(
             "No teacher exists with this email",
         );
@@ -103,14 +97,11 @@ const inviteTeacher = async ({
 
 
 const removeTeacher  = async ({ firestore, classGroupId, classId, getTeacherUid }) => {
-    // console.log("REMOVET")
     try {
         const recepientId = await getTeacherUid()
         const batch = writeBatch(firestore)
         const batchWithRemove = removeInvite(batch, firestore, recepientId, classGroupId, classId);
-        // console.log("BEFORE AWAIT")
         await batchWithRemove.commit()
-        // console.log("AFTER MATC")
         return { data: "" };
     } catch (err) {
         return { error: err.message };
@@ -149,7 +140,7 @@ const clearNotifications = async ({firestore, uid, listOfIds}) => {
 }
 
 
-const classInvitationSelector = (User) => {
+const getAllClassesStatus = (User) => {
     // invitationsKeyArray.remove(classesKeyArray) gives new invitations
     // Inform the user about the new invitations by checking their status if it is true or false
     // Take each id marked as true (user joined) from classesKeyArray and compare against invitationsKeyArray if some class is removed by host
@@ -200,5 +191,5 @@ const classInvitationSelector = (User) => {
 export {
     inviteTeacher, removeTeacher, getTeacherUid, removeInvite,
     acceptInvitation, rejectInvitation, clearNotifications, 
-    classInvitationSelector
+    getAllClassesStatus
 }

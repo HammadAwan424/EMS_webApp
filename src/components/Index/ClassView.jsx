@@ -1,5 +1,5 @@
 import { useGetAuthQuery, useGetUserQuery } from "src/api/apiSlice"
-import Classes from "./Classes"
+import { AttendanceCardsList } from "../Attendance/AttendanceCard"
 import Apology from "../Apology/Apology"
 import DetailedClass from "./DetailedClass"
 
@@ -12,7 +12,7 @@ function ClassView({id}) {
     return (
         <>
         {
-            id == "all" ? <Classes />
+            id == "all" ? <AttendanceCardsList />
                 : id == "noclass" ? <Apology text={`You don't have any classes for now. 
                     Classes that you join will appear here.`} /> 
                 : <DetailedClass classId={id} classGroupId={User.invitations[id].classGroupId} />

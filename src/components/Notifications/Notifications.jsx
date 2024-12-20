@@ -1,6 +1,6 @@
 import { useAcceptInvitationMutation, useClearNotificationsMutation, useGetAuthQuery, useGetUserQuery, useRejectInvitationMutation } from "src/api/apiSlice.js"
 import Button from "../CommonUI/Button.jsx"
-import { classInvitationSelector } from "src/api/invitation.js"
+import { getAllClassesStatus } from "src/api/rtk-helpers/invitation.js"
 
 // Deals with inactive classes, newInvitations (both with status == true || false)
 function Notifications() {
@@ -10,7 +10,7 @@ function Notifications() {
     const {
         acceptedRevoked, rejectedRevoked, 
         invitationsAllowed, invitationsRevoked
-    } = classInvitationSelector(User)
+    } = getAllClassesStatus(User)
 
     // Clear all -> clear rejectedRevoked (both), acceptedRevoked (both), inactiveInvitations (single)
     // just send array of ids

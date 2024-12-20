@@ -1,4 +1,4 @@
-import classGroups from "#src/api/classGroups";
+import classGroups from "src/api/rtk-helpers/classGroups";
 import { updateDoc, doc, deleteDoc, setDoc } from "firebase/firestore";
 import { getEnv } from "./helper";
 

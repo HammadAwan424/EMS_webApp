@@ -1,8 +1,8 @@
-import { useNavigate } from "react-router-dom"
+import { generatePath, useNavigate } from "react-router-dom"
 import { inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./GroupCommon"
 import { useImmerReducer } from "use-immer"
 import { useEditClassGroupMutation, useGetAuthQuery } from "src/api/apiSlice"
-import {  IconAlertCircle, IconCirclePlus  } from "src/IconsReexported.jsx"
+import {  IconAlertCircle, IconCirclePlus, IconArrowLeft  } from "src/IconsReexported.jsx"
 import dot from "dot-object"
 import isEqual from "lodash.isequal"
 import Button from "../CommonUI/Button"
@@ -26,7 +26,7 @@ function ClassGroupCreate() {
         }
     })  
     const [editClassGroup, { isLoading: mutating, data, isUninitialized, isSuccess }] = useEditClassGroupMutation()
-    const CLASS_GROUP_ID =  doc(collection(firestore, "classGroups")).id
+    const classGroupId =  doc(collection(firestore, "classGroups")).id
 
     const CLASS_COUNT = updates.meta.classIds.length
 
@@ -34,8 +34,8 @@ function ClassGroupCreate() {
     const {handleSubmit} = useSubmitChanges({
         CLASS_COUNT, reset: () => {}, updates,
         mutationFunc: async () => {
-            await editClassGroup({classGroupId: CLASS_GROUP_ID, create: true, ...updates}).unwrap()
-            navigate("/")
+            await editClassGroup({classGroupId, create: true, ...updates}).unwrap()
+            navigate(`/?id=${classGroupId}#classgroup`)
         }
     })
     
@@ -57,6 +57,7 @@ function ClassGroupCreate() {
     return(
         <>
         <div className="flex flex-col gap-3" onSubmit={(e) => handleSubmit({event: e})}>
+            <IconArrowLeft onClick={() => navigate(-1)} />
             <form className="grid grid-cols-[auto,1fr] gap-2 items-center">
                 
                 <div className="flex">
@@ -95,7 +96,7 @@ function ClassGroupCreate() {
                         <div className="flex-1"></div>
 
                         <button className="flex p-2 gap-1 bg-[--theme-secondary]" type="button"
-                            onClick={() => dispatch({ type: "addClass", classGroupId: CLASS_GROUP_ID })}
+                            onClick={() => dispatch({ type: "addClass", classGroupId: classGroupId })}
                         >
                             <IconCirclePlus className="text-green-400" />
                             <span>Add Class</span>

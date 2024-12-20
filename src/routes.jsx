@@ -125,7 +125,7 @@ function CustomRouterProvider() {
                 </Route>
 
                 {/* <Route
-                    path="/skeleton" element={<ClassSkeletonUI />}
+                    path="/skeleton" element={AttendanceCardSkeletonUI />}
                 /> */}
             </Route>
         )

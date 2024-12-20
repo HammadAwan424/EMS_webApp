@@ -1,7 +1,7 @@
 import { configureStore, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import userReducer from '../api/userSlice.js'
+import userReducer from '../api/redux/userActivity.js'
 import { apiSlice } from "#src/api/apiSlice.js";
-import { waitingAreaSlice } from "src/api/customSlice.js";
+import { waitingAreaSlice } from "src/api/rtk-helpers/customSlice.js";
 
 const store = configureStore({
     reducer: {

@@ -1,6 +1,7 @@
+import cn from "classnames"
 import { useRef, useState, useCallback, useLayoutEffect } from "react"
 
-function ImprovedTrack({swipeBack, totalItems, navigation, children}) {
+function ImprovedTrack({swipeBack, totalItems, navigation, children, classNames}) {
     const trackRef = useRef(null)
     const [trackTransform, setTrackTransform] = useState(0)
 
@@ -100,11 +101,11 @@ function ImprovedTrack({swipeBack, totalItems, navigation, children}) {
     // Setting justify-center will make the 
     return(
         <>
-            <div className="overflow-hidden">
-                <div className="" style={{ transform: `translate(${parentTransform}%, 0px)` }}>
-                    <div ref={trackRef} id="track" 
+            <div id="track" className={cn("overflow-hidden", classNames)}>
+                <div className="PARENT w-full h-full" style={{ transform: `translate(${parentTransform}%, 0px)` }}>
+                    <div ref={trackRef}
                         className={
-                            `flex [&>*]:flex-shrink-0 [&>*]:w-full transition items-start
+                            `flex [&>*]:flex-shrink-0 [&>*]:w-full transition items-start h-full
                         `} style={{ transform: `translate(${trackTransform}%, 0px)` }} onPointerDown={(e) => handleSwipeStart(e)}>
                         {children}
                     </div>

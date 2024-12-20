@@ -1,6 +1,6 @@
 import classNames from "classnames"
 import {  IconAlertCircle  } from "src/IconsReexported.jsx"
-function Apology({text="", children, className}) {
+function Apology({text="", header="", children, className}) {
     const classNameApology = classNames(
         "flex flex-col items-center justify-center",
         className
@@ -8,7 +8,7 @@ function Apology({text="", children, className}) {
     return (
         <div className={classNameApology}>
             <div className="text-xl font-medium">
-                {"Oops! Nothing here :("}
+                {header || "Oops! Nothing here :("}
             </div>
             <div className="flex items-start justify-center gap-2 text-yellow-400">
                 <IconAlertCircle />

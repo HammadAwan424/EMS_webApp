@@ -4,7 +4,7 @@ import { IconHome, IconNotification  } from "src/IconsReexported.jsx"
 import { useState } from "react"
 import { Link, Form, useNavigate, NavLink, useLocation } from "react-router-dom"
 import { Expand } from "../CommonUI/Icons"
-import { classInvitationSelector } from "src/api/invitation"
+import { getAllClassesStatus } from "src/api/rtk-helpers/invitation"
 import classNames from "classnames"
 
 const paths = {
@@ -24,7 +24,7 @@ export default function Sidebar({myRef}) {
     // Either some invitations was sent (maybe removed now) or access from some class is revoked
     const {
         acceptedRevoked, invitationsAllowed, invitationsRevoked
-    } = classInvitationSelector(User)
+    } = getAllClassesStatus(User)
     const hasNotifications = acceptedRevoked.length > 0 || invitationsRevoked.length > 0 || invitationsAllowed.length > 0
 
     function activeLink({isActive=false}={}) {

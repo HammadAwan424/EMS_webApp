@@ -1,20 +1,11 @@
 import classNames from "classnames"
 import { dateUTCPlusFive, parseDateStr } from "src/api/Utility"
 
-function AttendanceLayout({children}) {
-    return (
-        <div>
-            {children}
-        </div>
-    )
-}
-
 let states = {
     present: 1,
     unMarked: 0,
     absent: -1
 }
-
 
 function HeaderForEditViewAttendance({attendanceDoc, DateComponent, dateStr}) {
     const getReadable = () => {
@@ -80,8 +71,6 @@ function PercentageBar({presentCount, totalCount}) {
                 <span className="title-200 z-20 text-offwhite">{absentCount}</span>
             </div>
             <div className="flex h-10 justify-between relative items-center">
-                {/* <div className="h-2/3 rounded-full absolute left-0 bg-red-600 w-full">
-            </div> */}
                 <div className="border-green-500 border h-2/3 relative rounded-full w-full text-lg justify-center flex items-center">
                     <div style={{
                         width: `${percentage}%`

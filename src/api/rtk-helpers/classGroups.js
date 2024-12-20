@@ -1,9 +1,10 @@
-import { collection, doc, getDocs, query, where, writeBatch, serverTimestamp } from "firebase/firestore"
+import { collection, doc, getDocs, query, where, writeBatch, limit } from "firebase/firestore"
 import { flatten } from "flat";
 
 const getClassGroupsQuery = ({firestore, uid}) =>  query(
     collection(firestore, "classGroups"),
-    where("cgAdmin", "==", uid)
+    where("cgAdmin", "==", uid),
+    limit(10)
 );
 
 const getClassGroups = async ({firestore, uid}) => {

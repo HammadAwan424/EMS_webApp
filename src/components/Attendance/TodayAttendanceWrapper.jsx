@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom"
-import { useGetAttendanceQuery, useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetAttendanceQuery } from "src/api/rtk-query/attendance"
 import { getDateStr } from "src/api/Utility"
 import Set from "./Set"
 import Edit from "./Edit"
@@ -14,12 +15,9 @@ function TodayAttendanceWrapper() {
     const { isLoading: loadingClassData } = useGetClassByIdQuery({classId, classGroupId})
 
     // Waiting here so child comp doesn't have to do also
-    // but Set still has a wrapper that waits for query to get loaded -> TODO
     if (loadingAttendance || loadingClassData) {
         return null
     }
-
-    console.log("ATTENDANCE: ", attendance)
 
     if (attendance.exists) {
         return <Edit dateStr={dateStrToday} />

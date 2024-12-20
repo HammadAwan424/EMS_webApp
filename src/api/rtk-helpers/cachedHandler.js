@@ -11,13 +11,13 @@ async function cachedDocumentListener(
     try {
         unsubscribe = onSnapshot(docRef, { source: "cache", includeMetadataChanges: true }, (snapshot) => {
             updateCachedData((draft) => {
-                console.log("RUNNING SINGLE UPDATER, path: ", docRef.path);
-                console.log("Metadata: ", snapshot.metadata)
+                // console.log("RUNNING SINGLE UPDATER, path: ", docRef.path);
+                // console.log("Metadata: ", snapshot.metadata)
                 if (converter) {
-                    console.log("CONVERTER WAS PRESENT");
+                    // console.log("CONVERTER WAS PRESENT");
                     return converter(snapshot);
                 } else {
-                    console.log("ABSENT CONVERTER");
+                    // console.log("ABSENT CONVERTER");
                     return {
                         ...snapshot.data({ serverTimestamps: "estimate" }),
                         id: snapshot.id,
@@ -40,12 +40,12 @@ async function cachedQueryListener(
     let unsubscribe = null;
     try {
         unsubscribe = onSnapshot(query, { source: "cache" }, (snapshot) => {
-            // console.log("Initial: ", snapshot.docs[0].data(),
+            // // console.log("Initial: ", snapshot.docs[0].data(),
             //  snapshot.metadata.fromCache, snapshot.metadata.hasPendingWrites)
-            // console.log("Changed: ", snapshot.docChanges().length, snapshot.docChanges())
-            // console.log("ONSNAPSHOT RAN: ", snapshot.docChanges().length)
+            // // console.log("Changed: ", snapshot.docChanges().length, snapshot.docChanges())
+            // // console.log("ONSNAPSHOT RAN: ", snapshot.docChanges().length)
             updateCachedData((draft) => {
-                console.log("RUNNING MULTIPLE UPDATES");
+                // console.log("RUNNING MULTIPLE UPDATES");
 
                 snapshot.docChanges().forEach((docChange) => {
                     if (docChange.type == "added") {
@@ -84,19 +84,18 @@ async function cachedDocumentListenerWithWait(
 
     try {
         unsubscribe = onSnapshot(docRef, { source: "cache", includeMetadataChanges: true }, (snapshot) => {
+            // console.log("cachedDocumentListenerWithWait: ", snapshot.metadata, "data: ", snapshot.data())
             let doc;
-            console.log("RUNNING SINGLE UPDATER, path: ", docRef.path);
+            // console.log("RUNNING SINGLE UPDATER, path: ", docRef.path);
             if (converter) {
-                console.log("CONVERTER WAS PRESENT");
                 doc = converter(snapshot);
             } else {
-                console.log("ABSENT CONVERTER");
                 doc = {
                     ...snapshot.data({ serverTimestamps: "estimate" }),
                     id: snapshot.id,
                 };
             }
-            dispatch(moveThere({documentData: doc, identifier: snapshot.id}))
+            snapshot.metadata.hasPendingWrites && dispatch(moveThere({documentData: doc, identifier: snapshot.id}))
         });
         await cacheDataLoaded;
     } catch {

@@ -29,7 +29,7 @@ function classByIdConverter(docSnapshot) {
     const data = docSnapshot.data()
     const studentIds = Object.keys(data.students)
     const studentEntities = {}
-    studentIds.forEach(id => (studentEntities[id] = {...data.students[id]}))
+    studentIds.forEach(id => studentEntities[id] = {...data.students[id], id})
     return { id: docSnapshot.id, ...data, students: {ids: studentIds, entities: studentEntities} }
 }
 

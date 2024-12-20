@@ -51,7 +51,6 @@ function Track({swipeBack, totalItems, navigation, children}) {
 
                     if (itemExists(newItem)) {
                         setTrackTransform(calculatTransform(newItem))
-                        // console.log("THIS SHOLDNT BE PRINTED")
                         const funcCall = movement > 0 ? navigation.previous() : navigation.next()
                     }
                 }
@@ -100,14 +99,14 @@ function Track({swipeBack, totalItems, navigation, children}) {
 
     return(
         <>
-        <div className="w-full max-h-full aspect-square flex justify-center">
-        <div className="max-w-full h-full aspect-square overflow-hidden">
-            <div className="w-full h-full aspect-square" style={{ transform: `translate(${parentTransform}%, 0px)` }}>
-                <div ref={trackRef} id="track" className={"h-full whitespace-nowrap transition"} style={{ transform: `translate(${trackTransform}%, 0px)` }} onPointerDown={(e) => handleSwipeStart(e)}>
-                    {children}
-                </div>
-            </div>     
-        </div>
+        <div id="track" className="w-full max-h-full aspect-square flex justify-center">
+            <div className="max-w-full h-full aspect-square overflow-hidden">
+                <div className="w-full h-full aspect-square" style={{ transform: `translate(${parentTransform}%, 0px)` }}>
+                    <div ref={trackRef} id="track" className={"h-full whitespace-nowrap transition"} style={{ transform: `translate(${trackTransform}%, 0px)` }} onPointerDown={(e) => handleSwipeStart(e)}>
+                        {children}
+                    </div>
+                </div>     
+            </div>
         </div>
   
         </>

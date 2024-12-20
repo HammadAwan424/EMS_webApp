@@ -48,8 +48,9 @@ function dateUTCPlusFive(date=new Date()) {
     }
 }
 
+
 // takes a dateStr and returns dateObj which represent the same date in utc timezone
-// returns Date obj by parsing dateStr (utc +5:00)
+// returns Date obj by parsing dateStr, dateStr must be obtained through dateUTCPlusFive
 // all get operations should use getUTC*
 function parseDateStr(dateStr) {
     if (dateStr == undefined || dateStr == null) {
@@ -62,30 +63,43 @@ function parseDateStr(dateStr) {
     return new Date(`${date}T${time}${tz}`)
 }
 
+
 const getPath = {
-    class({classId, classGroupId}) {
+    class({classId, classGroupId, isJoined}) {
         const classPath = generatePath("/classgroup/:classGroupId/class/:classId", {
             classGroupId, classId
         })
+        const joined = isJoined ? "?joined=true" : "?joined=false"
         return {
-            edit: classPath+"/edit",
-            details: classPath+"/details"
+            edit: classPath+"/edit"+joined,
+            details: classPath+"/details"+joined,
         }
     },
-    attendance({classId, classGroupId}) {
+    attendance({classId, classGroupId, isJoined}) {
         const attendancePath = generatePath("/classgroup/:classGroupId/class/:classId/attendance", {
             classGroupId, classId
         })
+        const joined = isJoined ? "?joined=true" : "?joined=false"
         return {
-            today: attendancePath+"/today",
+            today: attendancePath+"/today"+joined,
             view({dateStr}) {
-                return attendancePath+`/view/${dateStr}`
+                return attendancePath+`/view/${dateStr}`+joined
             }
         }
     }
 }
 
 
-export {createClassGroupLink, signOutAction, getDateStr, parseDateStr, dateUTCPlusFive, getPath}
+// undefined -> invalid id, true -> isJoined, false -> isAdmin
+const joinedClass = (search) => {
+    const searchParams = new URLSearchParams(search)
+    const isJoined = searchParams.get("joined") == "true" ? true 
+        : searchParams.get("joined") == "false" ? false 
+        : undefined
+    return isJoined
+}
+
+
+export {createClassGroupLink, signOutAction, getDateStr, parseDateStr, dateUTCPlusFive, getPath, joinedClass}
 
 

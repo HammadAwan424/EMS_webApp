@@ -1,43 +1,20 @@
 import classNames from "classnames"
 import { useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
-import { useGetClassByIdQuery, useSetAttendanceMutation } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { useSetAttendanceMutation } from "src/api/rtk-query/attendance"
 import { useImmer } from "use-immer"
 import { usePopup } from "../CommonUI/Popup"
 import Student from "./Student"
 import Apology from "../Apology/Apology"
 import { getPath } from "src/api/Utility"
-import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/attendance"
+import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/rtk-helpers/attendance"
 import { produce } from "immer"
-
-
-function Set({dateStr}) {
-    // date represents utc +5:00 date
-    // const { classId, classGroupId } = useParams()
-
-    // const dateObj = parseDateStr(dateStr)
-    // const urlReadable = dateObj.toLocaleString("en-GB", {
-    //     "day": "numeric", "month": 
-    //     "long", "year": "numeric", "timeZone": "UTC"
-    // })
-
-    return (
-        <div className="flex flex-col gap-4">
-            <span className="title-100">{"Set Attendance"}</span>
-            <Main dateStr={dateStr} />
-            {/* {isValid ? (
-                <Main /> 
-            ) : (
-                // User requesting attendance for some previous day that doesn't exist
-                <Apology text={`No record found for ${urlReadable}`} />
-            )} */}
-        </div>
-    )
-}
+import Alert from "../CommonUI/Alert"
 
 
 // classData will be loaded by TodayAttendanceWrapper
-function Main({dateStr}) {
+function Set({dateStr}) {
     const { classId, classGroupId } = useParams()
     const navigate = useNavigate()
 
@@ -51,6 +28,7 @@ function Main({dateStr}) {
 
     const [attendance, setAttendance] = useImmer(() => {
         const ids = selectStudentIdsDaily(classData)
+        // set each entity status = 0 as unmarked initially
         const students = produce(selectStudentEntitiesDaily(classData), draft => {
             ids.forEach(id => draft[id].status = 0)
         })
@@ -100,7 +78,8 @@ function Main({dateStr}) {
     )
 
     return (
-        <>
+        <div className="flex flex-col gap-4">
+            <span className="title-100">{"Set Attendance"}</span>
             {hasStudents ? (
                 <div className="flex gap-2 flex-col">
                     <div className="studentLayout">
@@ -108,13 +87,13 @@ function Main({dateStr}) {
                             <Student details={attendance.students[id]} id={id} key={id} markStudent={markStudent} />
                         )}
                     </div>
-                    {renderWarning &&
-                        <div className="bg-red-900 text-red-400 self-start rounded-lg p-1">
-                            <p>
-                                Please mark all the students above
-                            </p>
-                        </div>}
 
+                    <Alert
+                        show={renderWarning}
+                        setter={setRenderWarning}
+                        text="Please mark all the students above"
+                        type="warning"
+                    />
                     <button className={buttonClasses} onClick={initialSubmitHandler}>
                         Submit
                     </button>
@@ -126,7 +105,7 @@ function Main({dateStr}) {
                 </Apology>
             )}
 
-        </>
+        </div>
     );
 }
 

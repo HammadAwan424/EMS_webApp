@@ -9,18 +9,18 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "src/components/shadcn/Dropdown"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { HeaderForEditViewAttendance, PercentageBar, states } from "./Common"
-import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/attendance"
+import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/rtk-helpers/attendance"
 import { Link, useParams } from "react-router-dom"
-import { useGetAttendanceWithRecentDataQuery, useGetClassByIdQuery } from "src/api/apiSlice"
-import { DayPicker } from "react-day-picker"
-import { getDateStr, getPath, parseDateStr } from "src/api/Utility"
+import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetAttendanceWithRecentDataQuery } from "src/api/rtk-query/attendance"
+import { DayPicker, TZDate } from "react-day-picker"
+import { dateUTCPlusFive, getDateStr, getPath, parseDateStr } from "src/api/Utility"
 import { Root, Trigger } from "@radix-ui/react-popover"
 import { CalendarIcon } from "@radix-ui/react-icons"
 import Button from "../CommonUI/Button"
 import { PopoverContent } from "../shadcn/Popover"
-
 
 const validate = (currentResult, originalArgs) => {
     // if current data doesn't exist, then use previous record
@@ -28,7 +28,8 @@ const validate = (currentResult, originalArgs) => {
         return {isError: false, data: currentResult, isPrevious: false}
     }
 
-    const previuosRecordExists = currentResult.__previousRecord__ != undefined && currentResult.__previousRecord__.exists == true
+    const previuosRecordExists = currentResult.__previousRecord__ != undefined 
+        && currentResult.__previousRecord__.exists == true
 
     if (previuosRecordExists) {
         return {isError: false, data: currentResult.__previousRecord__, isPrevious: true}
@@ -177,13 +178,16 @@ function View() {
 // TODO: suppose it will always be valid
 // component got rendered, you don't have data.createdAt, you will follow what you wil do while loading
 function DateComponent({queryParams, setQueryParams, validatedResult, isFetching}) {
-    // const {data, isFetching} = useGetAttendanceQuery(queryParams)
     // data.createdAt will be used to render date 
     // for now there is only one that is query
-    const {data, isPrevious, isError, originalArgs} = validatedResult // errors would be handled in parent
+    const today = useMemo(() => new TZDate(new Date(), "+05:00"), [])
+    const {data, isPrevious, isError, originalArgs} = validatedResult
     const [fetchedEmptyDays, setFetchedEmptyDays] = useState([])
-    const dateObj = parseDateStr(isError ? queryParams.dateStr : data.createdAt) 
-    const [selected, setSelected] = useState(isError ? undefined : dateObj)
+    const dateObj = parseDateStr(isError ? queryParams.dateStr : data.createdAt)
+    const [selected, setSelectedMain] = useState(isError ? undefined : dateObj)
+    const setSelected = (date) => {
+        setSelectedMain(dateUTCPlusFive(date))
+    }
 
     const queryParamsDateObj = parseDateStr(originalArgs.dateStr) // args will exist even in case of error
     if ((isPrevious || isError) && fetchedEmptyDays.findIndex(element => element.getTime?.() == queryParamsDateObj.getTime()) == -1) {
@@ -269,7 +273,7 @@ function DateComponent({queryParams, setQueryParams, validatedResult, isFetching
                     modifiers={{
                         fetchedEmptyDays
                     }}
-                    disabled={[{dayOfWeek: [0, 6]}, {after: new Date()}, ...fetchedEmptyDays]} 
+                    disabled={[{dayOfWeek: [0, 6]}, {after: today}, ...fetchedEmptyDays]} 
                 />
             </PopoverContent>
         </Root>
@@ -304,7 +308,6 @@ function Calendar({selected, setSelected, ...props}) {
     const monthButton = 'bg-transparent p-0 w-8 inline-flex items-center justify-center hover:bg-theme-100'
     return (
         <DayPicker
-        timeZone="UTC"
         captionLayout="label"
         mode='single'
         selected={selected}

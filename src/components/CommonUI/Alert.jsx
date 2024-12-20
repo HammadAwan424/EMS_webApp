@@ -1,6 +1,7 @@
 
 import classNames from "classnames"
-import {  IconAlertTriangle  } from "src/IconsReexported.jsx"
+import { useState } from "react"
+import {  IconAlertTriangle, IconSquareRoundedX  } from "src/IconsReexported.jsx"
 
 /**
  * Alert component
@@ -10,13 +11,14 @@ import {  IconAlertTriangle  } from "src/IconsReexported.jsx"
  * @param {"warning"|"success"} props.type - The type of alert.
  * @returns {JSX.Element} The Alert component.
  */
-function Alert({show, text, type}) {
+function Alert({show, setter, text, type}) {
     
     const className = classNames(
         'flex gap-2 rounded-lg p-1 items-center',
         {'text-red-700 border-red-700 border': type=='warning'},
         {'bg-green-900 text-green-400': type=="success"}
     )
+
 
     return (
         <>
@@ -26,6 +28,9 @@ function Alert({show, text, type}) {
                     <p> 
                         {text}
                     </p>
+                    <IconSquareRoundedX className="ml-auto" 
+                        onClick={() => {setter && setter(false)}} 
+                    />
                 </div>
             )}
         </>

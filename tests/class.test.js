@@ -1,10 +1,10 @@
 import { getEnv } from "./helper";
-import { signupFirestoreInteraction } from "#src/api/signup";
-import classGroups from "#src/api/classGroups";
-import { inviteTeacher, removeTeacher, getTeacherUid } from "#src/api/invitation";
+import { signupFirestoreInteraction } from "src/api/rtk-helpers/signup";
+import classGroups from "src/api/rtk-helpers/classGroups";
+import { inviteTeacher, removeTeacher, getTeacherUid } from "src/api/rtk-helpers/invitation";
 import path from "path"
 import { arrayRemove, deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
-import { deleteClass } from "#src/api/classes";
+import { deleteClass } from "src/api/rtk-helpers/classes";
 import { setLogLevel } from "firebase/app";
 
 setLogLevel("error")

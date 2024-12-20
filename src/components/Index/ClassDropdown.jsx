@@ -1,3 +1,6 @@
+// X ------------------- X
+// This code (custom dropdown) is not needed
+// because of radix-primitives which are more accessible
 import { useEffect, useRef, useState } from "react"
 
 function ClassDropdown({children}) {
