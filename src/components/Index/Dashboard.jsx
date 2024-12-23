@@ -83,39 +83,17 @@ function DashBoard() {
     }
 
     useEffect(() => {
-        // console.log("Running useEffect")
         if (!isValid) {
-            // console.log("Calling navigate inside useEffect")
             navigate(newId, newHash, {replace: true})
         }
     }, [navigate, newId, newHash, isValid])
 
     if (!isValid) {
-        // console.log("returning null")
-        // console.log(parsedUrl)
         return null
     }
 
     return (
         <div>
-            {/* <div className="p-20">
-                <div className=" w-80 h-40 bg-red-400 flex flex-col">
-                    <div>
-                        Hello world
-                    </div>
-                    <div>
-                        Hello world
-                    </div>
-                    <div>
-                        Hello world
-                    </div>
-                    <div className="flex-auto h-3 bg-white self-stretch items-center">
-                        <div className=" bg-pink-300 w-full aspect-square max-h-full">
-                        </div>
-                    </div>
-                </div>
-            </div> */}
-
             <div id="Topbar" className="flex items-center justify-between">
                 <span className="title-100">Dashboard</span>
                 <div className="self-stretch text-end">
@@ -221,7 +199,28 @@ function Try() {
                 <input id="checkbox" type="checkbox" ref={inputRef} />
             </div>
 
+                    
+            {/* Some other useful trick */}
+            {/* <div className="p-20">
+                <div className=" w-80 h-40 bg-red-400 flex flex-col">
+                    <div>
+                        Hello world
+                    </div>
+                    <div>
+                        Hello world
+                    </div>
+                    <div>
+                        Hello world
+                    </div>
+                    <div className="flex-auto h-3 bg-white self-stretch items-center">
+                        <div className=" bg-pink-300 w-full aspect-square max-h-full">
+                        </div>
+                    </div>
+                </div>
+            </div> */}
+
         </>
+
         
     )
 }

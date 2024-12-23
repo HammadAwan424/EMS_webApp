@@ -56,7 +56,7 @@ function CustomRouterProvider() {
 
     const router = createBrowserRouter(
         createRoutesFromElements(
-            <Route element={<Root />} loader={RootLoader} id="root">
+            <Route element={<Root />} loader={RootLoader} errorElement={<RootErrorPage />} id="root">
                 <Route
                     path="/login"
                     element={<Login />}
@@ -75,7 +75,6 @@ function CustomRouterProvider() {
                 <Route
                     path="/"
                     element={<RootLayout />}
-                    errorElement={<RootErrorPage />}
                 >   
     
                     <Route index element={<Index />} />
@@ -123,10 +122,6 @@ function CustomRouterProvider() {
 
                     <Route path="view" element={<View />}></Route>
                 </Route>
-
-                {/* <Route
-                    path="/skeleton" element={AttendanceCardSkeletonUI />}
-                /> */}
             </Route>
         )
     )

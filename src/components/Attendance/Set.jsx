@@ -1,13 +1,13 @@
 import classNames from "classnames"
 import { useState } from "react"
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom"
-import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 import { useSetAttendanceMutation } from "src/api/rtk-query/attendance"
 import { useImmer } from "use-immer"
 import { usePopup } from "../CommonUI/Popup"
 import Student from "./Student"
 import Apology from "../Apology/Apology"
-import { getPath } from "src/api/Utility"
+import { getPath, joinedClass } from "src/api/Utility"
 import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/rtk-helpers/attendance"
 import { produce } from "immer"
 import Alert from "../CommonUI/Alert"
@@ -17,6 +17,8 @@ import Alert from "../CommonUI/Alert"
 function Set({dateStr}) {
     const { classId, classGroupId } = useParams()
     const navigate = useNavigate()
+    const {search} = useLocation()
+    const isJoined = joinedClass(search)
 
     const { data: classData } = useGetClassByIdQuery({ classId, classGroupId })
     const [attendanceMutation, { isLoading: isMutating }] = useSetAttendanceMutation()
@@ -101,7 +103,7 @@ function Set({dateStr}) {
             ) : (
                 <Apology>
                     <span>{"It look's like you forgot to add students for this class. "}</span>
-                    <Link to={getPath.class({classId, classGroupId}).edit}>{"Add them here"}</Link>
+                <Link to={getPath.class({classId, classGroupId, isJoined}).edit}>{"Add them here"}</Link>
                 </Apology>
             )}
 

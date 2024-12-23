@@ -6,7 +6,8 @@ import {
     selectAllById, selectTotalById, selectIdsById 
 } from "src/api/redux/redux-utility"
 import { useGetMonthlyAttendanceQuery, useGetAttendanceQuery } from "src/api/rtk-query/attendance"
-import { useGetAuthQuery, useGetUserQuery, useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetAuthQuery, useGetUserQuery } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 import { dateUTCPlusFive, getDateStr, getPath } from "src/api/Utility"
 import Pie from "../CommonUI/Pie"
 import MediaQuery from "react-responsive"
@@ -195,7 +196,7 @@ function AttendanceCard({classId, classGroupId, cssClasses=""}) {
 
                             {fetchingMonthly && (
                                 <div className={cn(trackElemClasses, "bg-neutral-700")}>
-                                    <h1>{"Loading..."}</h1>
+                                    <div className="md:text-lg">{"Loading..."}</div>
                                 </div>                        
                             )}
 

@@ -4,7 +4,7 @@ import classGroups from "src/api/rtk-helpers/classGroups";
 import { inviteTeacher, removeTeacher, getTeacherUid } from "src/api/rtk-helpers/invitation";
 import path from "path"
 import { arrayRemove, deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { deleteClass } from "src/api/rtk-helpers/classes";
+import { deleteClass } from "src/api/rtk-helpers/class";
 import { setLogLevel } from "firebase/app";
 import { getAttendance, setAttendance, updateAttendance } from "src/api/rtk-helpers/attendance";
 import { dateUTCPlusFive, getDateStr } from "#src/api/Utility";

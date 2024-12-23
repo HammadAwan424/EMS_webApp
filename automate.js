@@ -3,11 +3,10 @@ import {glob} from "glob"
 
 let regex = /import \{([^}]+)\} from ['"]@tabler\/icons-react['"]/
 
-// Test str below with Test code
-// let str = 'import { IconArrowBadgeDownFilled, IconArrowBadgeRightFilled, IconHome, IconHome2, IconNotification } from "@tabler/icons-react"'
-// const imports = str.match(regex)[0]
-// const importsAsList = imports.split(", ")
-// const lines = importsAsList.map((name) => `import ${name} from "@tabler/icons-react/dist/esm/icons/${name}.mjs"`)
+// Wrote it to extract named icon imports from all the files
+// so to put then in IconReexported.jsx as default imports which fixed
+// the problem where all icons were being imported
+
 
 const listOfFiles = await glob("./src/**/*.jsx")
 const allIcons = []

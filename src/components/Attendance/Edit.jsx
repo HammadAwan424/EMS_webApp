@@ -1,7 +1,7 @@
 import classNames from "classnames"
 import { useState } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
-import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 import { useGetAttendanceQuery, useUpdateAttendanceMutation } from "src/api/rtk-query/attendance"
 import { useImmer } from "use-immer"
 import { usePopup } from "../CommonUI/Popup"

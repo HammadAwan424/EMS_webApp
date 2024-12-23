@@ -1,7 +1,7 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useContext, createContext, useEffect } from "react";
 
-import store from "src/app/store";
+import store from "src/api/store";
 import { apiSlice, useGetAuthQuery } from "src/api/apiSlice";
 import { Popup } from "./CommonUI/Popup";
 const AuthContext = createContext(null)

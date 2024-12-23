@@ -1,6 +1,7 @@
 import { useLocation, useParams } from "react-router-dom"
 import ClassEdit from "./ClassEdit"
-import { useGetAuthQuery, useGetClassByIdQuery, useGetUserQuery } from "src/api/apiSlice"
+import { useGetAuthQuery, useGetUserQuery } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 import { useGetClassGroup } from "../Index/ClassGroups"
 import { skipToken } from "@reduxjs/toolkit/query"
 import { joinedClass } from "src/api/Utility"

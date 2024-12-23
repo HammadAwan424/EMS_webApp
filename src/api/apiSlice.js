@@ -7,11 +7,9 @@ import {
 } from "firebase/auth";
 import { auth, firestore } from "#src/firebase/config.js";
 import {
-    getDoc, doc, 
-    writeBatch, deleteField,
+    getDoc, doc,
 } from "firebase/firestore";
 import { cachedDocumentListener, cachedQueryListener } from "./rtk-helpers/cachedHandler.js";
-import { flatten } from "flat";
 import { signupFirestoreInteraction } from "./rtk-helpers/signup.js";
 import {
     acceptInvitation,
@@ -22,7 +20,6 @@ import {
     removeTeacher,
 } from "./rtk-helpers/invitation.js";
 import classGroups from "./rtk-helpers/classGroups.js";
-import { classByIdConverter, deleteClass, getClassById } from "./rtk-helpers/classes.js";
 
 
 
@@ -98,69 +95,6 @@ export const apiSlice = createApi({
                     classGroupId, create,
                     meta, ...patch
                 })
-            },
-        }),
-        editClass: builder.mutation({
-            queryFn: async ({ classId, classGroupId, ...patch }) => {
-                const document = doc( firestore, "classGroups", classGroupId, "classes", classId );
-                console.log("DOCUEMTN PATH IS : ", document.path);
-                const batch = writeBatch(firestore);
-                const { students, ...other } = patch;
-
-                // Other fields
-                const updates = { ...other, students: {} };
-
-                // Student field on patch could be Added | Modified | Removed
-                for (let studentId of students.ids) {
-                    const type = students.meta[studentId];
-                    const student = students.entities[studentId];
-                    switch (type) {
-                        case "added":
-                        case "modified": {
-                            updates.students[studentId] = student;
-                            break;
-                        }
-                        case "removed": {
-                            updates.students[studentId] = deleteField();
-                            break;
-                        }
-                    }
-                }
-
-                const deleteFieldInstance = deleteField();
-                const flattened = flatten(updates, {
-                    safe: true,
-                    except: (key, value) =>
-                        value.constructor == deleteFieldInstance.constructor,
-                });
-
-                batch.update( doc( firestore, "classGroups", classGroupId, "classes", classId ), flattened );
-
-                other.className &&
-                    batch.update(doc(firestore, "classGroups", classGroupId), {
-                        [`classes.${classId}.className`]: other.className,
-                    });
-
-                await batch.commit();
-
-                return { data: "" };
-            },
-        }),
-        deleteClass: builder.mutation({
-            queryFn: async (path, {getState}) => {
-                const uid = auth.currentUser.uid
-                const group = apiSlice.endpoints.getClassGroups.select(uid)(
-                    getState()).data.find(ele => ele.id == path.classGroupId
-                )
-                const recepientId = group.editors[path.classId] && group.editors[path.classId][0]
-                return await deleteClass(firestore, path.classId, path.classGroupId, recepientId)
-            },
-        }),
-        getClassById: builder.query({
-            queryFn: async (path) => getClassById(firestore, path),
-            onCacheEntryAdded: async (path, cacheLifecycleApi) => {
-                const docRef = doc( firestore, "classGroups", path.classGroupId, "classes", path.classId );
-                await cachedDocumentListener(docRef, cacheLifecycleApi, classByIdConverter);
             },
         }),
         getPublicTeacherByEmail: builder.query({
@@ -280,14 +214,11 @@ export const {
     useGetUserQuery,
     useGetClassGroupsQuery,
     useGetPublicTeacherByEmailQuery,
-    useGetClassByIdQuery,
     useAssignTeacherMutation,
     useUnAssignTeacherMutation,
-    useEditClassMutation,
     useEditClassGroupMutation,
     useRegisterMutation,
     useSignInMutation,
-    useDeleteClassMutation,
     useAcceptInvitationMutation,
     useRejectInvitationMutation,
     useClearNotificationsMutation

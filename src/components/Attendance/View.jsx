@@ -9,18 +9,18 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "src/components/shadcn/Dropdown"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { HeaderForEditViewAttendance, PercentageBar, states } from "./Common"
 import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/rtk-helpers/attendance"
-import { Link, useParams } from "react-router-dom"
-import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { Link, useLocation, useOutletContext, useParams } from "react-router-dom"
+import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 import { useGetAttendanceWithRecentDataQuery } from "src/api/rtk-query/attendance"
 import { DayPicker, TZDate } from "react-day-picker"
-import { dateUTCPlusFive, getDateStr, getPath, parseDateStr } from "src/api/Utility"
+import { dateUTCPlusFive, getDateStr, getPath, joinedClass, parseDateStr } from "src/api/Utility"
 import { Root, Trigger } from "@radix-ui/react-popover"
+import { PopoverContent } from "../shadcn/Popover"
 import { CalendarIcon } from "@radix-ui/react-icons"
 import Button from "../CommonUI/Button"
-import { PopoverContent } from "../shadcn/Popover"
 
 const validate = (currentResult, originalArgs) => {
     // if current data doesn't exist, then use previous record
@@ -47,11 +47,12 @@ const validate = (currentResult, originalArgs) => {
 }
 
 // editedBy.className should exist without "" or null (no error but bad interface)
-// display name may not exist
+// display name may not exist, no prob
 function View() {
     const [filter, setFilter] = useState("all")
 
     const { classId, classGroupId, dateStr } = useParams()
+    const { search } = useLocation()
     const [queryParams, setQueryParams] = useState({classId, classGroupId, dateStr})
 
     const {
@@ -79,7 +80,7 @@ function View() {
                         No record found, but you can set it,&thinsp;
                         <Link 
                             className="noLink text-white font-semibold"
-                            to={getPath.attendance({classId, classGroupId}).today}
+                            to={getPath.attendance({classId, classGroupId, isJoined: joinedClass(search)}).today}
                         >visit Today.</Link>
                     </span>
                 ) : (
@@ -175,14 +176,16 @@ function View() {
 }
 
 // intial state from query params which are derived from url
-// TODO: suppose it will always be valid
-// component got rendered, you don't have data.createdAt, you will follow what you wil do while loading
+// TODO: suppose it (date in url) is always valid
 function DateComponent({queryParams, setQueryParams, validatedResult, isFetching}) {
-    // data.createdAt will be used to render date 
-    // for now there is only one that is query
     const today = useMemo(() => new TZDate(new Date(), "+05:00"), [])
-    const {data, isPrevious, isError, originalArgs} = validatedResult
-    const [fetchedEmptyDays, setFetchedEmptyDays] = useState([])
+    const {data = {}, isPrevious, isError, originalArgs} = validatedResult
+    // const [fetchedEmptyDays, setFetchedEmptyDays] = useState([])
+    // moving state up (classLayout) so it stays after View unmounts
+    const [fetchedEmptyDays, setFetchedEmptyDays] = useOutletContext()
+
+    // dateObj from data.createdAt is used for base state for
+    // 1) selected day 2) rendered date in button 
     const dateObj = parseDateStr(isError ? queryParams.dateStr : data.createdAt)
     const [selected, setSelectedMain] = useState(isError ? undefined : dateObj)
     const setSelected = (date) => {
@@ -190,16 +193,23 @@ function DateComponent({queryParams, setQueryParams, validatedResult, isFetching
     }
 
     const queryParamsDateObj = parseDateStr(originalArgs.dateStr) // args will exist even in case of error
-    if ((isPrevious || isError) && fetchedEmptyDays.findIndex(element => element.getTime?.() == queryParamsDateObj.getTime()) == -1) {
-        setFetchedEmptyDays([...fetchedEmptyDays, queryParamsDateObj])
-        isError == false && setSelected(parseDateStr(data.createdAt))
-    }
+    // previous or errored res will append current date 
+    // which is not in list already to disabled list
+    const toAppend = (isPrevious || isError) && 
+        fetchedEmptyDays.findIndex(element => element.getTime?.() == queryParamsDateObj.getTime()) == -1
+    useEffect(() => {
+        if (toAppend) {
+            setFetchedEmptyDays(prev => [...prev, queryParamsDateObj])
+            // selected date only changes when query is successful
+            isError == false && setSelected(parseDateStr(data.createdAt))
+        }
+    }, [toAppend, queryParamsDateObj, isError, data.createdAt, setFetchedEmptyDays])
 
-    // dateObj from data.createdAt is used for base state for 1) selected day 2) rendered date in button 
-    const [popupOpen, setPopupOpen] = useState(false) // already open in case of error
+
+    const [popupOpen, setPopupOpen] = useState(false)
 
 
-    // while loading, hide calendar (no day), show loading in button (no rendered date) 
+    // while loading, calendar stays hidden (no day), show loading in button instead of date
     // update query params with the selected date
     const onSubmit = () => {
         setPopupOpen(false)
@@ -214,9 +224,6 @@ function DateComponent({queryParams, setQueryParams, validatedResult, isFetching
 
     // only used while calendar is open, will show only when user select other day than being shown
     const showSubmit = isError || parseDateStr(data.createdAt).getTime() != selected.getTime()
-
-
-    // Can create a state inside this component to maintain the data for disabled items
 
     const urlReadable = dateObj.toLocaleString("en-GB", {
         "day": "numeric", "month": 
@@ -273,7 +280,7 @@ function DateComponent({queryParams, setQueryParams, validatedResult, isFetching
                     modifiers={{
                         fetchedEmptyDays
                     }}
-                    disabled={[{dayOfWeek: [0, 6]}, {after: today}, ...fetchedEmptyDays]} 
+                    disabled={[{after: today}, ...fetchedEmptyDays]} 
                 />
             </PopoverContent>
         </Root>

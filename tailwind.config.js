@@ -26,6 +26,7 @@ export default {
         skeleton: "#363636"
       },
       keyframes: {
+        // useless animation, just testing them
         mine: {
           "0%, 100%": {width: "0px", flex: "1 1 auto", position: "absolute"},
           "40%": {width: "100%", flex: "1 1 auto", position: "absolute"},

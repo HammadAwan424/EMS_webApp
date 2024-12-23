@@ -3,13 +3,14 @@ import {  IconEdit, IconCircleArrowUpFilled, IconAlertCircle, IconCirclePlus, Ic
 import classNames from "classnames"
 import dot from "dot-object"
 import { createContext, useContext, useEffect, useState } from "react"
-import { useAssignTeacherMutation, useGetAuthQuery, useGetClassByIdQuery, useUnAssignTeacherMutation } from "src/api/apiSlice"
+import { useAssignTeacherMutation, useGetAuthQuery, useUnAssignTeacherMutation } from "src/api/apiSlice"
 import Button from "../CommonUI/Button"
 import { Cross } from "../CommonUI/Icons"
 import MediaQuery from "react-responsive"
 import { Input, useInput } from "../CommonUI/Input"
 import { selectStudentIdsEdit, selectStudentIdsFromUpdates, useFormupdates } from "./Common"
 import Alert from "../CommonUI/Alert"
+import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 
 
 

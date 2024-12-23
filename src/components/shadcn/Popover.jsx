@@ -3,6 +3,7 @@ import * as PopoverPrimitive from "@radix-ui/react-popover"
 import classNames from "classnames"
 
 // just wanted animations/transitions
+// Root and Trigger are used directly from radix-primitives
 const PopoverContent = React.forwardRef(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
   <PopoverPrimitive.Portal>
     <PopoverPrimitive.Content

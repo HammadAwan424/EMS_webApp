@@ -66,6 +66,9 @@ function parseDateStr(dateStr) {
 
 const getPath = {
     class({classId, classGroupId, isJoined}) {
+        if (isJoined == undefined) {
+            throw Error("Can't construct path, isJoined was undefined")
+        } 
         const classPath = generatePath("/classgroup/:classGroupId/class/:classId", {
             classGroupId, classId
         })
@@ -76,6 +79,9 @@ const getPath = {
         }
     },
     attendance({classId, classGroupId, isJoined}) {
+        if (isJoined == undefined) {
+            throw Error("Can't construct path, isJoined was undefined")
+        } 
         const attendancePath = generatePath("/classgroup/:classGroupId/class/:classId/attendance", {
             classGroupId, classId
         })

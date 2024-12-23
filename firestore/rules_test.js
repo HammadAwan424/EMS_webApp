@@ -1,3 +1,6 @@
+// X ------------------- X
+// The real/useful tests are inside /tests/** directory, see there
+// This must be deleted on converting all tests to jest compatible
 import {
     assertFails,
     assertSucceeds,

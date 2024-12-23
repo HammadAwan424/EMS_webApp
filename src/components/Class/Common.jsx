@@ -1,7 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit"
 import { useImmerReducer } from "use-immer"
 import { classEditReducer, classEditReducerInitialState, dispatchWrapper } from "./reducer"
-import { useDeleteClassMutation, useEditClassMutation } from "src/api/apiSlice"
+import { useDeleteClassMutation, useEditClassMutation } from "src/api/rtk-query/class"
 import { useMemo } from "react"
 import isEqual from "lodash.isequal"
 import { usePopup } from "../CommonUI/Popup"

@@ -1,5 +1,3 @@
-import { response } from "express";
-
 const getFireStoreProp = (value) => {
     const props = {
         arrayValue: 1,

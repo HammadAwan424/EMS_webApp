@@ -8,8 +8,6 @@ import { IconArrowLeft } from "src/IconsReexported"
 function ClassLayout() {
     const todayDateStr = getDateStr()
 
-    console.log("THIS IS CLASS LAYOUT")
-
     const navLinkClass = classNames(
         "font-medium text-xl noLink border-b p-2 first:pl-0 last:pr-0 transition",
         "[&.active]:border-white [&.active]:text-white",
@@ -18,6 +16,9 @@ function ClassLayout() {
 
     const {dateStr, classGroupId, classId} = useParams()
     const [dateFromUrl, _] = useState(dateStr)
+
+    // for View component, to maintain state after it unmounts (user may be at Edit)
+    const [fetchedEmptyDays, setFetchedEmptyDays] = useState([])
 
     const {search} = useLocation()
     const isJoined = joinedClass(search)
@@ -32,23 +33,41 @@ function ClassLayout() {
             
                 <NavLink className={navLinkClass} replace={true}
                     to={getPath.attendance({classId, classGroupId, isJoined}).today}
-                >Today</NavLink>
-                <div className="w-[1px] self-stretch py-2 bg-clip-content bg-theme-100"></div>
+                >
+                    Today
+                </NavLink>
+                <Separator />
+
                 <NavLink className={navLinkClass} replace={true}
                     to={getPath.attendance({classId, classGroupId, isJoined}).view({dateStr: dateFromUrl || todayDateStr})}
-                >View</NavLink>
-                <div className="w-[1px] self-stretch py-2 bg-clip-content bg-theme-100"></div>
+                >
+                    View
+                </NavLink>
+                <Separator />
+
                 <NavLink className={navLinkClass} replace={true}
                     to={getPath.class({classId, classGroupId, isJoined}).edit}
-                >Edit</NavLink>                
-                <div className="w-[1px] self-stretch py-2 bg-clip-content bg-theme-100"></div>
+                >
+                    Edit
+                </NavLink>              
+                <Separator />  
+
                 <NavLink className={navLinkClass} replace={true}
                     to={getPath.class({classId, classGroupId, isJoined}).details}
-                >Details</NavLink>              
+                >
+                    Details
+                </NavLink>              
             </div>
             
-            <Outlet />
+            <Outlet context={[fetchedEmptyDays, setFetchedEmptyDays]} />
         </>
+    )
+}
+
+
+function Separator() {
+    return (
+        <div className="w-[1px] self-stretch py-2 bg-clip-content bg-theme-100"></div>
     )
 }
 

@@ -1,4 +1,4 @@
-import { generatePath, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./GroupCommon"
 import { useImmerReducer } from "use-immer"
 import { useEditClassGroupMutation, useGetAuthQuery } from "src/api/apiSlice"

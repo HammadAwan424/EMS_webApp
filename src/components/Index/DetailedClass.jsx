@@ -1,5 +1,5 @@
 import { selectMonthlyStudents, selectStudentCountMonthly } from "src/api/rtk-helpers/attendance"
-import { useGetAttendanceQuery, useGetMonthlyAttendanceQuery } from "src/api/rtk-query/attendance"
+import { useGetMonthlyAttendanceQuery } from "src/api/rtk-query/attendance"
 import AttendanceCard, { AttendanceCardSkeletonUI, AttendanceCardContext } from "src/components/Attendance/AttendanceCard"
 import {  IconUserFilled  } from "src/IconsReexported.jsx"
 import { useLocation, useParams } from "react-router-dom"
@@ -8,7 +8,7 @@ import { skipToken } from "@reduxjs/toolkit/query"
 import { dateUTCPlusFive, getDateStr, joinedClass } from "src/api/Utility"
 
 import ImprovedTrack from "./ImprovedTrack"
-import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 
 
 function DetailedClassWrapper() {

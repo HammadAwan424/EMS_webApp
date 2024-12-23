@@ -1,10 +1,12 @@
 import { useParams } from "react-router-dom"
-import { useGetClassByIdQuery } from "src/api/apiSlice"
+import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 import { useGetAttendanceQuery } from "src/api/rtk-query/attendance"
 import { getDateStr } from "src/api/Utility"
 import Set from "./Set"
 import Edit from "./Edit"
 
+// This is a wrapper around Set and Edit components
+// Render which is more suitable
 function TodayAttendanceWrapper() {
     const {classId, classGroupId} = useParams()
     const dateStrToday = getDateStr()

@@ -40,6 +40,10 @@ export default [
       }
     }
   },
+
+
+  // Copied from stack overflow
+  // TODO: have to change it acc to requirements and learn about it
   {
     // All eslint-plugin-import config is here
     languageOptions: {

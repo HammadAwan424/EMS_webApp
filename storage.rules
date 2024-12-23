@@ -10,13 +10,15 @@ service cloud.firestore {
     match /classGroups/{classGroupID} {
       function validateFields() {
         let requestData = request.resource.data;
-        // let resourceData = resource.data;
         return requestData.keys().hasOnly(['editors', 'classes', 'classGroupName', 'cgAdmin', 'meta', 'tmp']) &&
           requestData.editors is map &&
           requestData.classes is map &&
           requestData.classGroupName is string
       }
       
+      // No editor in classGroup doc can be removed unless he is notified by sending invitation 
+      // and can't be [spam added/notifying him] unless he is given proper access 
+
       function validControlBack() {
         let requestData = request.resource.data;
         let classId = requestData.get("meta", {}).get("metaId", null);
@@ -44,7 +46,7 @@ service cloud.firestore {
         );
       }
 
-      // // Doesn't account for mutation of class key, always returns true if no class is added or removed
+      // Doesn't account for mutation of class key, always returns true if no class is added or removed
       // function validClassChange(requestData, resourceData) {
       //   let diff = requestData.classes.diff(resourceData.classes);
   
@@ -58,7 +60,6 @@ service cloud.firestore {
       //     ) || (
       //       diff.removedKeys().size() == 0 && diff.addedKeys().size() == 0
       //     );
-     
       // }
 
       // function checks() {
@@ -72,8 +73,6 @@ service cloud.firestore {
       allow update: if resource.data.cgAdmin == request.auth.uid && request.resource.data.cgAdmin == resource.data.cgAdmin && 
         validateFields() && 
         validControlBack()
-        // validControlBack() && 
-        // // checks()
       allow read: if resource.data.cgAdmin == request.auth.uid
       allow delete: if resource.data.cgAdmin == request.auth.uid
 
@@ -130,6 +129,9 @@ service cloud.firestore {
       //   return doc
       // }
 
+      // Invitation is very sensitive op, it involves updating person A updating
+      // person B private doc alongside other invitations, the ensures person A
+      // updates only his field inside person B's notifications 
       function validInvitation() {
         
         let requestData = request.resource.data;
@@ -226,7 +228,6 @@ service cloud.firestore {
 
       // TODO: no className verification
       allow create: if TeacherOrAdmin(request.resource.data.classGroupId, request.resource.data) &&
-        // get(/databases/$(database)/documents/classGroups/$(request.resource.data.classGroupId)/classes/$(request.resource.data.classId)).data.students.size() == request.resource.data.students.size() &&
         utcplus5time() &&
         request.resource.data.createdAt == sheetID[20:28] &&
 

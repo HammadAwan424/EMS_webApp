@@ -1,9 +1,8 @@
 import express from "express"
 import { initializeApp, cert } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth"
-import { BulkWriter, getFirestore, FieldValue, FieldPath, Timestamp } from "firebase-admin/firestore"
-import { docFromApiRes, fireStoreParser } from "./helper.js";
-import { getDateStr } from "#src/api/Utility.js";
+import { getAuth, getFirestore } from "firebase-admin/auth"
+import { docFromApiRes } from "./helper.js";
+import cronjob from "./cronjob.js";
 
 // ($env:production="true"; vercel dev) for production // ps
 // ($env:debug="true"; vercel dev) for debug // ps
@@ -62,87 +61,11 @@ const firestoreUrl = process.env.production == "true" ?
     'http://localhost:8080/v1/projects/uplifted-env-416417/databases/(default)/documents'
 
 
-// docId will be classId202405
-const monthlyMock = {
-    classId: "aliceClassId12121212",
-    classGroupId: "classGroupId",
-    stats: {
-        day1: {
-            count: 32,
-            total: 50
-        },
-        day2: {
-            count: 12,
-            total: 50
-        } // ...
-    },
-    students: {
-        studentId1: {
-            absent: 4,
-            present: 2
-        },
-        studentId2: {
-            absent: 3,
-            present: 1
-        } // ...
-    }
-}
-// docId will be classId20240523
-const dailyMock = {
-    students: {
-        studentId1: { studentName: "mockName", rollNo: "mockRollNo", status: 1},
-        studentId2: { studentName: "mockName2", rollNo: "mockRollNo2", status: -1}
-    }, 
-    classId: "aliceClassId12121212",
-    classGroupId: "classGroupId",
-    lastModified: Timestamp.fromDate(new Date()),
-    createdAt: getDateStr(-1) // "20240523" aka Yesterday
-}
-app.get("/api/cronjob/daily", async (req, res) => {
-    const [bearerStr, token] = req.headers.authorization.split(" ")
-    if (token != process.env.CRON_SECRET) {
-        res.status(403)
-        res.send("permission-denied")
-    }
-
-    const bulkWriter = firestore.bulkWriter()
-    const utcPlusFive = getDateStr(-1)
-    const day = utcPlusFive.slice(-2,)
-    
-    const querySnapshot = await firestore.collection("attendance").where("createdAt", "==", utcPlusFive).get()
-    const attendanceDocs = querySnapshot.docs
-    
-    console.log("Starting Loop with attendanceDocs found: ", attendanceDocs.length)
-    for (let i = 0; i < attendanceDocs.length; i++) {
-        const attendanceDoc = attendanceDocs[i].data()
-        const studentIds = Object.keys(attendanceDoc.students)
-        const updates = {stats: {}, students: {}, classId: attendanceDoc.classId, classGroupId: attendanceDoc.classGroupId}
-        let present = 0;
-        // Sets overall Students Stats for one single month
-        for (let j = 0; j < studentIds.length; j++) {
-            const status = attendanceDoc.students[studentIds[j]]?.status ?? null
-            const keyForStudent = status == 1 ? "present"
-                : status == -1 ? "absent" 
-                : null
-            if (status == 1) present++
-            if (keyForStudent == null) continue
-            updates.students[studentIds[j]] = {[keyForStudent]: FieldValue.increment(1)}
-        }
-        // Sets overall Class Stats for one single month
-        updates.stats[day] = {count: present, total: studentIds.length}
-
-        const monthlyDocRef = firestore.doc(`monthlyAttendance/${attendanceDoc.classId}${attendanceDoc.createdAt.slice(0,-2)}`)
-        bulkWriter.set(monthlyDocRef, updates, {merge: true})
-    }
-    try {
-        await bulkWriter.close()
-        res.send("success")
-    } catch (err) {
-        res.send("error")
-    }
-})
+// Daily cronjob
+app.get("/api/cronjob/daily", (req, res) => cronjob(req, res, firestore))
 
 
+// Handles deletion of classgroups through firebase REST api
 app.delete("/api/classGroups/:id", async (req, res) => {
     const [bearerStr, token] = req.headers.authorization.split(" ")
     const id = req.params.id
@@ -158,6 +81,8 @@ app.delete("/api/classGroups/:id", async (req, res) => {
     }
     let document;
     try {
+        // custom function to convert api response to document
+        // similar to what a client lib does
         document = await docFromApiRes(response)
     } catch (err) {
         res.send(err.message)
@@ -193,14 +118,19 @@ app.get("/api/testDB/:collection/:id", debugOnly, async (req, res) => {
 }) 
 
 
+// Test route for checking server response
 app.get("/api/", (req, res) => {
     res.send('Server is responding')
 })
 
+
+// I was practicing regex in routes/endpoints
 app.get("/api/check/:id(\\d+)", (req, res) => {
     res.send("helloo")
 })
 
+
+// Prevents endpoint from running in production
 function debugOnly (req, res, next) {
     if (process.env.debug == "true") {
         next()
@@ -209,6 +139,8 @@ function debugOnly (req, res, next) {
     }
 }
 
+
 app.listen(3001, () => console.log("Server ready on port http://127.0.0.1:3001."));
+
 
 export default app  
