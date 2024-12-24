@@ -1,0 +1,17 @@
+# usually ignored
+*.log
+node_modules
+dist
+
+# Ignore all dot files except gitignore
+/.*
+!.gitignore
+
+# this is used for testing api endpoints (/server/api/*) locally on prod DB 
+private.js
+
+# dir for storing mock-firebase data using [firebase emulators:export ./mock]
+mock/
+
+tmp.js
+Toast/
