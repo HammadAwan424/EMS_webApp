@@ -61,14 +61,13 @@ export const apiSlice = createApi({
                         }
                     });
                 } catch {
-                    console.log("No no")
                     // No-op
                 }
             },
         }),
         getUser: builder.query({
             queryFn: async (uid) => {
-                console.log("getUser: ", uid)
+                // cosole.log("getUser: ", uid)
                 try {
                     const document = await getDoc(doc(firestore, "teachers", uid));
                     return { data: document.data() };
@@ -103,7 +102,7 @@ export const apiSlice = createApi({
                     const id = await getTeacherUid(firestore, email)
                     return {data: id}
                 } catch (err) {
-                    console.log("ERROR in getPublicTeacherByEmail: ", err.message)
+                    // cosole.log("ERROR in getPublicTeacherByEmail: ", err.message)
                     return {error: {message: err.message}} // err my be unserializable, so can't do return {error: err}
                 }
             }
@@ -127,7 +126,7 @@ export const apiSlice = createApi({
         }),
         signIn: builder.mutation({
             queryFn: async ({ email, password }) => {
-                console.log("SIGN IN CALLED");
+                // cosole.log("SIGN IN CALLED");
                 try {
                     const creds = await signInWithEmailAndPassword(
                         auth,
@@ -136,7 +135,7 @@ export const apiSlice = createApi({
                     );
                     return { data: "" };
                 } catch (err) {
-                    console.log("INTO EXCEPTION: ", err);
+                    // cosole.log("INTO EXCEPTION: ", err);
                     return { error: err.code };
                 }
             },

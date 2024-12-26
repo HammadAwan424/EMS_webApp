@@ -1,6 +1,6 @@
 import { skipToken } from "@reduxjs/toolkit/query"
 import {  IconCalendarOff  } from "src/IconsReexported.jsx"
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { 
     selectAllById, selectTotalById, selectIdsById 
@@ -13,8 +13,10 @@ import Pie from "../CommonUI/Pie"
 import MediaQuery from "react-responsive"
 import { getAllClassesStatus } from "src/api/rtk-helpers/invitation"
 import { selectStatsFromMonthly, selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/rtk-helpers/attendance"
-import ImprovedTrack from "../Index/ImprovedTrack"
+import ImprovedTrack, { trackReducer } from "../Index/ImprovedTrack"
 import cn from "classnames"
+import { Expand } from "../CommonUI/Icons"
+import { useImmerReducer } from "use-immer"
 
 const AttendanceCardContext = createContext({})
 
@@ -76,7 +78,7 @@ function AttendanceCard({classId, classGroupId, cssClasses=""}) {
         return {ISOString: dateWithOffset.toISOString(), month, year}
     }, [])
     const [uniqueParams, setUniqueParams] = useState(null)
-    const [swipeBack, setSwipeBack] = useState(0)
+    const [swipeBack, dispatch] = useReducer(trackReducer, 0)
 
     const [dropdown, setDropdown] = useState(false)
     const dropdownRef = useRef(null)
@@ -129,12 +131,14 @@ function AttendanceCard({classId, classGroupId, cssClasses=""}) {
     const todayStudentEntities = selectStudentEntitiesDaily(attendance)
     const presentCount = todayStudentIds.filter(id => todayStudentEntities[id].status == 1).length
     const totalStuCount = todayStudentIds.length
- 
+    
+
+    const totalItems = allPreviousCount+1+(fetchingMonthly||noMoreData ? 1 : 0)
     function previous() {
-        setSwipeBack(swipeBack - 1)
+        dispatch({type: "previous", totalItems})
     }
     function next() {
-        setSwipeBack(swipeBack + 1)
+        dispatch({type: "next", totalItems})
     }
     
 
@@ -176,9 +180,11 @@ function AttendanceCard({classId, classGroupId, cssClasses=""}) {
                 </Link>
             </div>
 
-            <div id="All Space" className="flex-auto self-stretch text-center flex items-center h-1">
+            <div id="All Space" className="flex-auto self-stretch text-center flex items-center h-1 gap-1">
+                <Expand size={"100%"} onClick={previous} 
+                    className="rotate-180 hover:bg-theme-300 w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 rounded-md"/>
 
-                <div className="w-full max-h-full aspect-square flex justify-center">
+                <div className="max-h-full aspect-square flex flex-1 justify-center">
                     <div className="h-full max-w-full aspect-square overflow-hidden">
                        <ImprovedTrack classNames={"h-full"} 
                             totalItems={allPreviousCount+1+(fetchingMonthly||noMoreData ? 1 : 0)}
@@ -244,6 +250,9 @@ function AttendanceCard({classId, classGroupId, cssClasses=""}) {
                         </ImprovedTrack>
                     </div>
                 </div>
+
+                <Expand size={"100%"} onClick={next} 
+                    className="hover:bg-theme-300 w-6 h-6 md:w-8 md:h-8 lg:w-12 lg:h-12 rounded-md"/>
             </div>
                 
             <div className="ml-auto text-xs md:text-sm lg:text-base">

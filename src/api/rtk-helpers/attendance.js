@@ -101,6 +101,7 @@ function attendanceConverter(snapshot) {
 }
 
 
+// These selectors also work on classData returned from getClassById query
 // Daily == daily_attendance, selectors for it:
 const staticRefArr = []
 const staticRefObj = {}
@@ -115,6 +116,8 @@ const selectStudentIdsDaily = createSelector(
     }
 )
 
+
+// CURRENTLY NOT USED ANYWHERE
 // source = {entities: {studentKey: {key: value}, ...}}
 // target = {entities: {studentKey: {key: value}, ...}}
 const studentDataMerger = (target, source) => {

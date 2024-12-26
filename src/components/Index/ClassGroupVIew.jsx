@@ -8,7 +8,6 @@ function ClassGroupView({id}) {
     
     const {data: Auth} = useGetAuthQuery()
     const {data: User} = useGetUserQuery(Auth.uid)
-    console.log("RECEIVED VALUE: ", id)
 
     return (
         <>

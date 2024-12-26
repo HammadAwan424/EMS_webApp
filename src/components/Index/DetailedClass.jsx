@@ -3,11 +3,11 @@ import { useGetMonthlyAttendanceQuery } from "src/api/rtk-query/attendance"
 import AttendanceCard, { AttendanceCardSkeletonUI, AttendanceCardContext } from "src/components/Attendance/AttendanceCard"
 import {  IconUserFilled  } from "src/IconsReexported.jsx"
 import { useLocation, useParams } from "react-router-dom"
-import { useState, useMemo , useEffect } from "react"
+import { useState, useMemo , useEffect, useReducer } from "react"
 import { skipToken } from "@reduxjs/toolkit/query"
 import { dateUTCPlusFive, getDateStr, joinedClass } from "src/api/Utility"
 
-import ImprovedTrack from "./ImprovedTrack"
+import ImprovedTrack, { trackReducer } from "./ImprovedTrack"
 import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 
 
@@ -43,7 +43,7 @@ export { DetailedClassSkeletonUI }
 
 function DetailedClass({classId, classGroupId}) {
 
-    const [swipeBack, setSwipeBack] = useState(0)
+    const [swipeBack, dispatch] = useReducer(trackReducer, 0)
     const baseDate = useMemo(() => {
         const dateWithOffset = dateUTCPlusFive()
         dateWithOffset.setUTCMonth(dateWithOffset.getUTCMonth() + 1) // to query for previous months, shift date to one month later
@@ -74,11 +74,12 @@ function DetailedClass({classId, classGroupId}) {
         }
     }, [queryArgsWithValue.length, studentsCount, swipeBack, baseDate, newUniqueParams, noMoreData])
 
+    const totalItems = queryArgsWithValue.length + 1
     function previous() {
-        setSwipeBack(swipeBack - 1)
+        dispatch({type: "previous", totalItems})
     }
     function next() {
-        setSwipeBack(swipeBack + 1)
+        dispatch({type: "next", totalItems})
     }
     
     if (loadingMonthly || loadingClass) {
@@ -106,7 +107,7 @@ function DetailedClass({classId, classGroupId}) {
                     <span className="title-200 pb-2 inline-flex">Students Summary</span>
                     <span>{readable}</span>
                 </div>
-                <ImprovedTrack totalItems={queryArgsWithValue.length+1} swipeBack={swipeBack} navigation={{next, previous}}>
+                <ImprovedTrack totalItems={totalItems} swipeBack={swipeBack} navigation={{next, previous}}>
                     {noMoreData ? (
                     <div className="flex items-center justify-center border border-theme-100 rounded-md">
                             <span className="title-100 p-6">No Previous Data</span>
@@ -127,6 +128,8 @@ function DetailedClass({classId, classGroupId}) {
         </div>
     )
 }
+
+
 // [&_tr:not(:first-child)>td]:border-t-2
 function Students({studentList}) {
     const [ui, setUI] = useState({showAll: studentList.length <= 3})

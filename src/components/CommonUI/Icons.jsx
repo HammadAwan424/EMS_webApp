@@ -23,7 +23,7 @@ function Spinner({svgClassNames="", width=25, height=25, strokeWidth=30}) {
     )
 }
 
-function Expand({className="", size=24, expanded=false}) {
+function Expand({className="", size=24, expanded=false, ...arg}) {
     const classes = classNames(
         className,
         'fill-transparent transition',
@@ -31,7 +31,7 @@ function Expand({className="", size=24, expanded=false}) {
         {'rotate-90': expanded}
     )   
     return (
-        <svg width={size} height={size} viewBox="0 0 100 100" className={classes}>
+        <svg width={size} height={size} viewBox="0 0 100 100" className={classes} {...arg}>
             <path d="M40 35 L60 50 L40 65" strokeWidth={6} strokeLinecap="round" />
         </svg>
     )

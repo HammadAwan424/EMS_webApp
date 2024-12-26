@@ -11,6 +11,7 @@ import { getPath, joinedClass } from "src/api/Utility"
 import { selectStudentEntitiesDaily, selectStudentIdsDaily } from "src/api/rtk-helpers/attendance"
 import { produce } from "immer"
 import Alert from "../CommonUI/Alert"
+import { states } from "./Common"
 
 
 // classData will be loaded by TodayAttendanceWrapper
@@ -79,9 +80,20 @@ function Set({dateStr}) {
         { "opacity-75": isUnMarked }
     )
 
+    const setAllPresent = () => {
+        selectStudentIdsDaily(classData).forEach((id) => markStudent(states.present, id))
+    }
+
+    console.log(attendance)
+
     return (
         <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
             <span className="title-100">{"Set Attendance"}</span>
+            {hasStudents && (
+                <button className="bg-theme-100 text-sm" onClick={setAllPresent}>All present</button>
+            )}
+            </div>
             {hasStudents ? (
                 <div className="flex gap-2 flex-col">
                     <div className="studentLayout">
