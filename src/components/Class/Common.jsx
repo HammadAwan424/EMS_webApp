@@ -9,23 +9,27 @@ import { usePopup } from "../CommonUI/Popup"
 const staticRefArr = []
 const staticRefObj = {}
 
-const selectStudentEntitiesEdit = state => state?.students?.entities ?? staticRefObj
+const selectStudentEntities = state => state?.students?.entities ?? staticRefObj
 const selectStudentIdsArray = state => state?.students?.ids ?? staticRefArr
+// Below is for old data, details with sorting
 const selectStudentIdsEdit = createSelector(
-    selectStudentEntitiesEdit,
+    selectStudentEntities,
     selectStudentIdsArray,
     (entities, studentIds) => {
         return studentIds.toSorted((a, b) => entities[a].rollNo - entities[b].rollNo)
     }
 )
-const selectStudentIdsFromUpdates = createSelector(
-    selectStudentEntitiesEdit,
+
+// Below works only for formUpdates without sorting
+const selectFromUpdatesCreator = (type) => createSelector(
+    selectStudentEntities,
     selectStudentIdsArray,
     (state) => state?.students?.meta ?? staticRefObj,
     (entities, studentIds, metaObj) => 
-        studentIds.filter(id => metaObj[id] != "removed")
-    
+        studentIds.filter(id => metaObj[id] == type)
 )
+const selectRemovedStudentIds = selectFromUpdatesCreator("removed")
+const selectAddedStudentIds = selectFromUpdatesCreator("added")
 
 function useFormupdates({resetFunc, classId, classGroupId}) {
     
@@ -93,4 +97,4 @@ function useFormupdates({resetFunc, classId, classGroupId}) {
     }
 }
 
-export {selectStudentEntitiesEdit, selectStudentIdsEdit, selectStudentIdsFromUpdates, useFormupdates}
+export {selectStudentEntities, selectStudentIdsEdit, selectAddedStudentIds, selectRemovedStudentIds, useFormupdates}

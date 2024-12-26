@@ -19,7 +19,7 @@ function classEditReducer(draft, action) {
     switch (action.type) {
         case "add_student": {
             const randId = Math.random().toString().slice(2, 8)
-            draft.students.entities[randId] = {studentName: "", rollNo: ""}
+            draft.students.entities[randId] = {studentName: "", rollNo: "", ...action.payload}
             draft.students.meta[randId] = "added"
             draft.students.ids.push(randId)
             break

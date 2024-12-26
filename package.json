@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "jest",
-    "firebase": "firebase emulators:start --import ./mock",
+    "firebase": "firebase emulators:start --import ./mock --project uplifted-env-416417",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",

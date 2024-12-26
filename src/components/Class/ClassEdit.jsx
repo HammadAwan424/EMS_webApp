@@ -8,7 +8,7 @@ import Button from "../CommonUI/Button"
 import { Cross } from "../CommonUI/Icons"
 import MediaQuery from "react-responsive"
 import { Input, useInput } from "../CommonUI/Input"
-import { selectStudentIdsEdit, selectStudentIdsFromUpdates, useFormupdates } from "./Common"
+import { selectStudentIdsEdit, selectAddedStudentIds, selectRemovedStudentIds, useFormupdates, selectStudentEntities } from "./Common"
 import Alert from "../CommonUI/Alert"
 import { useGetClassByIdQuery } from "src/api/rtk-query/class"
 
@@ -203,7 +203,17 @@ function TeacherEdit({hostEmail, showSaveChanges, hasModifications, isJoined}) {
 function StudentEdit() {
     const {classId, classGroupId, formUpdates, dispatch} = useContext(ClassEditContext) 
     const {data: details, isLoading: loadingDetails} = useGetClassByIdQuery({classId, classGroupId})
+
+    const addedStudentIds = selectAddedStudentIds(formUpdates)
     const oldStudentIds = selectStudentIdsEdit(details)
+
+    // For auto-incrementing id
+    const oldRollNo = selectStudentIdsEdit(details).map(id => selectStudentEntities(details)[id].rollNo)
+    const newRollNo = selectAddedStudentIds(formUpdates).map(id => selectStudentEntities(formUpdates)[id].rollNo)
+    const maxRollNo = Math.max(...oldRollNo, ...newRollNo, 0)
+
+    
+
     const hasStudents = oldStudentIds.length > 0
 
     return (
@@ -211,7 +221,7 @@ function StudentEdit() {
             <div className="flex gap-2">
                 <div className="font-medium">Students</div>  
             </div>
-            {selectStudentIdsFromUpdates(formUpdates).filter(id => formUpdates.students.meta[id] == "added").map(studentId => 
+            {addedStudentIds.map(studentId => 
                 <SingleStudentEdit 
                     key={studentId} studentId={studentId} 
                     type={"added"} 
@@ -232,7 +242,8 @@ function StudentEdit() {
             )}
             <button data-edit-type="studentEdit" className="self-start flex p-2 gap-1 bg-[--theme-secondary]" 
                 type="button" onClick={
-                    () => {dispatch({type: "add_student"}); dispatch({type: "lockInput", value: "teacher"})
+                    () => {dispatch({type: "add_student", payload: {rollNo: maxRollNo+1}}); 
+                    dispatch({type: "lockInput", value: "teacher"})
                 }}>
                 <IconCirclePlus className="self-end text-green-400" /> 
                 <span>Add Student</span>
@@ -294,10 +305,7 @@ function SingleStudentEdit({type, studentId}) {
                     () => {dispatch({ type: "remove_student", id: studentId }); dispatch({type:"lockInput", value: "teacher"})}
                 } />
             )}
-            <Input {...newInputProps} className={[
-                    getClassname(rollNoUi.isFocused),
-                    ""
-                ].join(" ")} name={fields[0]} type="number" placeholder="Roll No" />
+            <Input {...newInputProps} className={getClassname(rollNoUi.isFocused)} name={fields[0]} type="number" placeholder="Roll No" />
             <Input {...newInputProps} className={getClassname(nameUi.isFocused)} name={fields[1]} placeholder="Name" />
         </div>
     )
