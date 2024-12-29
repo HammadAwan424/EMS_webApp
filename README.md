@@ -1,4 +1,7 @@
-A **react-redux** app using **firebase** for teachers to maintain record of their students stats and allow collaborative work by creating groups. Deployed on **vercel**, [preview it here](https://attendit.vercel.app).
+# Attend It
+A **react-redux** app using **firebase** for teachers to maintain record of their students stats and allow collaborative work by creating groups. Deployed on **vercel**, [live preview here](https://attendit.vercel.app).
+
+#### Video Demo: https://youtu.be/HzMAjw2V8t8
 
 # Usage
 

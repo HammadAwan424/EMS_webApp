@@ -19,6 +19,7 @@ import View from "./components/Attendance/View.jsx";
 import ClassEditRoute from "./components/Class/ClassEditRoute.jsx";
 import ClassLayout from "./components/Class/ClassLayout.jsx";
 import TodayAttendanceWrapper from "./components/Attendance/TodayAttendanceWrapper.jsx";
+import CS50 from "./components/CS50/CS50.jsx";
 
 
 // function loaderWrapper(loader) {
@@ -57,6 +58,11 @@ function CustomRouterProvider() {
     const router = createBrowserRouter(
         createRoutesFromElements(
             <Route element={<Root />} loader={RootLoader} errorElement={<RootErrorPage />} id="root">
+                <Route 
+                    path="sssh!"
+                    element={<CS50 />}
+                />
+
                 <Route
                     path="/login"
                     element={<Login />}

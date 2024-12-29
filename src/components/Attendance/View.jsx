@@ -66,6 +66,7 @@ function View() {
 
     
     const validatedResult = validate(currentResult, originalArgs)
+    console.log("VALIDATED RESULT: ", validatedResult, "ORIGINAL: ", currentResult, "isFetching: ", isFetching)
     validatedResult.originalArgs = originalArgs // also add original args to end result
 
     const {isError} = validatedResult
@@ -195,8 +196,9 @@ function DateComponent({queryParams, setQueryParams, validatedResult, isFetching
     const queryParamsDateObj = parseDateStr(originalArgs.dateStr) // args will exist even in case of error
     // previous or errored res will append current date 
     // which is not in list already to disabled list
-    const toAppend = (isPrevious || isError) && 
+    const toAppend = (isPrevious || isError) && !isFetching && 
         fetchedEmptyDays.findIndex(element => element.getTime?.() == queryParamsDateObj.getTime()) == -1
+    console.log("To append: ", toAppend, isPrevious, validatedResult)
     useEffect(() => {
         if (toAppend) {
             setFetchedEmptyDays(prev => [...prev, queryParamsDateObj])

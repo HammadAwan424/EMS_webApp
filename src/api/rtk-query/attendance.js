@@ -73,12 +73,15 @@ const extendedApi = apiSlice.injectEndpoints({
         
         getAttendanceWithRecentData: builder.query({
             queryFn: async ({ classId, classGroupId, dateStr, fallback="" }, {dispatch}) => {
+                console.log("STARTING getAttendanceWIthRecentData")
                 try {
                     const promise = dispatch(apiSlice.endpoints.getAttendance.initiate({
                         classId, classGroupId, dateStr
                     }))
                     promise.unsubscribe()
-                    return await promise
+                    const res = await promise
+                    console.log("RETURNING: ", res, " with ", dateStr)
+                    return res
                 } catch (err) {
                     return {error: err.message}
                 }
