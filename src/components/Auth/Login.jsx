@@ -66,7 +66,7 @@ function Login() {
                         <Alert show={status.visible} text={status.text} type={status.type} />
                         <div></div>
                         <Button states={{isLoading}} text={{idleText: "Sign in", loadingText: "Signing in..."}} />
-                        <div className='text-sm self-center'>{"Don't have an account?"}<Link to="/register" state={location.state ?? "/"}>Register Now</Link></div>
+                        <div className='text-sm self-center'>{"Don't have an account? "}<Link to="/register" state={location.state ?? "/"}>Register Now</Link></div>
                     </form>
                 </div>
                 ) : null

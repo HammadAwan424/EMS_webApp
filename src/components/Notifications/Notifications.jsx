@@ -1,6 +1,6 @@
 import { useAcceptInvitationMutation, useClearNotificationsMutation, useGetAuthQuery, useGetUserQuery, useRejectInvitationMutation } from "src/api/apiSlice.js"
 import Button from "../CommonUI/Button.jsx"
-import { getAllClassesStatus } from "src/api/rtk-helpers/invitation.js"
+import { getAllClassesStatus } from "#src/api/rtk-query/teacher/invitation.ts"
 
 // Deals with inactive classes, newInvitations (both with status == true || false)
 function Notifications() {

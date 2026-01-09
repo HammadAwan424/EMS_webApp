@@ -1,5 +1,5 @@
 
-import { getAllClassesStatus } from "src/api/rtk-helpers/invitation.js"
+import { getAllClassesStatus } from "#src/api/rtk-query/teacher/invitation.ts"
 import DashBoard from "./Dashboard.jsx"
 import NewUser from "./NewUser.jsx"
 import { useGetAuthQuery, useGetClassGroupsQuery, useGetUserQuery } from "src/api/apiSlice.js"

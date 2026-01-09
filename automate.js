@@ -1,6 +1,5 @@
 import fs from "fs"
 import {glob} from "glob"
-
 let regex = /import \{([^}]+)\} from ['"]@tabler\/icons-react['"]/
 
 // Wrote it to extract named icon imports from all the files

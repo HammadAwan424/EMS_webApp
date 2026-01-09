@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom"
 import { inputClasses, NewClass, reducer, reducerInitState, uiReducer, useSubmitChanges } from "./GroupCommon"
 import { useImmerReducer } from "use-immer"
-import { useEditClassGroupMutation, useGetAuthQuery } from "src/api/apiSlice"
+
+// import { useEditClassGroupMutation, useGetAuthQuery } from "src/api/apiSlice"
+import {} from "src/api/rtk-query/extendedApi.ts"
 import {  IconAlertCircle, IconCirclePlus, IconArrowLeft  } from "src/IconsReexported.jsx"
 import dot from "dot-object"
 import isEqual from "lodash.isequal"

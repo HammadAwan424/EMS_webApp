@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+      "jsx": "react-jsx",
+      "strictNullChecks": true,
+      "allowJs": true,
+      "noEmit": true,
+      "baseUrl": ".",
+      "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator", "DOM"],
+      "module": "nodenext",
+      "target": "es2022",
+      "noImplicitAny": true,
+      "noErrorTruncation": true,
+      "allowImportingTsExtensions": true,
+      "paths": {
+        "src/*": ["src/*"],
+        "#src/*": ["src/*"],
+        "@": ["src/*"]
+      }
+    },
+    "include": ["**/*"],
+    "exclude": ["node_modules/**/"]
+}

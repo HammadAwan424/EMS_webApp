@@ -1,8 +1,10 @@
-{ "firestore": {
-  "rules": "storage.rules",
-  "indexes": "firestore.indexes.json"
+{
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-south1",
+    "rules": "storage.rules",
+    "indexes": "firestore.indexes.json"
   },
-
   "emulators": {
     "auth": {
       "host": "0.0.0.0",
