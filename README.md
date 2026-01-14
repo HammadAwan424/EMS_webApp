@@ -1,3 +1,5 @@
+## Conversion to typescript in progress, on brach `ts`
+
 # Attend It
 A **react-redux** app using **firebase** for teachers to maintain record of their students stats and allow collaborative work by creating groups. Deployed on **vercel**, [live preview here](https://attendit.vercel.app).
 
