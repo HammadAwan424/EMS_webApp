@@ -1,11 +1,7 @@
-import { doc, DocumentData, DocumentReference, DocumentSnapshot, getDoc, onSnapshot, Query as FirestoreQuery, Query } from "firebase/firestore";
-import { moveThere } from "../../rtk-helpers/customSlice.js";
-import apiSlice from "../apiSlice.js";
+import { DocumentData, DocumentReference, onSnapshot, Query as FirestoreQuery } from "firebase/firestore";
 import { ThunkExtra } from "../../redux/getStore.js";
-import { EndpointBuilder, fetchBaseQuery } from "@reduxjs/toolkit/query";
-
-
-import { createEntityAdapter, EntityAdapter, EntityId, EntityState, EntityStateAdapter } from "@reduxjs/toolkit";
+import { EndpointBuilder } from "@reduxjs/toolkit/query";
+import { EntityAdapter, EntityId, EntityState } from "@reduxjs/toolkit";
 import type { BaseQuery, TagTypes, ReducerPath } from "../baseApi.js";
 
 
@@ -24,6 +20,8 @@ type MultiDocListener<ResultType extends AdapterState, QueryArg> = {
     getQuery: (queryArg: QueryArg, extra: ThunkExtra) => FirestoreQuery<ResultType['entities'][EntityId], DocumentData>,
     entityAdapter: UnknownEntityAdapter
 }
+// multiple doc listener is only allowed when the 
+// query return type is AdapterState
 type MultiAllowed<ResultType, QueryArg> = ResultType extends AdapterState 
     ? MultiDocListener<ResultType, QueryArg> 
     : never
@@ -37,6 +35,7 @@ type WrapperQueryExtraArgs<ResultType, QueryArg> = {
 
 
 type Builder = EndpointBuilder<BaseQuery, TagTypes, ReducerPath>
+// value space was needed to provide type arguements to .query method
 declare const __builder__: Builder
 type __Typed_Query__<ResultType, QueryArg> = typeof __builder__.query<ResultType, QueryArg>
 type onCacheEntryAdded<ResultType, QueryArg> = Parameters<__Typed_Query__<ResultType, QueryArg>>[0]['onCacheEntryAdded']
@@ -112,7 +111,8 @@ function query<ResultType, QueryArg>(
     } else if (listenerType == "multi") {
         const { getQuery, entityAdapter } = definition
         onCacheEntryAdded = (arg, api) =>
-        // @ts-expect-error
+        // @ts-expect-error couldn't narrow down generic ResultType to ResultType extends EntityState
+        // avoiding overloads atm
             multiDocListener(getQuery(arg, api.extra as ThunkExtra), api, entityAdapter)
     }
     return builder.query<ResultType, QueryArg>({
