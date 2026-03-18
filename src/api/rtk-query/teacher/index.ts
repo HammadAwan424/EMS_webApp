@@ -8,6 +8,9 @@ import { ClassIdentifier, getClassByIdConverter } from "../class/util.ts";
 import { ClassGroupExtendedApi } from "../extendedApi.ts";
 import { cacheWrapper } from "../util/cachedHandler.ts";
 import { NoOpData } from "#src/api/util/Utility.ts";
+import { StartQueryActionCreatorOptions } from "@reduxjs/toolkit/query";
+import { AppAuth, User } from "../auth/util.ts";
+
 
 export const endpointsToInject = ((api: ClassGroupExtendedApi) => ({
     endpoints: builder => ({
@@ -17,6 +20,8 @@ export const endpointsToInject = ((api: ClassGroupExtendedApi) => ({
                 recepientEmail
             }, { dispatch, extra }) => {
                 const { auth, firestore } = (extra as ThunkExtra)
+                const appAuth = await dispatch(api.endpoints.getAuth.initiate(undefined, {subscribe: false}))
+                const hostEmail = (appAuth.data as AppAuth).email
                 const { email: hostEmail } = auth.currentUser as NonNullable<typeof auth.currentUser>
                 try {
                     const promise = dispatch(api.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
@@ -46,13 +51,19 @@ export const endpointsToInject = ((api: ClassGroupExtendedApi) => ({
                     console.log("Error at right place: ", error.message);
                     if (error.code == "permission-denied") {
                         return {
-                            status: "CUSTOM_ERROR",
                             error: {
-                                message: "You don't have any permission to do this",
-                                code: "permission-denied"
+                                status: "CUSTOM_ERROR" as const,
+                                data: "You don't have any permission to do this",
+                                error: "permission-denied"
                             }
                         };
-                    } else return { error: error.message };
+                    } else return { 
+                        error: {
+                            status: "CUSTOM_ERROR",
+                            data: error.message,
+                            error: "unexpected-error"
+                        } 
+                    };
                 }
             },
         }),
@@ -74,26 +85,6 @@ export const endpointsToInject = ((api: ClassGroupExtendedApi) => ({
                 await batch.commit()
                 return { data: "" };
             },
-            // unAssignTeacher: builder.mutation({
-            //     queryFn: async ({
-            //         recepientEmail,
-            //         classGroupId,
-            //         classId
-            //     }, { dispatch }) => {
-            //         return await removeTeacher({
-            //             firestore, classGroupId, classId,
-            //             getTeacherUid: async () => {
-            //                 const promise = dispatch(api.endpoints.getPublicTeacherByEmail.initiate(recepientEmail))
-            //                 promise.unsubscribe()
-            //                 const { isSuccess, ...other } = await promise
-            //                 if (isSuccess) {
-            //                     return other.data
-            //                 } else {
-            //                     throw other.error
-            //                 }
-            //             }
-            //         })
-            //     },
         }),
     })
 })) satisfies (api: BaseApi) => Parameters<BaseApi['injectEndpoints']>[0]

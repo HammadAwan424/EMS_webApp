@@ -2,12 +2,12 @@ import { onAuthStateChanged } from "firebase/auth";
 import { BaseApi } from "../baseApi.ts";
 import { ThunkExtra } from "#src/api/redux/getStore.ts";
 import { cacheWrapper } from "../util/cachedHandler.ts";
-import { doc, getDoc } from "firebase/firestore";
-import { Auth, User } from "./util.ts";
+import { doc, DocumentReference, getDoc } from "firebase/firestore";
+import { AppAuth, User } from "./util.ts";
 
 export const endpointsToInject = ((api: BaseApi) => ({
     endpoints: builder => ({
-        getAuth: builder.query<Auth | null, void>({
+        getAuth: builder.query<AppAuth | null, void>({
             queryFn: async (undefined, { extra }) => {
                 return new Promise((resolve, _) => {
                     const unsubscribe = onAuthStateChanged((extra as ThunkExtra).auth, (user) => {
@@ -15,7 +15,7 @@ export const endpointsToInject = ((api: BaseApi) => ({
                             resolve({
                                 // type assertion here cuz 
                                 // i know the resultatnt type definitely
-                                data: user.toJSON() as Auth
+                                data: user.toJSON() as AppAuth
                             });
                         } else resolve({ data: null });
                         unsubscribe();
@@ -36,7 +36,7 @@ export const endpointsToInject = ((api: BaseApi) => ({
                 }
             },
         }),
-        // TODO: define user type
+        // DONE: define user type
         // TODO: verify how getDocRef is working, what if the doc doesn't exist??
         getUser: cacheWrapper.query<User, string>(builder, {
             queryFn: async (uid, { extra }) => {                 
@@ -53,7 +53,9 @@ export const endpointsToInject = ((api: BaseApi) => ({
                 return {data} as {data: User};
             },
             listenerType: "single",
-            getDocRef: (uid, extra) => (doc((extra as ThunkExtra).firestore, "teachers", uid) as any)
+            getDocRef: (uid, extra) => (
+                doc((extra as ThunkExtra).firestore, "teachers", uid) as DocumentReference<User>
+            )
         }),
     })
 })) satisfies (api: BaseApi) => Parameters<BaseApi['injectEndpoints']>[0]
